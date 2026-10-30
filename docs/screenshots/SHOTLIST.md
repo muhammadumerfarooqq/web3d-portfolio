@@ -13,3 +13,6 @@ Every step adds its rows here. Save each screenshot under `docs/screenshots/<mod
 | P1-4 | MCP | Claude Code `/mcp` showing "blender" connected | run `/mcp` in Claude Code | ⬜ |
 | P1-5 | MCP/Blender | Blender viewport with SpikeCube + SpikeLimb + rig (Material Preview, armature visible) | open `blender/spikes/spike-a.blend` in Blender 5.2.3 | ⬜ |
 | P1-6 | MCP/Three.js | `spike-a.html` in the browser showing both animations (cube spinning, limb bending) + info panel (clips Spin/Bend, morph Squash, 1 skinned mesh) | `npm run dev` → http://localhost:5173/spikes/spike-a.html | ⬜ |
+| P1-7 | MCP/After Effects | AE bridge panel showing "Ready - Auto-run is ON" | AE 2022 → Window → `mcp-bridge-auto.jsx` | ⬜ |
+| P1-8 | MCP/Security | `npm audit --omit=dev` before/after `npm audit fix`: 7 → 2 advisories | re-run `npm audit --omit=dev` in `D:\PROJECTS\tools\after-effects-mcp` (plus the earlier "7" output from your log) | ⬜ |
+| P1-9 | MCP | Claude Code `/mcp` showing `blender` + `aftereffects` connected | run `/mcp` in Claude Code (restart it in the repo folder first) | ⬜ |

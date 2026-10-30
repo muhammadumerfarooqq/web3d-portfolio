@@ -465,12 +465,15 @@ Overall  [█░░░░░░░░░░░░░░░░░░░]  4%
 
 ### 8.2 After Effects 2022 — `a-y-ibrahim/after-effects-mcp`
 Not `kumoproductions/mcp-aftereffects` (needs AE 2024–2026), not the original Dakkshin version (6 tools), not `p10q/ae-mcp` (unsigned CEP + debug mode).
-1. Node.js 18+ (we use 24 LTS).
-2. `git clone https://github.com/a-y-ibrahim/after-effects-mcp.git D:\PROJECTS\tools\after-effects-mcp`
-3. **Read `package.json` scripts and the install-bridge script first** (third-party code writing into Program Files).
-4. `npm install` → PowerShell **as Administrator**: `npm run install-bridge`. If AE 2022 isn't found, copy the bridge `.jsx` into `C:\Program Files\Adobe\Adobe After Effects 2022\Support Files\Scripts\ScriptUI Panels\`.
-5. AE → Edit → Preferences → Scripting & Expressions → **"Allow Scripts to Write Files and Access Network"** → restart.
-6. AE → Window → **mcp-bridge-auto.jsx** → dock it, keep it open.
+What was actually done (30-Oct-2026):
+1. Node.js 24 LTS.
+2. `git clone https://github.com/a-y-ibrahim/after-effects-mcp.git D:\PROJECTS\tools\after-effects-mcp`, pinned at commit `e9ffbed9f675a3ac31a4295c83abfd1fb4a7b3f5` (16-Aug-2026, v1.13.0, MIT). Re-review before moving to any other commit.
+3. **Review the code before installing:** `package.json` scripts, `install-bridge.js`, `src/index.ts` (stdio transport only, no network calls, `child_process` only for `aerender`/`ffmpeg`), and the bridge `.jsx` panel. Findings are in `docs/security.md` (C5).
+4. `npm ci`: exact lockfile install; its `prepare` script builds `build/`.
+5. `npm audit fix` **without** `--force`: production advisories 7 → 2. The remaining two (`@modelcontextprotocol/sdk`, `zod`) are accepted risks R1 and R2 in `docs/security.md`.
+6. `npm run install-bridge` in a normal PowerShell, **no Administrator**: it installs the panel per user to `%APPDATA%\Adobe\After Effects\22.6\Scripts\ScriptUI Panels\mcp-bridge-auto.jsx`. The upstream README's Program Files / Administrator instruction is outdated.
+7. AE → Edit → Preferences → Scripting & Expressions → **"Allow Scripts to Write Files and Access Network"** → restart AE. Turn it off again after each video session (risk R4).
+8. AE → Window → **mcp-bridge-auto.jsx** → dock it; it shows "Ready - Auto-run is ON". Keep it open only while working (risk R3).
 
 ### 8.3 Register in Claude Code (`.mcp.json` in repo root)
 ```json

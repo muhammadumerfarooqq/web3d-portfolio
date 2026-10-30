@@ -24,7 +24,7 @@ function packageSpecs(server) {
   return specs;
 }
 
-describe('C4 local MCP tooling (.mcp.json)', () => {
+describe('C4/C5 local MCP tooling (.mcp.json)', () => {
   it('is valid JSON with a mcpServers object', () => {
     const config = JSON.parse(raw);
     expect(config.mcpServers).toBeTypeOf('object');
@@ -33,18 +33,28 @@ describe('C4 local MCP tooling (.mcp.json)', () => {
 
   it('contains no env values and nothing that looks like a secret', () => {
     const config = JSON.parse(raw);
+    const names = Object.keys(config.mcpServers).sort();
+    // Every registered server is scanned; a new entry must be added here on purpose.
+    expect(names).toEqual(['aftereffects', 'blender']);
+
+    const caseSensitive = ['sk-', 'sk_', 'gsk_', 'AIza', 'AQ.', 'sb_secret_', 'eyJ'];
+    const caseInsensitive = [/password/i, /token/i, /key=/i];
     for (const [name, server] of Object.entries(config.mcpServers)) {
-      const env = server.env ?? {};
-      for (const [key, value] of Object.entries(env)) {
-        expect(value, `${name}.env.${key} must not carry a value`).toBe('');
+      expect(server.env, `${name} must not have an env block`).toBeUndefined();
+
+      const entry = JSON.stringify(server);
+      for (const pattern of caseSensitive) {
+        expect(entry.includes(pattern), `${name} must not contain "${pattern}"`).toBe(false);
+      }
+      for (const pattern of caseInsensitive) {
+        expect(pattern.test(entry), `${name} must not match ${pattern}`).toBe(false);
       }
     }
 
-    const caseSensitive = ['sk-', 'sk_', 'gsk_', 'AIza', 'AQ.', 'sb_secret_', 'eyJ'];
+    // Whole-file scan as well, in case a secret sits outside mcpServers.
     for (const pattern of caseSensitive) {
       expect(raw.includes(pattern), `.mcp.json must not contain "${pattern}"`).toBe(false);
     }
-    const caseInsensitive = [/password/i, /token/i, /key=/i];
     for (const pattern of caseInsensitive) {
       expect(pattern.test(raw), `.mcp.json must not match ${pattern}`).toBe(false);
     }
@@ -69,11 +79,35 @@ describe('C4 local MCP tooling (.mcp.json)', () => {
     expect(packageSpecs(mcpServers.blender)).toEqual(['mcp-for-blender@2.2.6']);
   });
 
+  it('keeps the Blender entry exactly as registered in P1 Step 3', () => {
+    const { mcpServers } = JSON.parse(raw);
+    expect(mcpServers.blender).toStrictEqual({ command: 'cmd', args: ['/c', 'uvx', 'mcp-for-blender@2.2.6'] });
+  });
+
   it('the pin checker rejects unpinned or range specs', () => {
     const bad = ['mcp-for-blender', 'mcp-for-blender@latest', 'pkg@^1.2.3', 'pkg@~1.2.3', 'pkg@1.2'];
     for (const spec of bad) expect(spec).not.toMatch(EXACT_PIN);
     expect(packageSpecs({ command: 'cmd', args: ['/c', 'uvx', 'mcp-for-blender'] })).toEqual(['mcp-for-blender']);
     expect(packageSpecs({ command: 'npx', args: ['-y', '@scope/pkg@1.0.0'] })).toEqual(['@scope/pkg@1.0.0']);
+  });
+});
+
+describe('C5 local MCP tooling (After Effects)', () => {
+  const AE_ROOT = 'D:/PROJECTS/tools/';
+  const AE_ENTRY = '/after-effects-mcp/build/index.js';
+
+  it('runs node with exactly one arg: the reviewed build under D:/PROJECTS/tools/', () => {
+    const { aftereffects } = JSON.parse(raw).mcpServers;
+    expect(Object.keys(aftereffects).sort()).toEqual(['args', 'command']);
+    expect(aftereffects.command).toBe('node');
+    expect(aftereffects.args).toHaveLength(1);
+
+    const [script] = aftereffects.args;
+    expect(script.startsWith(AE_ROOT), `${script} must live under ${AE_ROOT}`).toBe(true);
+    expect(script.endsWith(AE_ENTRY), `${script} must end with ${AE_ENTRY}`).toBe(true);
+    // No traversal out of the tools folder and no flags smuggled into node.
+    expect(script.split('/')).not.toContain('..');
+    expect(script.startsWith('-')).toBe(false);
   });
 });
 

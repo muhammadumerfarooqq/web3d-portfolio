@@ -3,6 +3,10 @@
     "blender": {
       "command": "cmd",
       "args": ["/c", "uvx", "mcp-for-blender@2.2.6"]
+    },
+    "aftereffects": {
+      "command": "node",
+      "args": ["D:/PROJECTS/tools/after-effects-mcp/build/index.js"]
     }
   }
 }
