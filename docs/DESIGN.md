@@ -1,89 +1,108 @@
-# Art Direction — "PRISM" (v1 · 30-Oct-2026)
+# Art Direction — "PRISM" v2 · Hybrid Explore + Classic (31-Oct-2026)
 
-> Claude Code: read this file before ANY frontend or 3D step. It overrides the old "Midnight Lab" direction.
+> Claude Code: read this file before ANY frontend, 3D, audio or Blender step. v2 supersedes v1 and the old "Midnight Lab".
 
-## 1. Concept (one sentence, everything protects it)
+## 1. Concept
 **Light goes in as raw data — and refracts into everything Umer builds.**
-A living glass prism splits light into an aurora of colour. Each section of the site is a different "refraction": AI, 3D, projects, achievements. The avatar stands inside the light.
+A floating aurora island made of light and glass. Umer's AI twin lives on it. Colourful **and** premium: colour lives in light, glass, gradients and particles on a deep base — never in flat UI blocks.
 
-Rule: colourful **and** premium. Colour lives in light, glass, gradients and particles on a deep base — never in flat UI blocks.
+Reference format: explorable character portfolios (e.g. samsy.ninja, Bruno Simon). **Inspired by the format only — no copied layouts, assets, characters or code.**
 
-## 2. Palette (tokens)
-### Dark — "Aurora Night" (default)
+## 2. Experience architecture (Hybrid)
+```
+First visit:  Intro sting (8–10 s AE, Skip from 0 s) → Start screen
+Start screen: [Enter with sound] [Enter silently]   ·   [Explore the island] [Classic portfolio]
+Returning:    intro auto-skipped (remembered), straight to the last chosen mode
+Any time:     one HUD button switches Explore ⇄ Classic; same content, same anchors
+```
+| Mode | What it is | Default for |
+|---|---|---|
+| **Explore** | Third-person 3D island; you control Umer's avatar; zones = portfolio sections; the avatar is the **AI twin** you can talk to | desktop + capable laptops (ULTRA/HIGH tiers) |
+| **Classic** | Fast, scrollable, fully accessible HTML portfolio with premium motion and a 3D prism hero | phones/LOW tier, reduced motion, no WebGL, screen readers, recruiters in a hurry |
+
+Both modes render from `/content` (single source of truth). Every brief section exists in Classic mode, so grading never depends on finding something in the game.
+
+## 3. Palette (tokens)
+### Dark — "Aurora Night" (default) / Night on the island
 | Token | Value | Use |
 |---|---|---|
-| --bg | #07060F | page base (deep space violet-black) |
+| --bg | #07060F | base |
 | --surface | #0F0D1E | cards |
 | --surface-2 | #17142B | raised panels |
-| --glass | rgba(255,255,255,0.06) + backdrop-blur 18px | glass panels |
+| --glass | rgba(255,255,255,0.06) + blur 18px | glass panels |
 | --border | rgba(255,255,255,0.10) | hairlines |
-| --text | #F3F1FF | primary text |
-| --text-muted | #A9A3C7 | secondary text |
+| --text | #F3F1FF | text |
+| --text-muted | #A9A3C7 | secondary |
 | --violet | #7C3AED | aurora 1 |
-| --magenta | #FF2E93 | aurora 2 / hot accent |
-| --cyan | #22D3EE | aurora 3 / AI accent |
-| --mint | #34F5C5 | aurora 4 / success, data |
-| --amber | #FFB547 | aurora 5 / awards, highlights |
+| --magenta | #FF2E93 | aurora 2 |
+| --cyan | #22D3EE | aurora 3 / AI |
+| --mint | #34F5C5 | aurora 4 / data |
+| --amber | #FFB547 | aurora 5 / awards |
 | --focus | #22D3EE | focus ring |
+Signature gradient `--aurora: linear-gradient(115deg,#7C3AED 0%,#FF2E93 35%,#FFB547 60%,#34F5C5 80%,#22D3EE 100%)` for display text, borders, progress — never big flat backgrounds.
 
-**Signature gradient** `--aurora: linear-gradient(115deg, #7C3AED 0%, #FF2E93 35%, #FFB547 60%, #34F5C5 80%, #22D3EE 100%)` — used for headline text fills, borders on hover, the progress bar, never as large flat backgrounds.
+### Light — "Daylight Prism" / Day on the island
+Pearl #F7F5FF, surface #FFFFFF, text #12101F, muted #514A6E; aurora deepened for AA (violet #6D28D9, magenta #D61F78, cyan #0E7490, mint #0F766E, amber #B45309). **The theme toggle = day/night cycle on the island** (sky, sun/moon, fog, light colours animate between states).
 
-### Light — "Daylight Prism"
-Pearl base #F7F5FF, surface #FFFFFF, text #12101F, muted #514A6E; aurora colours deepened for AA contrast (violet #6D28D9, magenta #D61F78, cyan #0E7490, mint #0F766E, amber #B45309). 3D scene switches to pastel aurora + white fog.
+Contrast: body text ≥ 4.5:1 in both themes (automated test). Gradient text only ≥ 32 px with solid fallback.
 
-**Contrast rule:** body text ≥ 4.5:1 on its background in both themes (automated test). Gradient text only for display sizes (≥ 32 px) and always with a solid-colour fallback for forced-colors mode.
+## 4. Typography (OFL, self-hosted)
+Display **Syne** 800 (tight −0.04em, gradient on key words) · Body **Inter Variable** · HUD **JetBrains Mono** uppercase +0.12em ("03 — PROJECTS").
 
-## 3. Typography (all OFL, self-hosted)
-- **Display:** Syne (ExtraBold 800) — huge, tight tracking (-0.04em), gradient fill on key words.
-- **Body:** Inter Variable.
-- **HUD / labels:** JetBrains Mono, uppercase, +0.12em tracking, 11–13 px ("01 — ABOUT").
-- Fluid scale with clamp(); hero headline up to ~9 vw on desktop.
+## 5. Signature moments (protect these)
+1. **Intro → Start.** 8–10 s AE sting (name + light refracting through a prism), Skip button visible from 0 s, captions, auto-skip for returning visitors. Then the start screen (sound + mode choice). The full 45 s promo lives in the island's Cinema and in Classic mode's video section.
+2. **Explore: the aurora island.** Third-person control of the AI-twin avatar across a floating island under an aurora sky; giant 3D letters "UMER" at spawn that can be knocked over; zones that glow and open content panels; day/night = theme.
+3. **Classic: Prism hero + holographic gallery.** Iridescent glass prism (transmission + iridescence + dispersion) over an aurora shader; cursor acts as a light source; project cards with WebGL distortion hover and shader transitions.
+(v1's scroll-driven 60k-particle journey is **cut from Classic** to protect scope; particles live inside Explore zones instead.)
 
-## 4. The three signature moments (protect these; everything else supports them)
-1. **Hero — "The Prism Stage."** Avatar (P8) on a glossy reflective stage. Behind: a floating iridescent glass prism (MeshPhysicalMaterial: transmission + iridescence + dispersion) refracting a living aurora shader sky. Cursor = a light source: the prism tilts toward it, chromatic aberration and bloom intensify near the cursor. Headline splits in letter by letter with the aurora gradient.
-2. **Scroll journey — "Refraction Particles."** One GPU particle system (GPUComputationRenderer, curl-noise flow) that **morphs into a different shape per section**: prism burst (hero) → neural network (about/AI) → skills constellation, clickable nodes via raycasting (skills) → floating holographic project panels (projects) → trophy/star burst (achievements) → timeline ribbon (experience/education) → globe of light (contact). The camera flies along a spline, driven by scroll (GSAP ScrollTrigger + Lenis, scrubbed).
-3. **Projects — "Holographic gallery."** Project cards with WebGL image-distortion hover (RGB-shift + ripple), magnetic tilt, animated aurora borders; opening a project = displacement-shader transition into a detail view (View Transitions API for the DOM part).
-
-## 5. Effects stack (pmndrs `postprocessing`, single EffectComposer)
-Bloom (selective, luminance threshold) · Chromatic aberration (cursor-reactive, subtle) · Film grain/noise (2–4%) · Vignette · Depth of field (ULTRA only) · SMAA · AgX tone mapping · colour grading via LUT-style uniforms per section mood.
-
-## 6. Motion language
-- Easing: `expo.out` for entrances, `power4.inOut` for camera moves, `elastic.out(1,0.5)` only on micro-interactions.
-- Durations: 0.6–1.2 s entrances, 0.25 s hovers. Staggers 0.03–0.06 s per letter/word.
-- One animation loop: Lenis driven from `gsap.ticker`, ScrollTrigger updated from Lenis, three.js rendered on the same tick (`lagSmoothing(0)`).
-- Section reveals: masked line reveals (GSAP SplitText), counters roll up, HUD labels type on.
-- Page-level: preloader ≤ 1.5 s showing real load % (prism assembling), then a "light sweep" into the hero.
-
-## 7. Micro-interactions
-Custom cursor (dot + lagging ring, mix-blend difference; hidden on touch), magnetic buttons, hover sheen on glass cards, gradient border spin on focus/hover, scroll progress bar with aurora gradient, section index HUD ("03 / PROJECTS") fixed at the edge, sound toggle (off by default; CC0 ambient + UI ticks, documented in docs/licenses).
-
-## 8. Performance tiers (decided at load with detect-gpu + device memory + reduced-motion)
-| Tier | Who | Particles | Post-processing | DPR cap |
-|---|---|---|---|---|
-| ULTRA | desktop dGPU | 60k | full stack incl. DOF | 2 |
-| HIGH | good laptops | 30k | bloom + CA + grain + SMAA | 1.75 |
-| LOW | phones / iGPU | 10k | bloom only | 1.5 |
-| STATIC | no WebGL, reduced motion, or Save-Data | 0 | none — designed poster image + CSS aurora gradients | — |
-- Three.js is **dynamically imported after first paint**; the HTML (all text) renders first → LCP is text, not WebGL.
-- Render loop pauses when the tab is hidden or the canvas is off-screen.
-- Budgets: initial JS ≤ 200 KB gz (before the 3D chunk); 3D chunk lazy; LCP < 2.5 s; 60 fps on HIGH/ULTRA, ≥ 30 fps on LOW.
-- An on-page **"Quality" toggle** (Auto / High / Low / Off) and a **"Pause motion"** button.
-
-## 9. Accessibility (non-negotiable — extra-credit item)
-All text is real HTML (never WebGL text for content). `prefers-reduced-motion` → STATIC tier + no Lenis + no reveals. Visible focus everywhere. 3D-only info always duplicated in HTML (e.g. skills list). Custom cursor never hides the system cursor for keyboard users. Contrast tests in CI.
-
-## 10. Section storyboard
-| Section | 3D state (particles / camera) | Mood colour | DOM highlights |
+## 6. Explore mode spec
+### Zones (each = a brief section; content from /content)
+| Zone | 3D landmark | Interaction | Opens |
 |---|---|---|---|
-| Hero | prism burst; camera close on stage | violet → magenta | split-letter headline, profile card glass, CTA magnetic |
-| About | neural network | cyan | stat counters, aurora quote line |
-| Skills | constellation (raycast nodes) | mint | HTML skill chips mirror 3D nodes |
-| Projects | holographic panels | magenta | filter/search/sort, distortion hover, detail transition |
-| Achievements | trophy / star burst | amber | award photo in glass frame, lightbox |
-| Experience & Education | timeline ribbon | violet → cyan | animated vertical timeline |
-| Video | particles dim; light cone onto screen | neutral | promo MP4 in a glass "screen" with captions |
-| Ask my AI | particles pulse with typing | cyan | chat panel, voice button, citations |
-| Contact | globe of light (Karachi pin) | aurora full | form with glass fields, Turnstile |
+| Spawn Plaza | giant "UMER" letters (physics), prism monolith | knock letters, read welcome | Home/profile card |
+| AI Twin (anywhere) | the avatar itself | press **T** / click avatar | chat panel + speech bubble |
+| Projects Gallery | floating holographic billboards | walk up / **E** | project detail panel |
+| Skills Garden | glowing constellation of crystals (particles) | hover/raycast a crystal | skill tooltip + list |
+| Awards Tower | spiral tower, trophy, award photo frame | **E** at the frame | achievements panel |
+| Timeline Path | path with milestone stones | walk along, **E** | experience & education |
+| Cinema | big glass screen + seats | **E** / sit | promo video (spatial audio) |
+| Mailbox | glowing post box | **E** | contact form panel |
+| About Overlook | cliff bench with view | **E** | about panel |
+### Controls & camera
+WASD / arrows + Shift run + Space jump · **click-to-move** (raycast on ground) · **E** interact · **T** talk · **M** map/teleport · Esc closes panels · mobile: virtual joystick + tap-to-move + on-screen E/T. Third-person follow camera with smoothing, orbit drag, zoom, wall-collision pull-in.
+### Engine
+Capsule character vs world collision with **three-mesh-bvh** (no heavy physics engine for the walk); simple rigid-body physics only for the spawn letters (lightweight, e.g. cannon-es or custom). Zones via trigger volumes. Minimap + teleport menu (accessibility and speed). Panels are HTML overlays (CSS2D/DOM), not WebGL text.
 
-## 11. Anti-patterns (don't)
-Generic template layouts · flat neon on black with no light/material richness · 10 competing effects in one view · loaders longer than 1.5 s · WebGL text for content · animating layout properties (only transform/opacity) · effects on mobile that drop below 30 fps.
+## 7. The AI twin (avatar) — style & behaviour
+- **Style:** original **chunky designer-toy figure with chibi proportions** (head ≈ 1/3 of height), stylized and cute — **not a replica of any toy brand's figure or existing character.**
+- **Construction:** segmented rigid parts (head, torso, upper/lower arms, hands, hips, legs, feet) each parented to a bone → no skin-weight painting, robust to build and animate through code/MCP.
+- **Likeness (blender/AVATAR_BRIEF.md):** black textured hair with volume, light stubble, warm medium-brown skin, dark eyes and brows, charcoal suit, black shirt, satin black tie, silver tie clip, steel watch, glossy black shoes.
+- **Animations (glTF actions):** Idle, Walk, Run, Jump, Wave, Talk (jaw/mouth shape keys), Think, Nod, Blink (shape key), Smile (shape key).
+- **Behaviour:** waves when you arrive; turns to face you when talked to; Think loop while the RAG answer loads; mouth moves with TTS audio amplitude (Web Audio analyser); answers in first person ("I built KnoDesk's RAG pipeline…") with source citations in the chat panel.
+
+## 8. Effects stack (pmndrs `postprocessing`, one composer)
+Bloom (selective) · Chromatic aberration (subtle) · Film grain 2–4% · Vignette · Depth of field (ULTRA) · SMAA · AgX tone mapping · height fog tinted by theme · stylized materials (soft PBR + rim light; glass/iridescent accents).
+
+## 9. Motion language
+`expo.out` entrances, `power4.inOut` camera moves, `elastic.out(1,0.5)` micro only; 0.6–1.2 s entrances, 0.25 s hovers; 0.03–0.06 s staggers. One loop: Lenis on `gsap.ticker`, ScrollTrigger from Lenis, three.js on the same tick (`lagSmoothing(0)`). Masked line reveals (GSAP SplitText), counters, HUD type-on.
+
+## 10. Micro-interactions
+Custom cursor (dot + lagging ring, hidden on touch, never hides focus), magnetic buttons, glass sheen hover, spinning aurora borders, aurora progress bar, section HUD index, sound toggle always visible.
+
+## 11. Sound design (all licensed, credited in docs/licenses)
+Start choice "Enter with sound / silently" (respects browser autoplay rules). Music bed (ambient synth, looped, −18 LUFS-ish under UI) · footsteps synced to Walk/Run animation events · zone ambiences as THREE.PositionalAudio (cinema, tower wind chimes, garden shimmer) · UI ticks/whooshes · avatar voice = TTS. Global mute + volume; pauses when tab hidden.
+
+## 12. Performance tiers (detect-gpu + deviceMemory + reduced-motion + Save-Data)
+| Tier | Default mode | Explore detail | Post-processing | DPR |
+|---|---|---|---|---|
+| ULTRA | Explore | full props, 40k particles, shadows | full incl. DOF | 2 |
+| HIGH | Explore | reduced props, 15k particles, baked shadows | bloom + CA + grain + SMAA | 1.75 |
+| LOW (phones/iGPU) | Classic (Explore "lite" opt-in) | minimal props, 4k particles, no shadows | bloom only | 1.5 |
+| STATIC | Classic only | — | — | — |
+Three.js is dynamically imported after first paint. Render loop pauses when hidden/off-screen. Budgets: initial JS ≤ 200 KB gz; LCP < 2.5 s (Classic); Explore 60 fps on HIGH/ULTRA, ≥ 30 fps on lite; avatar GLB ≤ 3 MB, world GLB ≤ 6 MB (Draco + KTX2 where possible). Quality toggle + Pause motion always available.
+
+## 13. Accessibility
+Classic mode is the complete accessible path. Explore: full keyboard control, teleport menu, captions for video/voice, panels are real HTML with focus management, reduced-motion → Classic. Contrast tests in CI.
+
+## 14. Anti-patterns
+Cloning reference sites · third-party or brand-lookalike characters · long unskippable intros · loaders > 1.5 s · WebGL text for content · 10 competing effects · animating layout properties · Explore as the only way to reach content.

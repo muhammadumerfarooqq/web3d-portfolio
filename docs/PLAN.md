@@ -327,8 +327,8 @@ Weights add to 100 and drive the progress bar. A phase counts only when its **ex
 
 **Exit:** both spikes pass. Time box: 2 failed fix attempts → use the fallback (§12).
 
-### P2 — Frontend structure, sections & content UI · 11%
-> Follow `docs/DESIGN.md` (PRISM) for every visual decision. P2 builds the DOM/UI layer + motion language; P3 builds the WebGL world (prism stage, morphing particles, post-processing, tiers). · 1.1, 1.3–1.10, E2, E6, E8 (base), E10 (visitor sort)
+### P2 — Classic mode: UI layer, sections & content · 9%
+> Follow `docs/DESIGN.md` (PRISM v2: Hybrid Explore + Classic) for every visual decision. Classic mode = the fast scrollable portfolio (all brief sections, accessible, default for reduced-motion/no-WebGL); Explore mode reuses the same content. P2 builds the DOM/UI layer + motion language; P3 builds the WebGL world (prism stage, morphing particles, post-processing, tiers). · 1.1, 1.3–1.10, E2, E6, E8 (base), E10 (visitor sort)
 - Design tokens (dark + light), fonts self-hosted (Space Grotesk, Inter, JetBrains Mono; all OFL).
 - Sticky nav + active highlight + mobile menu; Lenis + GSAP reveals; View Transitions.
 - Sections: Hero + profile card · About + counters · Skills · Projects gallery · Achievements gallery + lightbox · Experience & Education timeline · Video · Chat entry · Contact · Footer.
@@ -337,7 +337,7 @@ Weights add to 100 and drive the progress bar. A phase counts only when its **ex
 
 **Exit:** all real content; no horizontal scroll at 360 px; keyboard-only works; Lighthouse A11y ≥ 90 in both themes.
 
-### P3 — 3D scene & interactions · 11%
+### P3 — Explore mode: 3D world engine, character controller, zones & effects · 15%
 > Implements DESIGN.md §4 (signature moments 1–2), §5 (effects stack) and §8 (performance tiers). Three.js is dynamically imported after first paint. · 1.2, 1.9, E1, E2 (3D)
 - Renderer (antialias, capped pixel ratio, sRGB, ACES), camera + scroll camera moves, lights (hemisphere + key + rim).
 - LoadingManager → loading screen with real %.
@@ -348,7 +348,7 @@ Weights add to 100 and drive the progress bar. A phase counts only when its **ex
 
 **Exit:** ≥ 55 fps desktop, smooth on mid Android; zero console errors; fallback works.
 
-### P4 — Supabase foundation + contact & email · 10% · 5.1–5.8
+### P4 — Supabase foundation + contact & email · 9% · 5.1–5.8
 - Supabase project; migrations: all tables, RLS policies, SQL functions (`hit_rate_limit`, `log_event`), `admins` table.
 - Shared zod schemas; `/api/contact` per §2.5; Turnstile; Nodemailer; all UI states.
 - Daily keep-alive cron.
@@ -371,7 +371,7 @@ Weights add to 100 and drive the progress bar. A phase counts only when its **ex
 
 **Exit:** English and Urdu voice questions answered on Chrome desktop + Android; denied permission handled.
 
-### P7 — Admin dashboard & secure login · 8% · E10 (admin + tasks), E7 (charts), security
+### P7 — Admin dashboard & secure login · 7% · E10 (admin + tasks), E7 (charts), security
 - `/admin`: Supabase Auth login (Turnstile), email confirmation, signups disabled, TOTP MFA enrollment + challenge, password reset.
 - `api/_lib/auth.js`: verify token, `admins` table, `aal2`.
 - Project ordering: drag-and-drop + keyboard up/down, visibility and featured toggles → live on the site.
@@ -380,14 +380,14 @@ Weights add to 100 and drive the progress bar. A phase counts only when its **ex
 
 **Exit:** login needs password + MFA; non-admin token → 403; anon can't read admin tables; reorder shows on live site within one refresh.
 
-### P8 — Blender avatar · 12% · 2.1–2.8, E1 (avatar), E5
+### P8 — Blender avatar (AI twin) + world art · 14% · 2.1–2.8, E1 (avatar), E5
 - Spec: original stylized character, full body (~4 heads tall), 15–25k tris, GLB ≤ 3 MB (Draco), Principled BSDF only, textures ≤ 1024 px.
 - Steps (each checked with MCP `look`): references → blockout → head/face (separate eyes) → hair → clothes → **materials + textures** (fabric, decal, iris) → cleanup (apply transforms, normals, origin at feet) → armature ~20 bones + weights → shape keys `Blink`, `Smile` → actions `Idle`, `Wave`, `Think`, `Nod` (NLA) → export → glTF Validator → integrate (mixer cross-fades, event-driven gestures, cursor head-tracking, drag-rotate) → turntable/pose renders (also for the video) → save `.blend` with resources packed.
 - No `generate_3d` for the avatar. Quality gate: weak blockout on day 1 → MPFB2 base human, customized.
 
 **Exit:** live avatar with all gestures + blink; ≤ 3 MB; 0 validator errors.
 
-### P9 — After Effects promo video · 9% · 3.1–3.8
+### P9 — After Effects intro sting (8–10 s) + full promo (45 s) · 8% · 3.1–3.8
 - Needs P2–P8 done (real site + avatar footage).
 - 1920×1080, 30 fps, 45 s, website palette + fonts; storyboard:
 
@@ -421,7 +421,7 @@ Weights add to 100 and drive the progress bar. A phase counts only when its **ex
 
 **Exit:** desktop Perf ≥ 85, A11y ≥ 95, BP ≥ 95, SEO ≥ 95; mobile Perf ≥ 70; zero secrets in history; `test:security` 100% pass; ZAP baseline 0 high/medium alerts; Observatory A or better; Supabase Advisor 0 errors; demo script runs end to end.
 
-### P12 — Documentation & submission · 6% · 6.2, S1–S10
+### P12 — Documentation & submission · 5% · 6.2, S1–S10
 - README: setup, env table, Supabase migrations, ingest, eval, deploy, MCP setup, admin setup.
 - Report PDF: headings copied word for word from the brief · architecture diagram · RAG pipeline · security model · tests + eval · screenshots · extra-credit section · limitations · licenses/credits.
 - `docs/screenshots/<module>/`, email evidence, live URL, repo link, source zip (no `node_modules`/`.env`), `.blend` + `.glb`, collected `.aep` + `.mp4`.
@@ -436,22 +436,24 @@ Weights add to 100 and drive the progress bar. A phase counts only when its **ex
 ```
 Overall  [██░░░░░░░░░░░░░░░░░░]  8%
 ```
+> **Rebalanced 31-Oct-2026** (Hybrid Explore + Classic): P2 11→9, P3 11→15, P4 10→9, P7 8→7, P8 12→14, P9 9→8, P12 6→5. Total still 100; P0+P1 = 8% done.
+
 
 | Phase | Weight | Status |
 |---|---|---|
 | P0 Setup, accounts & content | 4% | ✅ |
 | P1 MCP setup & spikes | 4% | ✅ |
-| P2 Frontend structure & sections | 11% | ⬜ |
-| P3 3D scene & interactions | 11% | ⬜ |
-| P4 Supabase + contact & email | 10% | ⬜ |
+| P2 Classic mode (UI layer + sections) | 9% | ⬜ |
+| P3 Explore mode (world engine + character + effects) | 15% | ⬜ |
+| P4 Supabase + contact & email | 9% | ⬜ |
 | P5 RAG chatbot | 13% | ⬜ |
 | P6 Voice chat | 4% | ⬜ |
-| P7 Admin dashboard & secure login | 8% | ⬜ |
-| P8 Blender avatar | 12% | ⬜ |
-| P9 After Effects video | 9% | ⬜ |
+| P7 Admin dashboard & secure login | 7% | ⬜ |
+| P8 Blender avatar (AI twin) + world art | 14% | ⬜ |
+| P9 AE intro sting + promo video | 8% | ⬜ |
 | P10 Analytics, a11y audit & polish | 4% | ⬜ |
 | P11 Security, QA & production | 4% | ⬜ |
-| P12 Documentation & submission | 6% | ⬜ |
+| P12 Documentation & submission | 5% | ⬜ |
 | **Total** | **100%** | |
 
 ---
