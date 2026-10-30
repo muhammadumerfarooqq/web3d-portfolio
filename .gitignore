@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Secrets: never commit. Only .env.example (names, no values) is tracked.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+service-account*.json
+
+# Tooling / build output
+.vercel/
+dist/
+coverage/
+.vite/
+*.log
+npm-debug.log*
+
+# Supabase CLI temp files
+supabase/.temp/
+
+# Blender backups, After Effects footage and large renders
+*.blend1
+aftereffects/assets/footage/
+*.mov
+*.avi
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors (keep a shared settings file if one is added)
+.vscode/*
+!.vscode/settings.json
+.idea/
+*.swp
