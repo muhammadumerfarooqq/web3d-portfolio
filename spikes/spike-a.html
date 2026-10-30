@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Spike A | Blender to Three.js</title>
+    <!-- Dev-only test page (P1 Test A). Not a vite.config.js input, so it never reaches the production build. -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #1b1b24;
+        color: #f1f1f8;
+        font: 14px/1.5 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      }
+      #viewport {
+        position: fixed;
+        inset: 0;
+        display: block;
+      }
+      #panel {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        max-width: min(360px, calc(100vw - 24px));
+        padding: 12px 14px;
+        background: rgb(13 13 22 / 0.85);
+        border: 1px solid #3a3a52;
+        border-radius: 8px;
+      }
+      #panel h1 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+      #panel h2 {
+        margin: 10px 0 4px;
+        font-size: 13px;
+        color: #b4b4c8;
+      }
+      #panel ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+      #status.error {
+        color: #ff8a80;
+      }
+      .controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-top: 10px;
+        flex-wrap: wrap;
+      }
+      button {
+        font: inherit;
+        padding: 4px 10px;
+      }
+      :focus-visible {
+        outline: 3px solid #a9a2ff;
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="viewport" aria-label="3D test scene: textured cube spinning and a bending limb"></canvas>
+    <section id="panel" aria-live="polite">
+      <h1>Spike A: Blender → GLB → Three.js</h1>
+      <p id="status">Loading /blender/exports/spike-a.glb …</p>
+      <h2>Animation clips</h2>
+      <ul id="clips"></ul>
+      <h2>Morph targets</h2>
+      <ul id="morphs"></ul>
+      <h2>Skinned meshes</h2>
+      <p id="skinned">–</p>
+      <div class="controls">
+        <button id="squash-toggle" type="button" aria-pressed="false" disabled>Squash: off</button>
+        <label for="squash-slider">Influence</label>
+        <input id="squash-slider" type="range" min="0" max="1" step="0.01" value="0" disabled />
+      </div>
+    </section>
+    <script type="module" src="./spike-a.js"></script>
+  </body>
+</html>

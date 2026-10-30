@@ -11,3 +11,5 @@ Every step adds its rows here. Save each screenshot under `docs/screenshots/<mod
 | P1-2 | MCP | Blender N-panel "MCP for Blender": server on port 9876, all integrations unticked | open Blender → N → MCP for Blender | ⬜ |
 | P1-3 | MCP | Add-on preferences: telemetry off, all API key fields empty | Blender → Edit → Preferences → Add-ons → MCP for Blender | ⬜ |
 | P1-4 | MCP | Claude Code `/mcp` showing "blender" connected | run `/mcp` in Claude Code | ⬜ |
+| P1-5 | MCP/Blender | Blender viewport with SpikeCube + SpikeLimb + rig (Material Preview, armature visible) | open `blender/spikes/spike-a.blend` in Blender 5.2.3 | ⬜ |
+| P1-6 | MCP/Three.js | `spike-a.html` in the browser showing both animations (cube spinning, limb bending) + info panel (clips Spin/Bend, morph Squash, 1 skinned mesh) | `npm run dev` → http://localhost:5173/spikes/spike-a.html | ⬜ |

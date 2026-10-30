@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { relative, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import viteConfig from '../../vite.config.js';
+
+const root = fileURLToPath(new URL('../../', import.meta.url));
 
 const raw = readFileSync(new URL('../../.mcp.json', import.meta.url), 'utf8');
 
@@ -69,5 +74,19 @@ describe('C4 local MCP tooling (.mcp.json)', () => {
     for (const spec of bad) expect(spec).not.toMatch(EXACT_PIN);
     expect(packageSpecs({ command: 'cmd', args: ['/c', 'uvx', 'mcp-for-blender'] })).toEqual(['mcp-for-blender']);
     expect(packageSpecs({ command: 'npx', args: ['-y', '@scope/pkg@1.0.0'] })).toEqual(['@scope/pkg@1.0.0']);
+  });
+});
+
+describe('C4 dev-only spike pages stay out of production', () => {
+  it('vite.config.js build inputs do not include anything under spikes/', () => {
+    const { build } = viteConfig;
+    const input = build?.rolldownOptions?.input ?? build?.rollupOptions?.input;
+    // Inputs are absolute paths; compare them relative to the repo root, with forward slashes.
+    const paths = Object.values(input ?? {}).map((p) => relative(root, String(p)).split(sep).join('/'));
+
+    expect(paths.length).toBeGreaterThan(0);
+    for (const p of paths) expect(p, `${p} must not be a spike page`).not.toMatch(/(^|\/)spikes\//);
+    // The two real pages are still the only entries.
+    expect([...paths].sort()).toEqual(['admin/index.html', 'index.html']);
   });
 });
