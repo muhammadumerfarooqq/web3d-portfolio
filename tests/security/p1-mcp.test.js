@@ -1,0 +1,73 @@
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+
+const raw = readFileSync(new URL('../../.mcp.json', import.meta.url), 'utf8');
+
+// Package runners whose next non-flag argument is a package spec that must be pinned.
+const RUNNERS = ['uvx', 'npx'];
+const EXACT_PIN = /^(@[\w.-]+\/)?[\w.-]+@\d+\.\d+\.\d+$/;
+
+// Returns the package spec each runner invocation in a server entry would fetch.
+function packageSpecs(server) {
+  const tokens = [server.command, ...(server.args ?? [])];
+  const specs = [];
+  tokens.forEach((token, i) => {
+    if (!RUNNERS.includes(token)) return;
+    const spec = tokens.slice(i + 1).find((t) => !t.startsWith('-'));
+    specs.push(spec);
+  });
+  return specs;
+}
+
+describe('C4 local MCP tooling (.mcp.json)', () => {
+  it('is valid JSON with a mcpServers object', () => {
+    const config = JSON.parse(raw);
+    expect(config.mcpServers).toBeTypeOf('object');
+    expect(Object.keys(config.mcpServers).length).toBeGreaterThan(0);
+  });
+
+  it('contains no env values and nothing that looks like a secret', () => {
+    const config = JSON.parse(raw);
+    for (const [name, server] of Object.entries(config.mcpServers)) {
+      const env = server.env ?? {};
+      for (const [key, value] of Object.entries(env)) {
+        expect(value, `${name}.env.${key} must not carry a value`).toBe('');
+      }
+    }
+
+    const caseSensitive = ['sk-', 'sk_', 'gsk_', 'AIza', 'AQ.', 'sb_secret_', 'eyJ'];
+    for (const pattern of caseSensitive) {
+      expect(raw.includes(pattern), `.mcp.json must not contain "${pattern}"`).toBe(false);
+    }
+    const caseInsensitive = [/password/i, /token/i, /key=/i];
+    for (const pattern of caseInsensitive) {
+      expect(pattern.test(raw), `.mcp.json must not match ${pattern}`).toBe(false);
+    }
+  });
+
+  it('pins every uvx/npx package to an exact version (name@x.y.z)', () => {
+    const { mcpServers } = JSON.parse(raw);
+    let checked = 0;
+    for (const [name, server] of Object.entries(mcpServers)) {
+      for (const spec of packageSpecs(server)) {
+        expect(spec, `${name}: runner has no package argument`).toBeTypeOf('string');
+        expect(spec, `${name}: "${spec}" must be pinned as name@x.y.z`).toMatch(EXACT_PIN);
+        checked += 1;
+      }
+    }
+    // Guard against the check silently passing because no runner was recognised.
+    expect(checked).toBeGreaterThan(0);
+  });
+
+  it('registers the Blender server pinned to mcp-for-blender@2.2.6', () => {
+    const { mcpServers } = JSON.parse(raw);
+    expect(packageSpecs(mcpServers.blender)).toEqual(['mcp-for-blender@2.2.6']);
+  });
+
+  it('the pin checker rejects unpinned or range specs', () => {
+    const bad = ['mcp-for-blender', 'mcp-for-blender@latest', 'pkg@^1.2.3', 'pkg@~1.2.3', 'pkg@1.2'];
+    for (const spec of bad) expect(spec).not.toMatch(EXACT_PIN);
+    expect(packageSpecs({ command: 'cmd', args: ['/c', 'uvx', 'mcp-for-blender'] })).toEqual(['mcp-for-blender']);
+    expect(packageSpecs({ command: 'npx', args: ['-y', '@scope/pkg@1.0.0'] })).toEqual(['@scope/pkg@1.0.0']);
+  });
+});

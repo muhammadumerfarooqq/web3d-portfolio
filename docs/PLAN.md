@@ -2,7 +2,7 @@
 
 **Owner:** Muhammad Umer Farooq · **Course:** Web 3D Programming (semester project)
 **Repo location:** `D:\PROJECTS\web3d-portfolio`
-**Last updated:** 30-Oct-2026 · **Status:** P0 not started · **Overall: 0%**
+**Last updated:** 30-Oct-2026 · **Status:** P0 ✅ done (tag `p0-done`), P1 in progress · **Overall: 4%**
 **Scope:** every line of the brief, including **all 10 extra-credit features** and every submission item.
 
 > Claude Code: read this file before every step. Never work outside the scope of the step you were given.
@@ -431,12 +431,12 @@ Weights add to 100 and drive the progress bar. A phase counts only when its **ex
 ## 7. Progress tracker
 
 ```
-Overall  [░░░░░░░░░░░░░░░░░░░░]  0%
+Overall  [█░░░░░░░░░░░░░░░░░░░]  4%
 ```
 
 | Phase | Weight | Status |
 |---|---|---|
-| P0 Setup, accounts & content | 4% | ⬜ |
+| P0 Setup, accounts & content | 4% | ✅ |
 | P1 MCP setup & spikes | 4% | ⬜ |
 | P2 Frontend structure & sections | 11% | ⬜ |
 | P3 3D scene & interactions | 11% | ⬜ |
@@ -456,9 +456,9 @@ Overall  [░░░░░░░░░░░░░░░░░░░░]  0%
 ## 8. MCP setup guide (Windows + Claude Code)
 
 ### 8.1 Blender — `mcp-for-blender`
-1. Install **Blender 5.2 LTS** from blender.org.
+1. Install **Blender 5.2.3 LTS**: portable zip from download.blender.org, SHA-256 verified, extracted to `D:\blender\blender-5.2.3-windows-x64\`.
 2. `winget install --id=astral-sh.uv -e` → reopen PowerShell → `uv --version`.
-3. `uvx mcp-for-blender install-addon`.
+3. `uvx mcp-for-blender@2.2.6 install-addon` with `BLENDERMCP_ADDONS_DIR` set to `%APPDATA%\Blender Foundation\Blender\5.2\scripts\addons` (auto-detection guessed 5.1 for the portable install).
 4. Blender → Edit → Preferences → Add-ons → enable **"Interface: MCP for Blender"**.
 5. Viewport → **N** → **MCP for Blender** tab → start server. Keep Blender open while working.
 6. First session: have Claude Code call `disable_telemetry`.
@@ -476,7 +476,7 @@ Not `kumoproductions/mcp-aftereffects` (needs AE 2024–2026), not the original 
 ```json
 {
   "mcpServers": {
-    "blender": { "command": "cmd", "args": ["/c", "uvx", "mcp-for-blender"] },
+    "blender": { "command": "cmd", "args": ["/c", "uvx", "mcp-for-blender@2.2.6"] },
     "aftereffects": { "command": "node", "args": ["D:/PROJECTS/tools/after-effects-mcp/build/index.js"] }
   }
 }

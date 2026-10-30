@@ -5,12 +5,12 @@ Interactive 3D portfolio for Muhammad Umer Farooq, Associate AI Engineer, built 
 ## Status
 
 ```
-Overall  [░░░░░░░░░░░░░░░░░░░░]  0%
+Overall  [█░░░░░░░░░░░░░░░░░░░]  4%
 ```
 
 | Phase | Weight | Status |
 |---|---|---|
-| P0 Setup, accounts & content | 4% | ⬜ |
+| P0 Setup, accounts & content | 4% | ✅ |
 | P1 MCP setup & spikes | 4% | ⬜ |
 | P2 Frontend structure & sections | 11% | ⬜ |
 | P3 3D scene & interactions | 11% | ⬜ |
@@ -25,7 +25,7 @@ Overall  [░░░░░░░░░░░░░░░░░░░░]  0%
 | P12 Documentation & submission | 6% | ⬜ |
 | **Total** | **100%** | |
 
-A phase counts only when its exit test passes. P0 is in progress (project scaffold done; accounts, deploy and content still open).
+A phase counts only when its exit test passes. P0 is complete (tag `p0-done`). P1 is in progress (Blender MCP registered; the pipeline spikes are still open).
 
 ## Prerequisites
 
@@ -57,3 +57,5 @@ Threat model, OWASP mappings, the controls register and known limitations are in
 - **P0 Step 4: project scaffold.** Vite multi-page project (`/` and `/admin/`), `vercel.json` (region `bom1` plus security headers; no CSP yet), `.gitignore`, `.env.example`, `.npmrc` (exact versions and strict install-script policy; `fsevents` install script explicitly denied), folder skeleton from the plan, `docs/security.md` and the first security tests (`tests/security/p0-baseline.test.js`). Dev dependencies: Vite and Vitest only.
 - **P0 Step 5a: Vercel project linked + GitHub connected (auto-deploy on push).**
 - **P0 Step 5b: `.gitattributes` + security finding F1.** LF line endings in the repo (CRLF kept for `.ps1`/`.bat`, binaries marked). Finding F1 (the Vercel CLI added `.env*` to `.gitignore` and re-ignored `.env.example`) is logged in [docs/security.md](docs/security.md) with a regression test. Screenshot checklist started in [docs/screenshots/SHOTLIST.md](docs/screenshots/SHOTLIST.md).
+- **P0 complete (tag `p0-done`).** Scaffold, deployment, `.gitattributes`, security finding F1 and the portfolio content are done. Overall progress is 4%.
+- **P1 Step 3: Blender MCP registered.** `.mcp.json` registers the Blender server pinned to `mcp-for-blender@2.2.6` (no secrets, no `env` values). Control C4 (local MCP tooling) is in [docs/security.md](docs/security.md), with tests in `tests/security/p1-mcp.test.js`. The add-on socket is localhost-only but unauthenticated, so the server is started only while working. Telemetry is disabled in the next step. The After Effects server comes later.
