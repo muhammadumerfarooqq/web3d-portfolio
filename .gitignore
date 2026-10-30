@@ -26,6 +26,8 @@ supabase/.temp/
 aftereffects/assets/footage/
 *.mov
 *.avi
+# Render logs After Effects writes next to the project ("<project>.aep Logs/")
+*.aep Logs/
 
 # OS junk
 .DS_Store

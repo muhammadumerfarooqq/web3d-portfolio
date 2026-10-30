@@ -16,3 +16,6 @@ Every step adds its rows here. Save each screenshot under `docs/screenshots/<mod
 | P1-7 | MCP/After Effects | AE bridge panel showing "Ready - Auto-run is ON" | AE 2022 → Window → `mcp-bridge-auto.jsx` | ⬜ |
 | P1-8 | MCP/Security | `npm audit --omit=dev` before/after `npm audit fix`: 7 → 2 advisories | re-run `npm audit --omit=dev` in `D:\PROJECTS\tools\after-effects-mcp` (plus the earlier "7" output from your log) | ⬜ |
 | P1-9 | MCP | Claude Code `/mcp` showing `blender` + `aftereffects` connected | run `/mcp` in Claude Code (restart it in the repo folder first) | ⬜ |
+| P1-10 | MCP/After Effects | AE timeline of SpikeB: layers (Subtitle, Title, AccentLine, BG), keyframes with easing (hourglass icons), Glow on Title, motion blur switches on | open `aftereffects/spikes/spike-b.aep` in AE 2022 → SpikeB → select all layers → press `U` | ⬜ |
+| P1-11 | MCP/Video | `spike-b.html` playing the MP4 with the info line "Duration: 5.00 s · Resolution: 1920×1080" | `npm run dev` → http://localhost:5173/spikes/spike-b.html | ⬜ |
+| P1-12 | MCP/Video | ffprobe output of `spike-b.mp4` (h264 High, 1920x1080, 30 fps, 5.000 s, yuv420p, bt709) | `ffprobe -v error -show_entries stream=codec_name,profile,width,height,r_frame_rate,pix_fmt,color_space -show_entries format=duration,size -of default=nw=1 aftereffects/renders/spike-b.mp4` | ⬜ |

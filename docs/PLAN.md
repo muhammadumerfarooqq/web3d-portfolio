@@ -2,7 +2,7 @@
 
 **Owner:** Muhammad Umer Farooq · **Course:** Web 3D Programming (semester project)
 **Repo location:** `D:\PROJECTS\web3d-portfolio`
-**Last updated:** 30-Oct-2026 · **Status:** P0 ✅ done (tag `p0-done`), P1 in progress · **Overall: 4%**
+**Last updated:** 30-Oct-2026 · **Status:** P1 ✅ done, P2 next · **Overall: 8%**
 **Scope:** every line of the brief, including **all 10 extra-credit features** and every submission item.
 
 > Claude Code: read this file before every step. Never work outside the scope of the step you were given.
@@ -431,13 +431,13 @@ Weights add to 100 and drive the progress bar. A phase counts only when its **ex
 ## 7. Progress tracker
 
 ```
-Overall  [█░░░░░░░░░░░░░░░░░░░]  4%
+Overall  [██░░░░░░░░░░░░░░░░░░]  8%
 ```
 
 | Phase | Weight | Status |
 |---|---|---|
 | P0 Setup, accounts & content | 4% | ✅ |
-| P1 MCP setup & spikes | 4% | ⬜ |
+| P1 MCP setup & spikes | 4% | ✅ |
 | P2 Frontend structure & sections | 11% | ⬜ |
 | P3 3D scene & interactions | 11% | ⬜ |
 | P4 Supabase + contact & email | 10% | ⬜ |
