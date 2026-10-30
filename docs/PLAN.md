@@ -32,8 +32,9 @@
 | Backend | Vercel Functions in `/api` (Node 24) | One repo, one deploy, one URL |
 | Database + vectors + auth | **Supabase**: Postgres + **pgvector** (HNSW) + Auth + Row Level Security + Storage | Real vector DB; email-confirmation login (the flow you used in your game); RLS for the admin data |
 | Retrieval | **Hybrid search**: pgvector cosine + Postgres full-text, merged with Reciprocal Rank Fusion | Better recall on names and acronyms (e.g. "KnoDesk", "FYDP") than vectors alone |
-| Embeddings | Gemini `gemini-embedding-001` at 768 dims | Multilingual: Urdu questions retrieve English chunks |
-| LLM | Groq (Llama 3.3 70B class) primary, Gemini Flash fallback, via `openai` npm client | **Model IDs in env vars**; verify current IDs on build day |
+| Embeddings | Gemini `gemini-embedding-001` at 768 dims (`gemini-embedding-2` is now GA: compare both in the P5 eval, keep 768 dims) | Multilingual: Urdu questions retrieve English chunks |
+| LLM | Groq primary, chosen by the P5 eval (available 30-Oct-2026: `openai/gpt-oss-120b`, `qwen/qwen3.8-27b`, `openai/gpt-oss-20b`); Gemini Flash fallback. Groq via `openai` npm client; Gemini via official `@google/genai` SDK (native endpoint) | **Model IDs in env vars.** AI Studio now issues only `AQ.` keys; native endpoint verified working 30-Oct-2026 |
+| Prompt-injection filter | Groq `meta-llama/llama-prompt-guard-2-86m` classifies every chat message before retrieval; flagged input gets a safe refusal and is logged | OWASP LLM01 control that can be demonstrated live |
 | Speech-to-text | Groq Whisper (`whisper-large-v3-turbo`) via `/api/transcribe` | Works in every browser (MediaRecorder), supports Urdu |
 | Text-to-speech | Browser `speechSynthesis` | Free, no server cost; Urdu voice where the OS/browser has one (Edge does) |
 | Email (contact form) | Nodemailer + Gmail SMTP, App Password #1 → `xmuhammadumerfarooq2003@gmail.com` | No domain needed |
@@ -83,7 +84,7 @@ Rule: only variables prefixed `VITE_` reach the browser bundle, so only public k
 - Shared zod validation, body size caps, POST + JSON only.
 - CR/LF stripped from email header fields; plain-text email body; no auto-reply (would turn the form into a spam relay).
 - Rate limits: contact 5/hour/IP · chat 20/10 min/IP + daily global cap · transcribe 10/10 min/IP + 30 s / 2 MB audio cap · events 60/min/IP. IPs stored only as salted hashes.
-- Chatbot: user text treated as data, system prompt never echoed, output rendered as text, token caps, no tools or writes reachable from the prompt.
+- Chatbot: **Prompt Guard 2 classifier screens every message first**; user text treated as data, system prompt never echoed, output rendered as text, token caps, no tools or writes reachable from the prompt.
 - Headers in `vercel.json`: CSP (self + `challenges.cloudflare.com` + Supabase URL + `wasm-unsafe-eval` for Draco), HSTS, X-Content-Type-Options, Referrer-Policy, `Permissions-Policy: microphone=(self)` (voice) and camera/geolocation off, `frame-ancestors 'none'`.
 - Generic error responses; no stack traces; no PII in logs.
 - Phone number never on the site or in the knowledge base; the CV PDF is redacted during ingest; a phone-free web CV is offered for download.
