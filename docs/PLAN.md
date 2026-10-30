@@ -28,6 +28,7 @@
 | Frontend | Vite (multi-page: `/` and `/admin`) + vanilla JavaScript + **Three.js** (pinned) | Same Three.js as the course; every concept visible for the viva |
 | Animation / navigation | GSAP + ScrollTrigger, Lenis smooth scroll, **View Transitions API** | Smooth section, modal and theme transitions |
 | Styling | Tailwind CSS v4 + CSS variables (theme tokens) | Fast responsive work; dark/light via tokens |
+| **Art direction** | **"PRISM" — see `docs/DESIGN.md`** (replaces "Midnight Lab", 30-Oct-2026): colourful aurora palette on a deep base, iridescent glass prism, GPU morphing particles per section, scroll-flown camera, pmndrs `postprocessing` (bloom, chromatic aberration, grain, DOF), GSAP SplitText reveals, custom cursor, magnetic UI, performance tiers via `detect-gpu` (ULTRA/HIGH/LOW/STATIC) | Umer wants a premium, colourful, effects-rich frontend; tiers + reduced-motion keep it fast, responsive and accessible |
 | Validation | **zod schemas shared by browser and server** (`src/shared/schemas.js`) | Same rules on both sides, written once |
 | Backend | Vercel Functions in `/api` (Node 24) | One repo, one deploy, one URL |
 | Database + vectors + auth | **Supabase**: Postgres + **pgvector** (HNSW) + Auth + Row Level Security + Storage | Real vector DB; email-confirmation login (the flow you used in your game); RLS for the admin data |
@@ -326,7 +327,8 @@ Weights add to 100 and drive the progress bar. A phase counts only when its **ex
 
 **Exit:** both spikes pass. Time box: 2 failed fix attempts → use the fallback (§12).
 
-### P2 — Frontend structure, sections & content UI · 11% · 1.1, 1.3–1.10, E2, E6, E8 (base), E10 (visitor sort)
+### P2 — Frontend structure, sections & content UI · 11%
+> Follow `docs/DESIGN.md` (PRISM) for every visual decision. P2 builds the DOM/UI layer + motion language; P3 builds the WebGL world (prism stage, morphing particles, post-processing, tiers). · 1.1, 1.3–1.10, E2, E6, E8 (base), E10 (visitor sort)
 - Design tokens (dark + light), fonts self-hosted (Space Grotesk, Inter, JetBrains Mono; all OFL).
 - Sticky nav + active highlight + mobile menu; Lenis + GSAP reveals; View Transitions.
 - Sections: Hero + profile card · About + counters · Skills · Projects gallery · Achievements gallery + lightbox · Experience & Education timeline · Video · Chat entry · Contact · Footer.
@@ -335,7 +337,8 @@ Weights add to 100 and drive the progress bar. A phase counts only when its **ex
 
 **Exit:** all real content; no horizontal scroll at 360 px; keyboard-only works; Lighthouse A11y ≥ 90 in both themes.
 
-### P3 — 3D scene & interactions · 11% · 1.2, 1.9, E1, E2 (3D)
+### P3 — 3D scene & interactions · 11%
+> Implements DESIGN.md §4 (signature moments 1–2), §5 (effects stack) and §8 (performance tiers). Three.js is dynamically imported after first paint. · 1.2, 1.9, E1, E2 (3D)
 - Renderer (antialias, capped pixel ratio, sRGB, ACES), camera + scroll camera moves, lights (hemisphere + key + rim).
 - LoadingManager → loading screen with real %.
 - Particle field with mouse parallax; skills constellation with raycast hover/click.
