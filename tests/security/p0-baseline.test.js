@@ -26,6 +26,15 @@ describe('C1 secrets management (.gitignore + .env.example)', () => {
     expect(isIgnored('.env.example')).toBe(false);
   });
 
+  it('.gitignore keeps .env.example tracked even after tool edits', () => {
+    // A tool (e.g. `vercel link`) may append rules such as `.env*` after `!.env.example`,
+    // which re-ignores it. check-ignore evaluates the whole file, so a later line is caught.
+    expect(isIgnored('.env.example')).toBe(false);
+    // The rules that protect Vercel's pulled secrets must still be in force.
+    expect(isIgnored('.env.local')).toBe(true);
+    expect(isIgnored('.vercel/project.json')).toBe(true);
+  });
+
   it('.env.example has no non-empty values', () => {
     const entries = read('.env.example')
       .split(/\r?\n/)

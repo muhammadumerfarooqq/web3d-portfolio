@@ -55,3 +55,5 @@ Threat model, OWASP mappings, the controls register and known limitations are in
 ## Progress log
 
 - **P0 Step 4: project scaffold.** Vite multi-page project (`/` and `/admin/`), `vercel.json` (region `bom1` plus security headers; no CSP yet), `.gitignore`, `.env.example`, `.npmrc` (exact versions and strict install-script policy; `fsevents` install script explicitly denied), folder skeleton from the plan, `docs/security.md` and the first security tests (`tests/security/p0-baseline.test.js`). Dev dependencies: Vite and Vitest only.
+- **P0 Step 5a: Vercel project linked + GitHub connected (auto-deploy on push).**
+- **P0 Step 5b: `.gitattributes` + security finding F1.** LF line endings in the repo (CRLF kept for `.ps1`/`.bat`, binaries marked). Finding F1 (the Vercel CLI added `.env*` to `.gitignore` and re-ignored `.env.example`) is logged in [docs/security.md](docs/security.md) with a regression test. Screenshot checklist started in [docs/screenshots/SHOTLIST.md](docs/screenshots/SHOTLIST.md).

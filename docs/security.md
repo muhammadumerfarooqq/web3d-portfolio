@@ -61,7 +61,7 @@ Only controls that exist in the repository today are listed. Every row has a tes
 
 | ID | Control | OWASP Top 10:2025 | Where | Test (`tests/security/p0-baseline.test.js`) | Added |
 |---|---|---|---|---|---|
-| C1 | **Secrets management.** `.env` and `.env.*` are git-ignored (only `.env.example` is tracked); `.env.example` contains names with empty values and explains that only `VITE_` variables reach the browser. No secret is stored in the repo. | A02 Security Misconfiguration, A04 Cryptographic Failures (key management) | [`.gitignore`](../.gitignore), [`.env.example`](../.env.example) | `.gitignore ignores .env and .env.local but not .env.example`; `.env.example has no non-empty values`; `.env.example lists every variable from PLAN.md section 4, and only public ones use VITE_` | P0 Step 4 |
+| C1 | **Secrets management.** `.env` and `.env.*` are git-ignored (only `.env.example` is tracked); `.env.example` contains names with empty values and explains that only `VITE_` variables reach the browser. No secret is stored in the repo. | A02 Security Misconfiguration, A04 Cryptographic Failures (key management) | [`.gitignore`](../.gitignore), [`.env.example`](../.env.example) | `.gitignore ignores .env and .env.local but not .env.example`; `.gitignore keeps .env.example tracked even after tool edits` (regression for F1); `.env.example has no non-empty values`; `.env.example lists every variable from PLAN.md section 4, and only public ones use VITE_` | P0 Step 4 |
 | C2 | **HTTP security headers** on every route: HSTS (2 years, preload), `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, `Permissions-Policy` (camera, geolocation, payment, USB off; microphone allowed for this origin only, for voice chat). Deploy region pinned to `bom1`. | A02 Security Misconfiguration | [`vercel.json`](../vercel.json) | `deploys to the Mumbai region only`; `applies the headers to every route`; one `sets <header> with the exact required value` test per header | P0 Step 4 |
 | C3 | **Supply chain.** Exact dependency versions (`save-exact=true`, no `^` or `~`). Strict install-script policy: `strict-allow-scripts=true` plus an `allowScripts` list in `package.json`, so any dependency that wants to run an install script makes the install fail until the script is reviewed and approved by hand. The list currently contains one explicit denial: `fsevents` (a macOS-only optional dependency of Vite; its install script is never run). | A03 Software Supply Chain Failures (also A08 Software or Data Integrity Failures) | [`package.json`](../package.json), [`.npmrc`](../.npmrc) | `dependencies and devDependencies use exact versions (no ^ or ~)`; `.npmrc keeps exact saves and the strict install-script policy on` | P0 Step 4 |
 
@@ -83,7 +83,15 @@ Only controls that exist in the repository today are listed. Every row has a tes
 - **Tests check configuration, not behaviour on the live site.** Live header verification happens in P11.
 - Admin, database and chatbot controls do not exist yet (see sections 1 to 3).
 
-## 7. Plain-English explainer
+## 7. Findings / incidents log
+
+Things that went wrong or nearly did, how they were detected and how they were fixed.
+
+| ID | Date | Finding | Detected by | Fix | Lesson |
+|---|---|---|---|---|---|
+| F1 | 30-Oct-2026 | During `vercel link`, the Vercel CLI appended `.vercel` and `.env*` to `.gitignore`. The `.env*` line came after `!.env.example`, so it overrode the exception and `.env.example` became ignored (it could no longer be committed). | Control C1 check (`git check-ignore --no-index`), run by `tests/security/p0-baseline.test.js` | Reverted `.gitignore` to the committed version. The existing rules `.env.*` and `.vercel/` already cover `.env.local` (which holds `VERCEL_OIDC_TOKEN`) and `.vercel/`. A regression test was added: `.gitignore keeps .env.example tracked even after tool edits`. | Tools can silently change security configuration; the automated test caught it. |
+
+## 8. Plain-English explainer
 
 - **Secrets.** Passwords and API keys live in a file called `.env` that git is told to ignore, so it can never be uploaded by accident. `.env.example` is a fill-in-the-blanks form with the names of the secrets but none of the values. Anything starting with `VITE_` is deliberately public (it ends up in the website's code), so only harmless values get that prefix.
 - **Security headers.** These are instructions the server sends to the visitor's browser: always use HTTPS, do not guess file types, do not let other sites put this page inside a frame, share only the minimum in the referrer, and only allow the microphone on this site (needed for voice chat later).
