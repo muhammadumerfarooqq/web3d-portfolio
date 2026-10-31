@@ -210,7 +210,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 ### Module 1 — 3D Web-Based Portfolio
 | # | Brief line | How we meet it | Phase | Evidence | Status |
 |---|---|---|---|---|---|
-| 1.1 | Responsive and visually appealing personal portfolio website | Design system (tokens, type scale, grid), polished UI, Lighthouse targets | P2, P11 | Screenshots at 3 breakpoints; Lighthouse report | ⬜ |
+| 1.1 | Responsive and visually appealing personal portfolio website | Design system (tokens, type scale, grid), polished UI, Lighthouse targets | P2, P11 | Screenshots at 3 breakpoints; Lighthouse report | 🟨 |
 | 1.2 | Interactive 3D environment or 3D elements | Three.js scene: avatar, particle field, skills constellation, scroll-driven camera, raycasting | P3 | Screenshots + screen recording | ⬜ |
 | 1.3 | Home page with the name, introduction, and profile | Hero: name, title, intro, **profile card** (photo, role, city, LinkedIn/GitHub, web-CV download), CTAs | P2 | Hero screenshot | ⬜ |
 | 1.4 | About Me section | Bio + key stats with animated counters | P2 | Screenshot | ⬜ |
@@ -218,7 +218,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 | 1.6 | Projects and achievements gallery | Projects grid (images, stack chips, links, detail modal) + **achievements gallery** (award/certificate images, lightbox) | P2 | Screenshots | ⬜ |
 | 1.7 | Education and experience section | Animated timeline (NED, Axisero, FYP) | P2 | Screenshot | ⬜ |
 | 1.8 | Contact section | Contact form + social links | P2, P4 | Screenshot | ⬜ |
-| 1.9 | Smooth animations, navigation, and transitions | Lenis smooth scroll, sticky nav + active section, GSAP reveals, View Transitions for modals/theme, camera moves | P2, P3 | Screen recording | ⬜ |
+| 1.9 | Smooth animations, navigation, and transitions | Lenis smooth scroll, sticky nav + active section, GSAP reveals, View Transitions for modals/theme, camera moves | P2, P3 | Screen recording | 🟨 |
 | 1.10 | Responsive design for desktop, tablet, and mobile | 360/768/1024/1440 layouts, touch interactions, lighter 3D on mobile | P2, P11 | Device screenshots | ⬜ |
 
 ### Module 2 — Custom 3D Avatar Using Blender
@@ -281,7 +281,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 | # | Feature | How we meet it | Phase | Status |
 |---|---|---|---|---|
 | E1 | Interactive 3D objects that respond to mouse movement | Particle parallax, skill nodes react on hover (raycast), avatar head/eyes follow cursor, drag to rotate | P3, P8 | ⬜ |
-| E2 | Dark and light themes | Token-based themes, system default + remembered choice, View Transition on switch, **3D scene lights/fog/background change with the theme** | P2, P3 | ⬜ |
+| E2 | Dark and light themes | Token-based themes, system default + remembered choice, View Transition on switch, **3D scene lights/fog/background change with the theme** | P2, P3 | 🟨 |
 | E3 | Voice interaction with the chatbot | Push-to-talk → Groq Whisper → chat; answers read aloud with `speechSynthesis`; mute toggle; fallback message where unsupported | P6 | ⬜ |
 | E4 | Multilingual chatbot support | English, Urdu (RTL) and Roman Urdu: answers in the user's language, chat UI strings EN/UR, voice input in Urdu | P5, P6 | ⬜ |
 | E5 | Animated 3D avatar expressions or gestures | Blink, Smile, Wave, Think, Nod. Event-driven: wave on load/click, think while the bot answers, nod on answer, smile on contact success | P8 | ⬜ |

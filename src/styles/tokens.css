@@ -1,0 +1,174 @@
+/*
+  PRISM design tokens (docs/DESIGN.md §3).
+  Dark "Aurora Night" is the default; light "Daylight Prism" applies with [data-theme="light"].
+  Colour tokens stay as plain hex in the two theme blocks: tests/design-tokens.test.js reads them
+  and checks WCAG contrast for text, muted text and accent text.
+*/
+
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Base palette */
+  --bg: #07060F;
+  --surface: #0F0D1E;
+  --surface-2: #17142B;
+  --glass: rgba(255, 255, 255, 0.06);
+  --border: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.18);
+  --text: #F3F1FF;
+  --text-muted: #A9A3C7;
+
+  /* Aurora */
+  --violet: #7C3AED;
+  --magenta: #FF2E93;
+  --cyan: #22D3EE;
+  --mint: #34F5C5;
+  --amber: #FFB547;
+  --focus: #22D3EE;
+  /* Small coloured text (must pass 4.5:1 on --bg) */
+  --accent-text: #22D3EE;
+
+  --aurora: linear-gradient(115deg, #7C3AED 0%, #FF2E93 35%, #FFB547 60%, #34F5C5 80%, #22D3EE 100%);
+  --aurora-conic: conic-gradient(from 0deg, #7C3AED, #FF2E93, #FFB547, #34F5C5, #22D3EE, #7C3AED);
+
+  /* Glass: 1px gradient hairline + soft inner glow */
+  --glass-strong: rgba(15, 13, 30, 0.72);
+  --hairline: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.30) 0%,
+    rgba(255, 255, 255, 0.06) 38%,
+    rgba(124, 58, 237, 0.40) 72%,
+    rgba(34, 211, 238, 0.36) 100%
+  );
+  --inner-glow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 0 40px rgba(124, 58, 237, 0.07);
+  --shadow-soft: 0 24px 64px -24px rgba(0, 0, 0, 0.7);
+  --aurora-border-fill: #110E22;
+
+  /* Glows tinted with the aurora colours */
+  --glow-violet: 0 0 56px -12px rgba(124, 58, 237, 0.65);
+  --glow-magenta: 0 0 56px -12px rgba(255, 46, 147, 0.55);
+  --glow-cyan: 0 0 48px -12px rgba(34, 211, 238, 0.6);
+  --glow-amber: 0 0 48px -12px rgba(255, 181, 71, 0.5);
+  --focus-glow: 0 0 0 6px rgba(34, 211, 238, 0.18);
+
+  /* Classic-mode background */
+  --blob-violet: rgba(124, 58, 237, 0.55);
+  --blob-magenta: rgba(255, 46, 147, 0.38);
+  --blob-cyan: rgba(34, 211, 238, 0.34);
+  --blob-amber: rgba(255, 181, 71, 0.22);
+  --grain-opacity: 0.09;
+  --grain-blend: overlay;
+  --scrim: linear-gradient(180deg, rgba(7, 6, 15, 0) 0%, rgba(7, 6, 15, 0.55) 100%);
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #F7F5FF;
+  --surface: #FFFFFF;
+  --surface-2: #EEEAFB;
+  --glass: rgba(255, 255, 255, 0.58);
+  --border: rgba(18, 16, 31, 0.10);
+  --border-strong: rgba(18, 16, 31, 0.18);
+  --text: #12101F;
+  --text-muted: #514A6E;
+
+  --violet: #6D28D9;
+  --magenta: #D61F78;
+  --cyan: #0E7490;
+  --mint: #0F766E;
+  --amber: #B45309;
+  --focus: #0E7490;
+  --accent-text: #0E7490;
+
+  --aurora: linear-gradient(115deg, #6D28D9 0%, #D61F78 35%, #B45309 60%, #0F766E 80%, #0E7490 100%);
+  --aurora-conic: conic-gradient(from 0deg, #6D28D9, #D61F78, #B45309, #0F766E, #0E7490, #6D28D9);
+
+  --glass-strong: rgba(247, 245, 255, 0.78);
+  --hairline: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(18, 16, 31, 0.08) 40%,
+    rgba(109, 40, 217, 0.30) 72%,
+    rgba(14, 116, 144, 0.30) 100%
+  );
+  --inner-glow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 0 40px rgba(109, 40, 217, 0.05);
+  --shadow-soft: 0 24px 56px -28px rgba(45, 30, 110, 0.35);
+  --aurora-border-fill: #FFFFFF;
+
+  --glow-violet: 0 0 48px -14px rgba(109, 40, 217, 0.45);
+  --glow-magenta: 0 0 48px -14px rgba(214, 31, 120, 0.4);
+  --glow-cyan: 0 0 44px -14px rgba(14, 116, 144, 0.45);
+  --glow-amber: 0 0 44px -14px rgba(180, 83, 9, 0.35);
+  --focus-glow: 0 0 0 6px rgba(14, 116, 144, 0.16);
+
+  /* Pastel aurora for daylight */
+  --blob-violet: rgba(196, 181, 253, 0.70);
+  --blob-magenta: rgba(249, 168, 212, 0.55);
+  --blob-cyan: rgba(165, 243, 252, 0.65);
+  --blob-amber: rgba(253, 230, 138, 0.55);
+  --grain-opacity: 0.05;
+  --grain-blend: multiply;
+  --scrim: linear-gradient(180deg, rgba(247, 245, 255, 0) 0%, rgba(247, 245, 255, 0.6) 100%);
+}
+
+/* Theme-independent tokens */
+:root {
+  /* Radii */
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-pill: 999px;
+
+  /* 4px spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  /* Fluid type scale */
+  --fs-display: clamp(2rem, 8.4vw, 7.75rem);
+  --fs-h1: clamp(2.5rem, 5.2vw + 0.5rem, 5.75rem);
+  --fs-h2: clamp(2rem, 3.6vw + 0.6rem, 4.25rem);
+  --fs-h3: clamp(1.25rem, 1.1vw + 0.9rem, 1.75rem);
+  --fs-body: clamp(1rem, 0.25vw + 0.94rem, 1.125rem);
+  --fs-small: clamp(0.875rem, 0.1vw + 0.85rem, 0.9375rem);
+  --fs-label: 0.75rem;
+
+  /* Fonts (self-hosted via @fontsource, OFL) */
+  --font-display: 'Syne Variable', 'Syne', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+
+  /* Motion (DESIGN.md §9) */
+  --ease-expo-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-power4-inout: cubic-bezier(0.77, 0, 0.175, 1);
+  --dur-hover: 0.25s;
+  --dur-enter: 0.9s;
+
+  /* Layout */
+  --container: 1240px;
+  --gutter: clamp(16px, 5vw, 72px);
+  --header-h: 72px;
+
+  /* Z-index scale */
+  --z-bg: 0;
+  --z-base: 1;
+  --z-raised: 10;
+  --z-hud: 40;
+  --z-header: 50;
+  --z-menu: 60;
+  --z-progress: 70;
+  --z-cursor: 100;
+  --z-skip: 110;
+}
