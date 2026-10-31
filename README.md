@@ -72,3 +72,8 @@ Threat model, OWASP mappings, the controls register and known limitations are in
   - **Page:** empty section skeletons (`#home` … `#contact`) ready for P2.2 content.
   - **Reduced motion:** turns all motion off.
   - **Security:** control C6 (no inline scripts, zero third-party requests, whitelisted `localStorage`), tested in `tests/security/p2-foundation.test.js`. Contrast is tested in `tests/design-tokens.test.js`.
+- **P2 Step 2: content pipeline + Hero, About, Skills, Journey.**
+  - **Pipeline:** `/content` is rendered into `index.html` at build time (`scripts/content/`). Front matter is plain YAML (core schema; `---js` is rejected and never evaluated) and is checked by strict zod schemas (`src/shared/content-schema.js`). Bodies go through markdown-it with raw HTML off and a link allowlist; every string is escaped. A PII guard fails the build on phone, CNIC or email. Drafts are excluded, and `virtual:content` exports the public JSON.
+  - **Sections:** Hero statement + intro, a profile card with a holographic photo ring and 3D tilt + glare, a two-row skills marquee, About bio + rolling stats, a Skills bento with hand-drawn icons, and a Journey timeline whose aurora line draws on scroll. Everything is pre-rendered, so it works with JS off.
+  - **Polish:** the day gradient is fixed (OKLCH, new daylight prism stops, no olive band). Experience + Education are merged into `#journey` (anchors `#experience`/`#education` kept), and the sections are renumbered 00–08. The mobile menu is opaque and has a bottom bar. The meta description is generated from `profile.md`.
+  - **Tests:** control C7 tests in `tests/security/p2-content.test.js`, plus `tests/content.test.js` and gradient tests.

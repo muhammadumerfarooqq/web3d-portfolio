@@ -212,14 +212,14 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 |---|---|---|---|---|---|
 | 1.1 | Responsive and visually appealing personal portfolio website | Design system (tokens, type scale, grid), polished UI, Lighthouse targets | P2, P11 | Screenshots at 3 breakpoints; Lighthouse report | 🟨 |
 | 1.2 | Interactive 3D environment or 3D elements | Three.js scene: avatar, particle field, skills constellation, scroll-driven camera, raycasting | P3 | Screenshots + screen recording | ⬜ |
-| 1.3 | Home page with the name, introduction, and profile | Hero: name, title, intro, **profile card** (photo, role, city, LinkedIn/GitHub, web-CV download), CTAs | P2 | Hero screenshot | ⬜ |
-| 1.4 | About Me section | Bio + key stats with animated counters | P2 | Screenshot | ⬜ |
-| 1.5 | Skills and technologies section | Categorized HTML skills list + 3D constellation with hover tooltips | P2, P3 | Screenshot | ⬜ |
+| 1.3 | Home page with the name, introduction, and profile | Hero: name, title, intro, **profile card** (photo, role, city, LinkedIn/GitHub, web-CV download), CTAs | P2 | Hero screenshot | 🟨 (web CV pending) |
+| 1.4 | About Me section | Bio + key stats with animated counters | P2 | Screenshot | ✅ |
+| 1.5 | Skills and technologies section | Categorized HTML skills list + 3D constellation with hover tooltips | P2, P3 | Screenshot | 🟨 (3D in P3) |
 | 1.6 | Projects and achievements gallery | Projects grid (images, stack chips, links, detail modal) + **achievements gallery** (award/certificate images, lightbox) | P2 | Screenshots | ⬜ |
-| 1.7 | Education and experience section | Animated timeline (NED, Axisero, FYP) | P2 | Screenshot | ⬜ |
+| 1.7 | Education and experience section | Animated timeline (NED, Axisero, FYP) | P2 | Screenshot | ✅ |
 | 1.8 | Contact section | Contact form + social links | P2, P4 | Screenshot | ⬜ |
 | 1.9 | Smooth animations, navigation, and transitions | Lenis smooth scroll, sticky nav + active section, GSAP reveals, View Transitions for modals/theme, camera moves | P2, P3 | Screen recording | 🟨 |
-| 1.10 | Responsive design for desktop, tablet, and mobile | 360/768/1024/1440 layouts, touch interactions, lighter 3D on mobile | P2, P11 | Device screenshots | ⬜ |
+| 1.10 | Responsive design for desktop, tablet, and mobile | 360/768/1024/1440 layouts, touch interactions, lighter 3D on mobile | P2, P11 | Device screenshots | 🟨 |
 
 ### Module 2 — Custom 3D Avatar Using Blender
 | # | Brief line | How we meet it | Phase | Evidence | Status |
@@ -329,7 +329,7 @@ Weights add to 100 and drive the progress bar. A phase counts only when its **ex
 
 ### P2 — Classic mode: UI layer, sections & content · 9%
 > Follow `docs/DESIGN.md` (PRISM v2: Hybrid Explore + Classic) for every visual decision. Classic mode = the fast scrollable portfolio (all brief sections, accessible, default for reduced-motion/no-WebGL); Explore mode reuses the same content. P2 builds the DOM/UI layer + motion language; P3 builds the WebGL world (prism stage, morphing particles, post-processing, tiers). · 1.1, 1.3–1.10, E2, E6, E8 (base), E10 (visitor sort)
-- Design tokens (dark + light), fonts self-hosted (Space Grotesk, Inter, JetBrains Mono; all OFL).
+- Design tokens (dark + light), fonts self-hosted (Syne, Inter, JetBrains Mono; all OFL).
 - Sticky nav + active highlight + mobile menu; Lenis + GSAP reveals; View Transitions.
 - Sections: Hero + profile card · About + counters · Skills · Projects gallery · Achievements gallery + lightbox · Experience & Education timeline · Video · Chat entry · Contact · Footer.
 - Projects: category + stack filters, live search, sort (featured/newest/A–Z), URL state, detail modal, `#anchors`.

@@ -29,11 +29,15 @@
   /* Small coloured text (must pass 4.5:1 on --bg) */
   --accent-text: #22D3EE;
 
-  --aurora: linear-gradient(115deg, #7C3AED 0%, #FF2E93 35%, #FFB547 60%, #34F5C5 80%, #22D3EE 100%);
+  /* Display gradient. Stops live in their own token so the sRGB fallback and the OKLCH version
+     (see @supports below) share them; tests sample these stops for ≥ 3:1 on --bg. */
+  --aurora-stops: #7C3AED 0%, #FF2E93 35%, #FFB547 60%, #34F5C5 80%, #22D3EE 100%;
+  --aurora: linear-gradient(115deg, var(--aurora-stops));
   --aurora-conic: conic-gradient(from 0deg, #7C3AED, #FF2E93, #FFB547, #34F5C5, #22D3EE, #7C3AED);
 
   /* Glass: 1px gradient hairline + soft inner glow */
   --glass-strong: rgba(15, 13, 30, 0.72);
+  --menu-bg: rgba(7, 6, 15, 0.94);
   --hairline: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.30) 0%,
@@ -82,10 +86,14 @@
   --focus: #0E7490;
   --accent-text: #0E7490;
 
-  --aurora: linear-gradient(115deg, #6D28D9 0%, #D61F78 35%, #B45309 60%, #0F766E 80%, #0E7490 100%);
-  --aurora-conic: conic-gradient(from 0deg, #6D28D9, #D61F78, #B45309, #0F766E, #0E7490, #6D28D9);
+  /* Daylight prism: cyan → blue → violet → magenta → orange. On a pearl background any
+     yellow-green dark enough for 3:1 reads as olive, so this gradient never passes through it. */
+  --aurora-stops: #0E7490 0%, #2563EB 22%, #7C3AED 46%, #DB2777 74%, #DD4F0C 100%;
+  --aurora: linear-gradient(115deg, var(--aurora-stops));
+  --aurora-conic: conic-gradient(from 0deg, #0E7490, #2563EB, #7C3AED, #DB2777, #DD4F0C, #0E7490);
 
   --glass-strong: rgba(247, 245, 255, 0.78);
+  --menu-bg: rgba(247, 245, 255, 0.95);
   --hairline: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.95) 0%,
@@ -115,6 +123,9 @@
 
 /* Theme-independent tokens */
 :root {
+  /* Vertical aurora (timeline line); --aurora-stops resolves per theme on <html>. */
+  --aurora-v: linear-gradient(180deg, var(--aurora-stops));
+
   /* Radii */
   --radius-sm: 10px;
   --radius-md: 16px;
@@ -171,4 +182,23 @@
   --z-progress: 70;
   --z-cursor: 100;
   --z-skip: 110;
+}
+
+/* Interpolate the display gradients in OKLCH where supported (sRGB fallback above): no grey
+   or muddy band between hues. */
+@supports (background-image: linear-gradient(in oklch, red, blue)) {
+  :root {
+    --aurora: linear-gradient(in oklch 115deg, var(--aurora-stops));
+    --aurora-v: linear-gradient(in oklch 180deg, var(--aurora-stops));
+  }
+
+  [data-theme='dark'] {
+    --aurora: linear-gradient(in oklch 115deg, var(--aurora-stops));
+    --aurora-conic: conic-gradient(in oklch from 0deg, #7C3AED, #FF2E93, #FFB547, #34F5C5, #22D3EE, #7C3AED);
+  }
+
+  [data-theme='light'] {
+    --aurora: linear-gradient(in oklch 115deg, var(--aurora-stops));
+    --aurora-conic: conic-gradient(in oklch from 0deg, #0E7490, #2563EB, #7C3AED, #DB2777, #DD4F0C, #0E7490);
+  }
 }

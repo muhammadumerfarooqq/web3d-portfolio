@@ -23,3 +23,7 @@ Every step adds its rows here. Save each screenshot under `docs/screenshots/<mod
 | P2-2 | Classic UI | Day (light) desktop shell, mid circular theme reveal if you can catch it | same page, click the sun/moon toggle (or system light mode) | ⬜ |
 | P2-3 | Classic UI | Mobile menu open: full-screen glass, big Syne links, close button | DevTools device toolbar at 390×844 → tap the menu button | ⬜ |
 | P2-4 | Classic UI | Custom cursor ring + magnetic "View projects" button with spinning aurora border | desktop, hover "View projects" in the hero (mouse, not touch) | ⬜ |
+| P2-5 | Classic UI / Hero | Hero + profile card (night): gradient name, statement line, holographic photo ring with live dot, chips, tilted card with glare, skills marquee below | `npm run dev` → http://localhost:5173, night theme, hover the profile card with the mouse | ⬜ |
+| P2-6 | Classic UI / About + Skills | About counters mid-roll and the skills bento (day theme) | day theme → nav "About" (counters roll), then "Skills" (hover a card: spotlight + chip glow) | ⬜ |
+| P2-7 | Classic UI / Journey | Journey timeline mid-draw: aurora line part-way down, first nodes lit, alternating cards | nav "Journey", then scroll slowly until the line is between two nodes | ⬜ |
+| P2-8 | Classic UI / No-JS | Page with JavaScript disabled showing the pre-rendered content (hero, about, skills, journey all visible) | Chrome DevTools → ⋮ → Run command → "Disable JavaScript" → reload http://localhost:5173 | ⬜ |

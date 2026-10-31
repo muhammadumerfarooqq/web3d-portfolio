@@ -1,9 +1,6 @@
 // Header state, active section tracking and smooth in-page navigation.
 import { getLenis } from './motion.js';
 
-// Sections without their own nav link highlight the closest one.
-const SECTION_TO_NAV = { education: 'experience' };
-
 function headerOffset() {
   return document.querySelector('[data-header]')?.offsetHeight ?? 0;
 }
@@ -40,9 +37,8 @@ function initActiveSection() {
   const setActive = (section) => {
     if (section.id === activeId) return;
     activeId = section.id;
-    const navId = SECTION_TO_NAV[section.id] ?? section.id;
     for (const link of links) {
-      if (link.hash === `#${navId}`) link.setAttribute('aria-current', 'true');
+      if (link.hash === `#${section.id}`) link.setAttribute('aria-current', 'true');
       else link.removeAttribute('aria-current');
     }
     window.dispatchEvent(

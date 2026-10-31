@@ -6,7 +6,10 @@ import { initMenu } from './ui/menu.js';
 import { initMotion } from './ui/motion.js';
 import { initNav } from './ui/nav.js';
 import { initSound } from './ui/sound.js';
+import { initSpotlight } from './ui/spotlight.js';
 import { initTheme } from './ui/theme.js';
+import { initTilt } from './ui/tilt.js';
+import { initTimeline } from './ui/timeline.js';
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -25,8 +28,11 @@ safely('motion', initMotion); // before nav/menu: they use the Lenis instance
 safely('nav', initNav);
 safely('menu', initMenu);
 safely('hud', initHud);
+safely('timeline', initTimeline);
 safely('cursor', initCursor);
 safely('magnetic', initMagnetic);
+safely('tilt', initTilt);
+safely('spotlight', initSpotlight);
 
 for (const el of document.querySelectorAll('[data-year]')) el.textContent = String(new Date().getFullYear());
 

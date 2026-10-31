@@ -22,11 +22,13 @@ const triggerFor = (el) =>
 
 // data-reveal="…" → animation factory. Split reveals return their tween from onSplit, so
 // SplitText can revert and rebuild it when fonts load or the line breaks change.
+// Opacity only (never autoAlpha/visibility): links in a not-yet-revealed card must stay focusable,
+// and focusing one scrolls it into view, which plays its reveal.
 const REVEALS = {
   'fade-up': (el) =>
     gsap.from(el, {
       y: 48,
-      autoAlpha: 0,
+      opacity: 0,
       duration: 1.1,
       ease: 'expo.out',
       delay: delayOf(el),
@@ -57,7 +59,7 @@ const REVEALS = {
       onSplit: (self) =>
         gsap.from(self.chars, {
           yPercent: 70,
-          autoAlpha: 0,
+          opacity: 0,
           duration: 0.9,
           ease: 'expo.out',
           stagger: 0.03,
@@ -66,12 +68,19 @@ const REVEALS = {
         }),
     }),
 
+  // The card rises, then its [data-reveal-item] children (chips) follow in a quick stagger.
+  stagger: (el) =>
+    gsap
+      .timeline({ delay: delayOf(el), scrollTrigger: triggerFor(el) })
+      .from(el, { y: 40, opacity: 0, duration: 1, ease: 'expo.out' })
+      .from(el.querySelectorAll('[data-reveal-item]'), { y: 14, opacity: 0, duration: 0.6, ease: 'expo.out', stagger: 0.04 }, '-=0.7'),
+
   'type-on': (el) =>
     SplitText.create(el, {
       type: 'words,chars',
       onSplit: (self) =>
         gsap.from(self.chars, {
-          autoAlpha: 0,
+          opacity: 0,
           duration: 0.01,
           stagger: 0.035,
           ease: 'none',

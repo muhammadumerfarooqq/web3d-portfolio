@@ -4,10 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Muhammad Umer Farooq | 3D Portfolio</title>
-    <meta
-      name="description"
-      content="Muhammad Umer Farooq, Associate AI Engineer. An interactive 3D portfolio is coming soon."
-    />
+    <!-- description + og:description are generated from content/profile.md (scripts/content/plugin.mjs) -->
+    <!--content:head-->
     <meta name="color-scheme" content="dark light" />
     <meta name="theme-color" content="#07060F" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#F7F5FF" media="(prefers-color-scheme: light)" />
@@ -15,7 +13,6 @@
     <!-- Open Graph (absolute image URL is set once the production domain is final) -->
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Muhammad Umer Farooq | 3D Portfolio" />
-    <meta property="og:description" content="Associate AI Engineer. Interactive 3D portfolio, AI twin and projects." />
     <meta property="og:image" content="/images/profile/umer-portrait.jpg" />
     <meta property="og:image:alt" content="Portrait of Muhammad Umer Farooq" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -50,7 +47,7 @@
             <li><a class="nav-link" href="#skills" data-nav-link>Skills</a></li>
             <li><a class="nav-link" href="#projects" data-nav-link>Projects</a></li>
             <li><a class="nav-link" href="#achievements" data-nav-link>Achievements</a></li>
-            <li><a class="nav-link" href="#experience" data-nav-link>Journey</a></li>
+            <li><a class="nav-link" href="#journey" data-nav-link>Journey</a></li>
             <li><a class="nav-link" href="#video" data-nav-link>Video</a></li>
             <li><a class="nav-link" href="#chat" data-nav-link>Ask my AI</a></li>
             <li><a class="nav-link" href="#contact" data-nav-link>Contact</a></li>
@@ -114,13 +111,55 @@
             <li><a class="mobile-menu__link" href="#skills" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">02</span><span class="mobile-menu__text">Skills</span></a></li>
             <li><a class="mobile-menu__link" href="#projects" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">03</span><span class="mobile-menu__text">Projects</span></a></li>
             <li><a class="mobile-menu__link" href="#achievements" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">04</span><span class="mobile-menu__text">Achievements</span></a></li>
-            <li><a class="mobile-menu__link" href="#experience" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">05</span><span class="mobile-menu__text">Journey</span></a></li>
-            <li><a class="mobile-menu__link" href="#video" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">07</span><span class="mobile-menu__text">Video</span></a></li>
-            <li><a class="mobile-menu__link" href="#chat" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">08</span><span class="mobile-menu__text">Ask my AI</span></a></li>
-            <li><a class="mobile-menu__link" href="#contact" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">09</span><span class="mobile-menu__text">Contact</span></a></li>
+            <li><a class="mobile-menu__link" href="#journey" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">05</span><span class="mobile-menu__text">Journey</span></a></li>
+            <li><a class="mobile-menu__link" href="#video" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">06</span><span class="mobile-menu__text">Video</span></a></li>
+            <li><a class="mobile-menu__link" href="#chat" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">07</span><span class="mobile-menu__text">Ask my AI</span></a></li>
+            <li><a class="mobile-menu__link" href="#contact" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">08</span><span class="mobile-menu__text">Contact</span></a></li>
           </ul>
         </nav>
-        <p class="hud-label mobile-menu__meta">Classic mode · Explore island arrives in P3</p>
+
+        <!-- Bottom bar: same toggles as the header (theme.js / sound.js sync every [data-*-toggle]) -->
+        <div class="mobile-menu__bar">
+          <ul class="mobile-menu__social">
+            <li>
+              <a class="social-link" href="https://linkedin.com/in/mumerfarooq04" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45Z" /></svg>
+                <span>LinkedIn</span><span class="sr-only"> (opens in a new tab)</span>
+              </a>
+            </li>
+            <li>
+              <a class="social-link" href="https://github.com/muhammadumerfarooqq" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z" /></svg>
+                <span>GitHub</span><span class="sr-only"> (opens in a new tab)</span>
+              </a>
+            </li>
+          </ul>
+          <div class="mobile-menu__controls">
+            <span class="chip chip--disabled">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 20 18H4Z" /><path d="M2 13h7" /></svg>
+              Explore island · P3
+            </span>
+            <button type="button" class="icon-btn" aria-label="Sound" aria-pressed="false" data-sound-toggle>
+              <svg class="sound-icon--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
+                <path d="m16 9.5 5 5M21 9.5l-5 5" />
+              </svg>
+              <svg class="sound-icon--on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
+                <path d="M15.5 9a4.2 4.2 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11" />
+              </svg>
+            </button>
+            <button type="button" class="icon-btn" aria-label="Dark theme" aria-pressed="true" data-theme-toggle>
+              <svg class="theme-icon--moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z" />
+              </svg>
+              <svg class="theme-icon--sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true" focusable="false">
+                <circle cx="12" cy="12" r="4" />
+                <path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4" />
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -134,15 +173,11 @@
       <section id="home" class="section section--hero" data-section data-index="00" data-label="Home" aria-labelledby="home-title" data-reveal-immediate>
         <div class="container hero">
           <p class="hud-label" aria-hidden="true" data-reveal="type-on">00 — Home</p>
-          <h1 id="home-title" class="hero__title" data-reveal="mask-lines" data-reveal-delay="0.15">
-            <span class="text-aurora">Muhammad</span> Umer Farooq
-          </h1>
+          <!--content:hero-heading-->
           <div class="hero__row">
             <div class="hero__lead">
-              <p class="hero__role" data-reveal="fade-up" data-reveal-delay="0.45">
-                <span class="hero__role-dot" aria-hidden="true"></span>Associate AI Engineer
-              </p>
-              <div class="hero__ctas" data-reveal="fade-up" data-reveal-delay="0.6">
+              <!--content:hero-intro-->
+              <div class="hero__ctas" data-reveal="fade-up" data-reveal-delay="0.65">
                 <a class="btn aurora-border" href="#projects" data-magnetic data-cursor>
                   <span>View projects</span>
                   <svg class="btn__icon btn__icon--nudge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
@@ -154,10 +189,10 @@
               </div>
               <p class="scroll-cue" aria-hidden="true"><span class="scroll-cue__line"></span>Scroll</p>
             </div>
-            <!-- Profile card (rendered from /content in P2.2) -->
-            <div class="hero__slot glass hud-frame" data-slot="profile" data-reveal="fade-up" data-reveal-delay="0.5"></div>
+            <!--content:profile-card-->
           </div>
         </div>
+        <!--content:marquee-->
       </section>
 
       <section id="about" class="section" data-section data-index="01" data-label="About" aria-labelledby="about-title">
@@ -166,7 +201,7 @@
             <p class="hud-label" aria-hidden="true" data-reveal="type-on">01 — About</p>
             <h2 id="about-title" class="section__title" data-reveal="mask-lines">About me</h2>
           </div>
-          <div class="slot glass hud-frame" data-slot="about" data-reveal="fade-up"></div>
+          <!--content:about-->
         </div>
       </section>
 
@@ -176,7 +211,7 @@
             <p class="hud-label" aria-hidden="true" data-reveal="type-on">02 — Skills</p>
             <h2 id="skills-title" class="section__title" data-reveal="mask-lines">Skills &amp; technologies</h2>
           </div>
-          <div class="slot glass hud-frame" data-slot="skills" data-reveal="fade-up"></div>
+          <!--content:skills-->
         </div>
       </section>
 
@@ -200,50 +235,40 @@
         </div>
       </section>
 
-      <section id="experience" class="section" data-section data-index="05" data-label="Experience" aria-labelledby="experience-title">
+      <section id="journey" class="section" data-section data-index="05" data-label="Journey" aria-labelledby="journey-title">
         <div class="container">
           <div class="section__head">
-            <p class="hud-label" aria-hidden="true" data-reveal="type-on">05 — Experience</p>
-            <h2 id="experience-title" class="section__title" data-reveal="mask-lines">Experience</h2>
+            <p class="hud-label" aria-hidden="true" data-reveal="type-on">05 — Journey</p>
+            <h2 id="journey-title" class="section__title" data-reveal="mask-lines">Journey</h2>
           </div>
-          <div class="slot glass hud-frame" data-slot="experience" data-reveal="fade-up"></div>
+          <!--content:journey-->
         </div>
       </section>
 
-      <section id="education" class="section" data-section data-index="06" data-label="Education" aria-labelledby="education-title">
+      <section id="video" class="section" data-section data-index="06" data-label="Video" aria-labelledby="video-title">
         <div class="container">
           <div class="section__head">
-            <p class="hud-label" aria-hidden="true" data-reveal="type-on">06 — Education</p>
-            <h2 id="education-title" class="section__title" data-reveal="mask-lines">Education</h2>
-          </div>
-          <div class="slot glass hud-frame" data-slot="education" data-reveal="fade-up"></div>
-        </div>
-      </section>
-
-      <section id="video" class="section" data-section data-index="07" data-label="Video" aria-labelledby="video-title">
-        <div class="container">
-          <div class="section__head">
-            <p class="hud-label" aria-hidden="true" data-reveal="type-on">07 — Video</p>
+            <p class="hud-label" aria-hidden="true" data-reveal="type-on">06 — Video</p>
             <h2 id="video-title" class="section__title" data-reveal="mask-lines">Video</h2>
           </div>
           <div class="slot glass hud-frame" data-slot="video" data-reveal="fade-up"></div>
         </div>
       </section>
 
-      <section id="chat" class="section" data-section data-index="08" data-label="Ask my AI" aria-labelledby="chat-title">
+      <section id="chat" class="section" data-section data-index="07" data-label="Ask my AI" aria-labelledby="chat-title">
         <div class="container">
           <div class="section__head">
-            <p class="hud-label" aria-hidden="true" data-reveal="type-on">08 — Ask my AI</p>
+            <p class="hud-label" aria-hidden="true" data-reveal="type-on">07 — Ask my AI</p>
             <h2 id="chat-title" class="section__title" data-reveal="mask-lines">Ask my AI</h2>
           </div>
           <div class="slot glass hud-frame" data-slot="chat" data-reveal="fade-up"></div>
         </div>
       </section>
 
-      <section id="contact" class="section" data-section data-index="09" data-label="Contact" aria-labelledby="contact-title">
+      <section id="contact" class="section" data-section data-index="08" data-label="Contact" aria-labelledby="contact-title">
         <div class="container">
           <div class="section__head">
-            <p class="hud-label" aria-hidden="true" data-reveal="type-on">09 — Contact</p>
+            <p class="hud-label" aria-hidden="true" data-reveal="type-on">08 — Contact</p>
             <h2 id="contact-title" class="section__title" data-reveal="mask-lines">Contact</h2>
           </div>
           <div class="slot glass hud-frame" data-slot="contact" data-reveal="fade-up"></div>
