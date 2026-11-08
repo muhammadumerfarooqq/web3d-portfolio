@@ -8,6 +8,7 @@ export function initTilt({ reduced }) {
   if (reduced || !window.matchMedia('(pointer: fine)').matches) return;
 
   for (const card of document.querySelectorAll('[data-tilt]')) {
+    const max = Number.parseFloat(card.dataset.tilt) || MAX_DEG; // data-tilt="3" for a lighter tilt
     const glare = card.querySelector('.tilt-glare');
     gsap.set(card, { transformPerspective: 900 });
     const rotX = gsap.quickTo(card, 'rotationX', { duration: 0.6, ease: 'power3.out' });
@@ -25,8 +26,8 @@ export function initTilt({ reduced }) {
       if (!rect || event.pointerType !== 'mouse') return;
       const px = (event.clientX - rect.left) / rect.width;
       const py = (event.clientY - rect.top) / rect.height;
-      rotY((px - 0.5) * 2 * MAX_DEG);
-      rotX(-(py - 0.5) * 2 * MAX_DEG);
+      rotY((px - 0.5) * 2 * max);
+      rotX(-(py - 0.5) * 2 * max);
       glareX?.(px * rect.width);
       glareY?.(py * rect.height);
     });

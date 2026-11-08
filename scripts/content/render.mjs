@@ -1,184 +1,26 @@
-// Build-time renderer: /content → static HTML for index.html. Every front-matter string is escaped
-// by escapeHtml() (through the html`` template); markdown bodies go through markdown-it with raw
-// HTML disabled and a link allowlist.
-import { readFileSync } from 'node:fs';
-import MarkdownIt from 'markdown-it';
+// Build-time renderer: /content → static HTML blocks for index.html. Every front-matter string is
+// escaped by escapeHtml() (through the html`` template); markdown goes through the safe markdown-it.
+import { ContentError } from './load.mjs';
+import { renderAchievements, renderProjects, renderVideoSection } from './gallery.mjs';
+import {
+  ICONS,
+  SOCIAL,
+  externalAttrs,
+  html,
+  markdownBlocks,
+  markdownText,
+  paragraphs,
+  raw,
+  renderBlocks,
+  renderInline,
+  splitStat,
+  timeEl,
+} from './html.mjs';
 
-/* ────────────────────────── Escaping ────────────────────────── */
+// Re-exported for tests and callers that import from render.mjs.
+export { createMarkdown, escapeHtml, formatDate, html, imageSize, isSafeUrl, markdownBlocks, raw, renderBlocks, renderMarkdown, splitStat } from './html.mjs';
 
-const ENTITIES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
-
-/** The one escaping helper for every content string placed into HTML (text or quoted attribute). */
-export function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (c) => ENTITIES[c]);
-}
-
-class SafeHtml {
-  constructor(value) {
-    this.value = value;
-  }
-
-  toString() {
-    return this.value;
-  }
-}
-
-/** Mark trusted markup (our own templates, markdown-it output, static SVG). */
-export const raw = (value) => new SafeHtml(String(value));
-
-function toHtml(value) {
-  if (value === null || value === undefined || value === false) return '';
-  if (Array.isArray(value)) return value.map(toHtml).join('');
-  if (value instanceof SafeHtml) return value.value;
-  return escapeHtml(value);
-}
-
-/** Tagged template: interpolated values are escaped unless they are SafeHtml. */
-export function html(strings, ...values) {
-  let out = strings[0];
-  values.forEach((value, i) => {
-    out += toHtml(value) + strings[i + 1];
-  });
-  return new SafeHtml(out);
-}
-
-/* ────────────────────────── URLs & markdown ────────────────────────── */
-
-const SAFE_URL = /^(?:https?:\/\/|\/(?!\/)|#)/i;
-
-/** Allowed link targets: http(s), site-relative "/…" (not protocol-relative "//"), and "#…". */
-export function isSafeUrl(url) {
-  return SAFE_URL.test(String(url).trim());
-}
-
-const isExternal = (url) => /^https?:\/\//i.test(url);
-const externalAttrs = (url) => (isExternal(url) ? raw(' target="_blank" rel="noopener noreferrer"') : '');
-
-export function createMarkdown() {
-  const md = new MarkdownIt({ html: false, linkify: false, typographer: true });
-  md.disable(['image']); // no remote images from content
-  md.validateLink = (url) => isSafeUrl(url); // anything else stays plain text
-  const renderToken = (tokens, idx, options, env, self) => self.renderToken(tokens, idx, options);
-  const linkOpen = md.renderer.rules.link_open ?? renderToken;
-  md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
-    const href = tokens[idx].attrGet('href') ?? '';
-    if (isExternal(href)) {
-      tokens[idx].attrSet('target', '_blank');
-      tokens[idx].attrSet('rel', 'noopener noreferrer');
-    }
-    return linkOpen(tokens, idx, options, env, self);
-  };
-  return md;
-}
-
-const md = createMarkdown();
-
-/** Top-level markdown blocks: [{ type: 'paragraph' | 'bullet_list' | 'heading' | …, tokens }]. */
-export function markdownBlocks(source, instance = md) {
-  const tokens = instance.parse(source, {});
-  const blocks = [];
-  let start = -1;
-  tokens.forEach((token, i) => {
-    if (token.level !== 0) return;
-    if (token.nesting === 1) start = i;
-    else if (token.nesting === -1) blocks.push({ type: tokens[start].type.replace(/_open$/, ''), tokens: tokens.slice(start, i + 1) });
-    else blocks.push({ type: token.type, tokens: [token] });
-  });
-  return blocks;
-}
-
-/** Render blocks to HTML; `attrs` are added to each block's opening tag (e.g. data-reveal). */
-export function renderBlocks(blocks, attrs = {}, instance = md) {
-  return raw(
-    blocks
-      .map((block) => {
-        for (const [k, v] of Object.entries(attrs)) block.tokens[0].attrSet(k, v);
-        return instance.renderer.render(block.tokens, instance.options, {});
-      })
-      .join(''),
-  );
-}
-
-/** Render a whole markdown string (used by tests and future sections). */
-export const renderMarkdown = (source, instance = md) => raw(instance.render(source));
-
-const paragraphs = (source) => markdownBlocks(source).filter((b) => b.type === 'paragraph');
-const firstList = (source) => markdownBlocks(source).filter((b) => b.type === 'bullet_list').slice(0, 1);
-
-/* ────────────────────────── Formatting (presentation only) ────────────────────────── */
-
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-/** "2026-08" → "Aug 2026", "2026-10-24" → "24 Oct 2026", "present" → "Present"; anything else as written. */
-export function formatDate(value) {
-  const s = String(value);
-  let m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (m) return `${Number(m[3])} ${MONTHS[Number(m[2]) - 1]} ${m[1]}`;
-  m = s.match(/^(\d{4})-(\d{2})$/);
-  if (m) return `${MONTHS[Number(m[2]) - 1]} ${m[1]}`;
-  if (s === 'present') return 'Present';
-  return s;
-}
-
-const isoDate = (value) => (/^\d{4}(?:-\d{2}){0,2}$/.test(String(value)) ? String(value) : null);
-
-function timeEl(value) {
-  const iso = isoDate(value);
-  return iso ? html`<time datetime="${iso}">${formatDate(value)}</time>` : html`<span>${formatDate(value)}</span>`;
-}
-
-/** "1st / 70+" → { prefix: "1st / ", number: "70", suffix: "+" } (the last number rolls). */
-export function splitStat(value) {
-  const m = String(value).match(/^(.*?)(\d+(?:\.\d+)?)(\D*)$/);
-  return m ? { prefix: m[1], number: m[2], suffix: m[3] } : { prefix: String(value), number: null, suffix: '' };
-}
-
-/** Pixel size of a JPEG or PNG (no dependencies). */
-export function imageSize(path) {
-  const buf = readFileSync(path);
-  if (buf.readUInt32BE(0) === 0x89504e47) return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
-  if (buf[0] === 0xff && buf[1] === 0xd8) {
-    let offset = 2;
-    while (offset < buf.length) {
-      if (buf[offset] !== 0xff) break;
-      const marker = buf[offset + 1];
-      const length = buf.readUInt16BE(offset + 2);
-      if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
-        return { height: buf.readUInt16BE(offset + 5), width: buf.readUInt16BE(offset + 7) };
-      }
-      offset += 2 + length;
-    }
-  }
-  throw new Error(`Unsupported or corrupt image: ${path}`);
-}
-
-/* ────────────────────────── Icons (hand-written, static) ────────────────────────── */
-
-const svg = (body, viewBox = '0 0 24 24') =>
-  raw(
-    `<svg viewBox="${viewBox}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">${body}</svg>`,
-  );
-
-const ICONS = {
-  pin: svg('<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21Z"/><circle cx="12" cy="10" r="2.4"/>'),
-  linkedin: raw(
-    '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13ZM7.12 20.45H3.56V9h3.56v11.45Z"/></svg>',
-  ),
-  github: raw(
-    '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" focusable="false"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>',
-  ),
-  download: svg('<path d="M12 4v11M7 10l5 5 5-5M5 20h14"/>'),
-  arrow: svg('<path d="M5 12h14M13 6l6 6-6 6"/>'),
-  // Skill categories
-  neural: svg('<circle cx="5" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="m6.7 7.1 3.6 3.8M6.7 16.9l3.6-3.8M13.7 10.9l3.6-3.8M13.7 13.1l3.6 3.8"/>'),
-  eye: svg('<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/><path d="M12 2v1.5M12 20.5V22M4 4l1 1M19 19l1 1"/>'),
-  cube: svg('<path d="m12 2.8 8 4.6v9.2l-8 4.6-8-4.6V7.4Z"/><path d="m4 7.4 8 4.6 8-4.6M12 12v9.2"/>'),
-  window: svg('<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 8.5h18M6 6.3h.01M8.5 6.3h.01"/><path d="m9.5 12.5-2 2 2 2M14.5 12.5l2 2-2 2"/>'),
-  database: svg('<ellipse cx="12" cy="5.5" rx="7" ry="2.8"/><path d="M5 5.5v13c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-13"/><path d="M5 12c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8"/>'),
-  cycle: svg('<path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.7"/><path d="M20 4v4.7h-4.7"/><path d="M20 12a8 8 0 0 1-13.7 5.6L4 15.3"/><path d="M4 20v-4.7h4.7"/>'),
-  code: svg('<path d="m8 7-5 5 5 5M16 7l5 5-5 5M13.5 4.5l-3 15"/>'),
-  spark: svg('<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/>'),
-};
+const HUES = ['violet', 'cyan', 'magenta', 'amber', 'mint'];
 
 function categoryIcon(name) {
   if (/machine|\bai\b|ml/i.test(name)) return ICONS.neural;
@@ -187,13 +29,11 @@ function categoryIcon(name) {
   if (/front/i.test(name)) return ICONS.window;
   if (/back|data/i.test(name)) return ICONS.database;
   if (/devops|tool/i.test(name)) return ICONS.cycle;
-  if (/lang/i.test(name)) return ICONS.code;
+  if (/lang/i.test(name)) return ICONS.brackets;
   return ICONS.spark;
 }
 
-const HUES = ['violet', 'cyan', 'magenta', 'amber', 'mint'];
-
-/* ────────────────────────── Sections ────────────────────────── */
+/* ────────────────────────── Head & social ────────────────────────── */
 
 export function metaDescription(profile) {
   return `${profile.name} — ${profile.title}, ${profile.location}. ${profile.headline}`;
@@ -205,33 +45,45 @@ export function renderHead({ profile }) {
     <meta property="og:description" content="${description}" />`;
 }
 
-/** h1 + statement line. The name's first word and the headline's part after " — " get the gradient. */
-export function renderHeroHeading({ profile }) {
+/** <li> social links from profile.links: the single source for footer, menu and contact. */
+export function renderSocial({ profile }, className = 'social-link') {
+  return html`${Object.entries(SOCIAL)
+    .filter(([key]) => profile.links[key])
+    .map(
+      ([key, { label, icon }]) => html`<li>
+              <a class="${className}" href="${profile.links[key]}"${externalAttrs(profile.links[key])}>${icon}<span>${label}</span><span class="sr-only"> (opens in a new tab)</span></a>
+            </li>`,
+    )}`;
+}
+
+/* ────────────────────────── Hero ────────────────────────── */
+
+export function renderHeroTitle({ profile }) {
   const [first, ...rest] = profile.name.split(' ');
+  return html`<h1 id="home-title" class="hero__title" data-reveal="mask-lines" data-reveal-delay="0.15"><span class="text-aurora">${first}</span> ${rest.join(' ')}</h1>`;
+}
+
+/** profile.headline; the part after " — " gets the gradient. */
+export function renderHeroStatement({ profile }) {
   const dash = profile.headline.indexOf(' — ');
   const statement =
     dash === -1
       ? html`${profile.headline}`
       : html`${profile.headline.slice(0, dash)} — <span class="text-aurora">${profile.headline.slice(dash + 3)}</span>`;
-  return html`<h1 id="home-title" class="hero__title" data-reveal="mask-lines" data-reveal-delay="0.15"><span class="text-aurora">${first}</span> ${rest.join(' ')}</h1>
-          <p class="hero__statement" data-reveal="mask-lines" data-reveal-delay="0.35">${statement}</p>`;
+  return html`<p class="hero__statement" data-reveal="mask-lines" data-reveal-delay="0.3">${statement}</p>`;
+}
+
+/** Title + statement together (kept for callers and tests). */
+export function renderHeroHeading(content) {
+  return html`${renderHeroTitle(content)}${renderHeroStatement(content)}`;
 }
 
 export function renderHeroIntro({ profile }) {
-  return renderBlocks(paragraphs(profile.body).slice(0, 1), { class: 'hero__intro', 'data-reveal': 'fade-up', 'data-reveal-delay': '0.5' });
-}
-
-function chips(items, className = 'chip') {
-  return html`<ul class="chips">${items.map((item) => html`<li class="${className}">${item}</li>`)}</ul>`;
+  return renderBlocks(paragraphs(profile.body).slice(0, 1), { class: 'hero__intro', 'data-reveal': 'fade-up', 'data-reveal-delay': '0.45' });
 }
 
 export function renderProfileCard({ profile }, { photoSize, cvHref }) {
-  const facts = [
-    ['Open to', profile.open_to],
-    ['Work mode', profile.work_mode],
-    ['Languages', profile.languages],
-  ];
-  return html`<article class="profile-card glass hud-frame" aria-labelledby="profile-name" data-tilt data-reveal="fade-up" data-reveal-delay="0.55">
+  return html`<article class="profile-card glass hud-frame" aria-labelledby="profile-name" data-tilt data-reveal="fade-up" data-reveal-delay="0.4">
               <span class="tilt-glare" aria-hidden="true"></span>
               <div class="profile-card__top">
                 <div class="holo">
@@ -246,9 +98,11 @@ export function renderProfileCard({ profile }, { photoSize, cvHref }) {
                 </div>
               </div>
               <p class="status-pill"><span class="status-pill__dot" aria-hidden="true"></span>Available for work</p>
-              <dl class="profile-card__facts">
-                ${facts.map(([label, items]) => html`<div class="profile-card__fact"><dt class="hud-label">${label}</dt><dd>${chips(items)}</dd></div>`)}
-              </dl>
+              <div class="profile-card__fact">
+                <p class="hud-label">Open to</p>
+                <ul class="chips chips--compact">${[...profile.open_to, ...profile.work_mode].map((item) => html`<li class="chip">${item}</li>`)}</ul>
+              </div>
+              <p class="profile-card__langs"><span class="hud-label">Languages</span><span>${profile.languages.join(' · ')}</span></p>
               <div class="profile-card__actions">
                 <a class="icon-btn" href="${profile.links.linkedin}"${externalAttrs(profile.links.linkedin)} aria-label="LinkedIn (opens in a new tab)" data-magnetic="0.4" data-cursor>${ICONS.linkedin}</a>
                 <a class="icon-btn" href="${profile.links.github}"${externalAttrs(profile.links.github)} aria-label="GitHub (opens in a new tab)" data-magnetic="0.4" data-cursor>${ICONS.github}</a>
@@ -276,6 +130,8 @@ export function renderMarquee({ skills }) {
         )}
       </div>`;
 }
+
+/* ────────────────────────── About & skills ────────────────────────── */
 
 export function renderAbout({ about }) {
   return html`<div class="about">
@@ -320,8 +176,46 @@ export function renderSkills({ skills }) {
           </div>`;
 }
 
+/* ────────────────────────── Journey ────────────────────────── */
+
+const PROJECT_REF = /\(See project: ([^)]+?)\.?\)/;
+
+/** Every "(See project: X)" reference in a markdown body. */
+export function findProjectRefs(source) {
+  return [...source.matchAll(new RegExp(PROJECT_REF.source, 'g'))].map((m) => m[1].trim());
+}
+
+/** A reference matches a non-draft project's full title or its part before " — "; exactly one must match. */
+export function resolveProjectRef(ref, projects, file = 'content') {
+  const matches = projects.filter((p) => !p.draft && (p.title === ref || p.title.split(' — ')[0] === ref));
+  if (matches.length !== 1) {
+    throw new ContentError(`${file}: "(See project: ${ref})" matches ${matches.length} published project titles (need exactly 1)`);
+  }
+  return matches[0];
+}
+
+/** Bullets: bold lead on its own line, body below; "(See project: X)" becomes a link chip. */
+function renderRolePoints(body, projects, file) {
+  const list = markdownBlocks(body).find((b) => b.type === 'bullet_list');
+  if (!list) return '';
+  const items = list.tokens.filter((t) => t.type === 'inline').map((t) => t.content);
+  return html`<ul class="timeline__points timeline__points--split">${items.map((source) => {
+    const m = source.match(/^\*\*(.+?)\*\*\s*[—–-]\s*([\s\S]*)$/);
+    const lead = m ? m[1] : null;
+    let rest = m ? m[2] : source;
+    const ref = rest.match(PROJECT_REF);
+    let chip = '';
+    if (ref) {
+      const project = resolveProjectRef(ref[1].trim(), projects, file);
+      rest = rest.replace(PROJECT_REF, '').trim();
+      chip = html`<a class="chip chip--link" href="#${project.anchor}" data-cursor>See project: ${ref[1].trim()} ${ICONS.arrow}</a>`;
+    }
+    return html`<li>${lead ? html`<strong class="point__lead">${lead}</strong>` : ''}<span class="point__body">${renderInline(rest)}</span>${chip}</li>`;
+  })}</ul>`;
+}
+
 /** Chronological timeline: education entries, roles and dated awards, sorted by start date. */
-export function renderJourney({ education, experience, achievements }) {
+export function renderJourney({ education, experience, achievements, projects }) {
   const entries = [];
 
   education.entries.forEach((entry, i) => {
@@ -351,7 +245,7 @@ export function renderJourney({ education, experience, achievements }) {
       title: role.role,
       org: `${role.company} · ${role.location}`,
       body: html`<p class="timeline__summary">${role.summary}</p>
-                  ${i === 0 ? renderBlocks(firstList(experience.body), { class: 'timeline__points' }) : ''}`,
+                  ${i === 0 ? renderRolePoints(experience.body, projects, experience.file) : ''}`,
     });
   });
 
@@ -372,12 +266,14 @@ export function renderJourney({ education, experience, achievements }) {
   }
 
   entries.sort((a, b) => a.sort.localeCompare(b.sort));
+  const firstYear = entries[0]?.sort.slice(0, 4) ?? '';
 
   return html`<div class="timeline" data-timeline>
+            <div class="timeline__years" aria-hidden="true"><span class="timeline__year" data-timeline-year>${firstYear}</span></div>
             <span class="timeline__rail" aria-hidden="true"><span class="timeline__progress" data-timeline-progress></span></span>
             <ol class="timeline__list">
               ${entries.map(
-                (entry) => html`<li class="timeline__item"${entry.id ? html` id="${entry.id}"` : ''} data-hue="${entry.hue}" data-timeline-item>
+                (entry) => html`<li class="timeline__item"${entry.id ? html` id="${entry.id}"` : ''} data-hue="${entry.hue}" data-entry-year="${entry.sort.slice(0, 4)}" data-timeline-item>
                 <span class="timeline__node" aria-hidden="true"></span>
                 <article class="timeline__card glass" data-spotlight data-reveal="fade-up">
                   <span class="spotlight" aria-hidden="true"></span>
@@ -392,21 +288,30 @@ export function renderJourney({ education, experience, achievements }) {
           </div>`;
 }
 
+/* ────────────────────────── Assemble ────────────────────────── */
+
 /** All index.html blocks, keyed by marker name. */
-export function renderSections(content, { photoSize, cvHref }) {
+export function renderSections(content, { photoSize, cvHref, root }) {
   return {
     head: renderHead(content),
-    'hero-heading': renderHeroHeading(content),
+    'hero-title': renderHeroTitle(content),
+    'hero-statement': renderHeroStatement(content),
     'hero-intro': renderHeroIntro(content),
     'profile-card': renderProfileCard(content, { photoSize, cvHref }),
     marquee: renderMarquee(content),
     about: renderAbout(content),
     skills: renderSkills(content),
+    projects: renderProjects(content, { root }),
+    achievements: renderAchievements(content, { root }),
     journey: renderJourney(content),
+    video: renderVideoSection({ root }),
+    'social-menu': renderSocial(content),
+    'social-contact': renderSocial(content),
+    'social-footer': renderSocial(content),
   };
 }
 
-/** Public JSON for virtual:content: front matter only, drafts removed. */
+/** Public JSON for virtual:content: front matter (+ plain-text project bodies for search), drafts removed. */
 export function publicData(content) {
   const strip = ({ body, bodyStartLine, file, draft, ...rest }) => rest;
   return {
@@ -417,6 +322,6 @@ export function publicData(content) {
     education: strip(content.education),
     achievements: strip(content.achievements),
     faq: strip(content.faq),
-    projects: content.projects.filter((p) => !p.draft).map(strip),
+    projects: content.projects.filter((p) => !p.draft).map((p) => ({ ...strip(p), bodyText: markdownText(p.body) })),
   };
 }

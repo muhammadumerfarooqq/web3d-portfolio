@@ -31,6 +31,32 @@ function parseYaml(source, file) {
   }
 }
 
+// YAML flow lists split on every comma, even inside brackets: [A (B, C), D] yields "A (B" and
+// "C)". Any front-matter string with unbalanced () or [] is almost certainly such a split.
+const CLOSERS = { ')': '(', ']': '[' };
+
+function isBalanced(text) {
+  const stack = [];
+  for (const ch of text) {
+    if (ch === '(' || ch === '[') stack.push(ch);
+    else if (ch in CLOSERS && stack.pop() !== CLOSERS[ch]) return false;
+  }
+  return stack.length === 0;
+}
+
+/** Fail on any front-matter string with unbalanced () or []. */
+export function assertBalancedBrackets(data, file, path = []) {
+  if (typeof data === 'string') {
+    if (!isBalanced(data)) {
+      throw new ContentError(
+        `${file}: ${path.join('.')}: unbalanced brackets in "${data}" (a YAML flow list split on a comma? quote the item)`,
+      );
+    }
+  } else if (data && typeof data === 'object') {
+    for (const [key, value] of Object.entries(data)) assertBalancedBrackets(value, file, [...path, key]);
+  }
+}
+
 /** Split and parse one markdown file. Never evaluates code. */
 export function parseContentFile(raw, file) {
   const text = raw.replace(/^\uFEFF/, '');
@@ -44,6 +70,7 @@ export function parseContentFile(raw, file) {
   if (data === null || typeof data !== 'object' || Array.isArray(data)) {
     throw new ContentError(`${file}: front matter must be a YAML mapping`);
   }
+  assertBalancedBrackets(data, file);
   const bodyStartLine = match[0].split(/\r?\n/).length; // 1-based line where the body starts
   return { data, body: text.slice(match[0].length), bodyStartLine };
 }

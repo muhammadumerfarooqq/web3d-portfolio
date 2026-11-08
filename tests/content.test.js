@@ -83,6 +83,20 @@ describe('build output', () => {
     expect(site.indexHtml).toContain(`<meta property="og:description" content="${description}"`);
   });
 
+  it('footer, mobile-menu and contact social links come from profile.links only', () => {
+    const source = readFileSync(join(ROOT, 'index.html'), 'utf8');
+    expect(source).not.toMatch(/linkedin\.com|github\.com/i); // no hard-coded copies left
+    const block = (open) => {
+      const i = site.indexHtml.indexOf(open);
+      return site.indexHtml.slice(i, site.indexHtml.indexOf('</ul>', i));
+    };
+    for (const open of ['<ul class="mobile-menu__social">', '<ul class="social-list">']) {
+      const hrefs = [...block(open).matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+      expect(hrefs, open).toEqual([content.profile.links.linkedin, content.profile.links.github]);
+    }
+    expect(site.indexHtml.match(new RegExp(content.profile.links.linkedin.replace(/[.]/g, '\\.'), 'g')).length).toBeGreaterThanOrEqual(4);
+  });
+
   it('admin/index.html receives no content', () => {
     expect(site.adminHtml).not.toContain('profile-card');
     expect(site.adminHtml).not.toContain(content.profile.headline);

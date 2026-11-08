@@ -52,6 +52,10 @@ Copy `.env.example` to `.env` and fill in the values. **Never commit `.env`**: i
 
 Threat model, OWASP mappings, the controls register and known limitations are in [docs/security.md](docs/security.md).
 
+## Limitations
+
+Every known limitation and issue since P0, with its impact, a plain-English defence and the planned fix, is tracked in [docs/LIMITATIONS.md](docs/LIMITATIONS.md). It is updated after every step; rows are never deleted, and fixed ones are marked `SOLVED in P<n>`.
+
 ## Progress log
 
 - **P0 Step 4: project scaffold.** Vite multi-page project (`/` and `/admin/`), `vercel.json` (region `bom1` plus security headers; no CSP yet), `.gitignore`, `.env.example`, `.npmrc` (exact versions and strict install-script policy; `fsevents` install script explicitly denied), folder skeleton from the plan, `docs/security.md` and the first security tests (`tests/security/p0-baseline.test.js`). Dev dependencies: Vite and Vitest only.
@@ -77,3 +81,10 @@ Threat model, OWASP mappings, the controls register and known limitations are in
   - **Sections:** Hero statement + intro, a profile card with a holographic photo ring and 3D tilt + glare, a two-row skills marquee, About bio + rolling stats, a Skills bento with hand-drawn icons, and a Journey timeline whose aurora line draws on scroll. Everything is pre-rendered, so it works with JS off.
   - **Polish:** the day gradient is fixed (OKLCH, new daylight prism stops, no olive band). Experience + Education are merged into `#journey` (anchors `#experience`/`#education` kept), and the sections are renumbered 00–08. The mobile menu is opaque and has a bottom bar. The meta description is generated from `profile.md`.
   - **Tests:** control C7 tests in `tests/security/p2-content.test.js`, plus `tests/content.test.js` and gradient tests.
+- **P2 Step 3: projects gallery, achievements, video player; decision record.**
+  - **Gallery:** cards are pre-rendered (deterministic generated SVG covers per category), with category chips, a stack listbox, debounced search with highlights, sort, `?cat/stack/q/sort` URL state and a Flip reflow. A native `<dialog>` detail modal morphs from the card cover; `#project-<slug>` deep links open it.
+  - **Achievements and video:** the Achievements section has a photo lightbox. A reusable accessible video player is used for APEX (labelled "No audio") and for the promo once it exists. Chat and contact show placeholders.
+  - **P2.2 fixes:** the YAML chip split is fixed, with a bracket guard. The hero is compact (whole card visible at 1440×900 and 1366×768). Journey has a sticky year, a rail and one column of cards, with "See project" chips that fail the build if they don't resolve. Social links are generated from `profile.links`.
+  - **Security:** control C8 (DOM-sink and URL-state hygiene), tested in `tests/security/p2-gallery.test.js`.
+  - **Decision record (9-Nov-2026):** the avatar becomes a stylized animated-film human built from Blender bpy scripts (DESIGN.md §7). The Blender MCP is retired (removed from `.mcp.json`, C4 retired, R5 closed).
+  - **New doc:** [docs/LIMITATIONS.md](docs/LIMITATIONS.md).

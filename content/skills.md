@@ -3,7 +3,7 @@ anchor: skills
 title: Skills & technologies
 categories:
   - name: AI & Machine Learning
-    items: [LLMs, Retrieval-Augmented Generation (RAG), LangChain, Vector databases (ChromaDB, pgvector), LLM tool-calling, Prompt engineering, LLM evaluation (Weights & Biases)]
+    items: [LLMs, Retrieval-Augmented Generation (RAG), LangChain, "Vector databases (ChromaDB, pgvector)", LLM tool-calling, Prompt engineering, LLM evaluation (Weights & Biases)]
   - name: Computer Vision
     items: [OpenCV, InsightFace / ArcFace, MediaPipe, ONNX Runtime]
   - name: 3D, Games & Motion

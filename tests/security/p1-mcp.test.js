@@ -35,7 +35,8 @@ describe('C4/C5 local MCP tooling (.mcp.json)', () => {
     const config = JSON.parse(raw);
     const names = Object.keys(config.mcpServers).sort();
     // Every registered server is scanned; a new entry must be added here on purpose.
-    expect(names).toEqual(['aftereffects', 'blender']);
+    // Blender MCP retired 9-Nov-2026 (P2.3 decision record): After Effects is the only server.
+    expect(names).toEqual(['aftereffects']);
 
     const caseSensitive = ['sk-', 'sk_', 'gsk_', 'AIza', 'AQ.', 'sb_secret_', 'eyJ'];
     const caseInsensitive = [/password/i, /token/i, /key=/i];
@@ -70,18 +71,16 @@ describe('C4/C5 local MCP tooling (.mcp.json)', () => {
         checked += 1;
       }
     }
-    // Guard against the check silently passing because no runner was recognised.
-    expect(checked).toBeGreaterThan(0);
+    // Since the Blender MCP was retired no server uses uvx/npx, so `checked` may be 0; the rule
+    // still applies to any future runner entry. Guard instead that the loop saw every server.
+    expect(Object.keys(mcpServers).length).toBeGreaterThan(0);
+    expect(checked).toBe(Object.values(mcpServers).flatMap(packageSpecs).length);
   });
 
-  it('registers the Blender server pinned to mcp-for-blender@2.2.6', () => {
+  it('has no blender entry (Blender MCP retired 9-Nov-2026, attack surface removed)', () => {
     const { mcpServers } = JSON.parse(raw);
-    expect(packageSpecs(mcpServers.blender)).toEqual(['mcp-for-blender@2.2.6']);
-  });
-
-  it('keeps the Blender entry exactly as registered in P1 Step 3', () => {
-    const { mcpServers } = JSON.parse(raw);
-    expect(mcpServers.blender).toStrictEqual({ command: 'cmd', args: ['/c', 'uvx', 'mcp-for-blender@2.2.6'] });
+    expect(mcpServers.blender).toBeUndefined();
+    expect(raw).not.toMatch(/mcp-for-blender/);
   });
 
   it('the pin checker rejects unpinned or range specs', () => {

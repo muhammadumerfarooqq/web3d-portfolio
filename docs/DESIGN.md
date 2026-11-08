@@ -1,4 +1,4 @@
-# Art Direction — "PRISM" v2 · Hybrid Explore + Classic (31-Oct-2026)
+# Art Direction — "PRISM" v2 · Hybrid Explore + Classic (31-Oct-2026; §7 avatar updated 9-Nov-2026)
 
 > Claude Code: read this file before ANY frontend, 3D, audio or Blender step. v2 supersedes v1 and the old "Midnight Lab".
 
@@ -74,11 +74,16 @@ WASD / arrows + Shift run + Space jump · **click-to-move** (raycast on ground) 
 Capsule character vs world collision with **three-mesh-bvh** (no heavy physics engine for the walk); simple rigid-body physics only for the spawn letters (lightweight, e.g. cannon-es or custom). Zones via trigger volumes. Minimap + teleport menu (accessibility and speed). Panels are HTML overlays (CSS2D/DOM), not WebGL text.
 
 ## 7. The AI twin (avatar) — style & behaviour
-- **Style:** original **chunky designer-toy figure with chibi proportions** (head ≈ 1/3 of height), stylized and cute — **not a replica of any toy brand's figure or existing character.**
-- **Construction:** segmented rigid parts (head, torso, upper/lower arms, hands, hips, legs, feet) each parented to a bone → no skin-weight painting, robust to build and animate through code/MCP.
-- **Likeness (blender/AVATAR_BRIEF.md):** black textured hair with volume, light stubble, warm medium-brown skin, dark eyes and brows, charcoal suit, black shirt, satin black tie, silver tie clip, steel watch, glossy black shoes.
-- **Animations (glTF actions):** Idle, Walk, Run, Jump, Wave, Talk (jaw/mouth shape keys), Think, Nod, Blink (shape key), Smile (shape key).
-- **Behaviour:** waves when you arrive; turns to face you when talked to; Think loop while the RAG answer loads; mouth moves with TTS audio amplitude (Web Audio analyser); answers in first person ("I built KnoDesk's RAG pipeline…") with source citations in the chat panel.
+> **Decision record 9-Nov-2026:** replaces the 31-Oct-2026 chibi designer-toy concept.
+
+- **Style:** stylized **animated-film human** (Pixar-inspired, **not** a copy of any studio's style, film or existing character) with Umer's likeness. Realistic-leaning proportions (head ≈ 1/6.5 of height), slightly enlarged head and eyes, soft shapes, clean PBR materials (soft skin, matte wool suit, satin tie).
+- **Likeness (blender/AVATAR_BRIEF.md):** slim; long oval face; warm medium-brown skin; black curly/textured hair; light stubble; charcoal suit; no glasses.
+- **How it is built:** by Claude (assistant) in a cloud workspace with **Blender 5.2.3 Python (bpy) scripts**, committed under `blender/scripts/`. No Blender MCP, no AI 3D generators, no imported third-party models or base meshes. Reproducible: running the scripts rebuilds `blender/avatar.blend`.
+- **Rig:** custom humanoid armature, glTF-compatible.
+- **Actions (exported as glTF clips):** Idle, IdleArmsCrossed, Walk, Run, Jump, Wave, Talk, Think, Nod.
+- **Shape keys:** Blink, Smile, Mouth_Open.
+- **Budget:** `avatar.glb` ≤ 3 MB (Draco + compressed textures), ≤ 40k triangles.
+- **Behaviour:** waves when you arrive; turns to face you when talked to; Think loop while the RAG answer loads; Mouth_Open follows TTS audio amplitude (Web Audio analyser); answers in first person ("I built KnoDesk's RAG pipeline…") with source citations in the chat panel.
 
 ## 8. Effects stack (pmndrs `postprocessing`, one composer)
 Bloom (selective) · Chromatic aberration (subtle) · Film grain 2–4% · Vignette · Depth of field (ULTRA) · SMAA · AgX tone mapping · height fog tinted by theme · stylized materials (soft PBR + rim light; glass/iridescent accents).

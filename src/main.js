@@ -1,15 +1,18 @@
 // Portfolio entry (Classic mode shell). The 3D island and section content arrive in P2.2/P3.
 import { initCursor } from './ui/cursor.js';
 import { initHud } from './ui/hud.js';
+import { initLightbox } from './ui/lightbox.js';
 import { initMagnetic } from './ui/magnetic.js';
 import { initMenu } from './ui/menu.js';
 import { initMotion } from './ui/motion.js';
 import { initNav } from './ui/nav.js';
+import { initGallery } from './ui/projects/gallery.js';
 import { initSound } from './ui/sound.js';
 import { initSpotlight } from './ui/spotlight.js';
 import { initTheme } from './ui/theme.js';
 import { initTilt } from './ui/tilt.js';
 import { initTimeline } from './ui/timeline.js';
+import { initPlayer } from './ui/video.js';
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -29,6 +32,10 @@ safely('nav', initNav);
 safely('menu', initMenu);
 safely('hud', initHud);
 safely('timeline', initTimeline);
+safely('gallery', initGallery);
+safely('lightbox', initLightbox);
+// Players in the #video section; project players are enhanced when their modal opens.
+safely('video', () => document.querySelectorAll('#video [data-player]').forEach(initPlayer));
 safely('cursor', initCursor);
 safely('magnetic', initMagnetic);
 safely('tilt', initTilt);

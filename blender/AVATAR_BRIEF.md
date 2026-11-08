@@ -2,10 +2,12 @@
 
 Reference photos are NOT stored in the repo (privacy). Umer re-shares them at P8; they go in `blender/references/` which must be gitignored first.
 
-## Style (decided 31-Oct-2026, see docs/DESIGN.md §7)
-Original **chunky designer-toy figure with chibi proportions** (head ≈ 1/3 of total height), cute and stylized. Built from **segmented rigid parts** (head, torso, upper/lower arms, hands, hips, legs, feet), each parented to one bone — no skin-weight painting. Not a replica of any toy brand's figure or existing character. The avatar is also the **AI twin** (talks, gestures) and the **player character** in Explore mode.
+## Style (decision record 9-Nov-2026, see docs/DESIGN.md §7; replaces the 31-Oct chibi designer-toy concept)
+Stylized **animated-film human** (Pixar-inspired, **not** a copy of any studio's style, film or existing character) with Umer's likeness. Realistic-leaning proportions (head ≈ 1/6.5 of total height), slightly enlarged head and eyes, soft shapes, clean PBR materials (soft skin, matte wool suit, satin tie). The avatar is also the **AI twin** (talks, gestures) and the **player character** in Explore mode.
 
-Required actions: Idle, Walk, Run, Jump, Wave, Talk, Think, Nod. Shape keys: Blink, Smile, Mouth_Open (talk).
+Built by Claude (assistant) in a cloud workspace with **Blender 5.2.3 Python (bpy) scripts** committed under `blender/scripts/`; running them rebuilds `blender/avatar.blend`. No Blender MCP, no AI 3D generators, no imported third-party models or base meshes. Custom humanoid armature, glTF-compatible.
+
+Required actions (glTF clips): Idle, IdleArmsCrossed, Walk, Run, Jump, Wave, Talk, Think, Nod. Shape keys: Blink, Smile, Mouth_Open. Budget: `avatar.glb` ≤ 3 MB (Draco + compressed textures), ≤ 40k triangles.
 
 ## Likeness (stylized, not photoreal)
 | Feature | Description |

@@ -26,7 +26,7 @@ export function buildContent(root) {
 
   return {
     content,
-    sections: renderSections(content, { photoSize: imageSize(photoFile), cvHref }),
+    sections: renderSections(content, { photoSize: imageSize(photoFile), cvHref, root }),
     data: publicData(content),
     cvHref,
   };

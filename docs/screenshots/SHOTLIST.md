@@ -27,3 +27,7 @@ Every step adds its rows here. Save each screenshot under `docs/screenshots/<mod
 | P2-6 | Classic UI / About + Skills | About counters mid-roll and the skills bento (day theme) | day theme → nav "About" (counters roll), then "Skills" (hover a card: spotlight + chip glow) | ⬜ |
 | P2-7 | Classic UI / Journey | Journey timeline mid-draw: aurora line part-way down, first nodes lit, alternating cards | nav "Journey", then scroll slowly until the line is between two nodes | ⬜ |
 | P2-8 | Classic UI / No-JS | Page with JavaScript disabled showing the pre-rendered content (hero, about, skills, journey all visible) | Chrome DevTools → ⋮ → Run command → "Disable JavaScript" → reload http://localhost:5173 | ⬜ |
+| P2-9 | Classic UI / Projects | Projects gallery with a filter active (e.g. AI & RAG + a search term with highlighted matches) and the URL bar showing `?cat=…&q=…` | `npm run dev` → http://localhost:5173/?cat=AI+%26+RAG&q=pipeline#projects (screenshot the whole browser window so the URL bar is visible) | ⬜ |
+| P2-10 | Classic UI / Projects | Project modal for APEX with the video player (No audio chip, scrub bar, controls) | open http://localhost:5173/#project-ae-car-edit, press play | ⬜ |
+| P2-11 | Classic UI / Achievements | Achievements lightbox showing the Best FYDP photo with its caption | nav "Achievements" → click the award photo | ⬜ |
+| P2-12 | Classic UI / Projects | Designed empty search state ("No projects match" + Clear filters) | Projects → type `zzzz` in the search box | ⬜ |

@@ -44,7 +44,7 @@
 | Analytics | Vercel Web Analytics (page views, free) + **first-party event log in Supabase** shown in the admin dashboard | Vercel custom events are Pro/Enterprise only |
 | Hosting | Vercel Hobby (personal account) + private GitHub repo + Supabase Free | Free HTTPS, preview deploys |
 | Keep-alive | Vercel Cron, once a day → `/api/cron/keepalive` (protected by `CRON_SECRET`) runs one DB query | Supabase pauses Free projects without weekly DB activity |
-| 3D asset | Blender 5.2 LTS + `mcp-for-blender` | LTS until July 2028 |
+| 3D asset (avatar) | **Decision 9-Nov-2026:** stylized animated-film human (Pixar-inspired, not a copy of any studio or character) with Umer's likeness, built by Claude in a cloud workspace with Blender 5.2.3 Python (bpy) scripts in `blender/scripts/` (DESIGN.md §7). Blender MCP retired; no AI 3D generators, no imported models or base meshes | Reproducible from scripts, no local MCP attack surface; Blender 5.2 is LTS until July 2028 |
 | Video | After Effects 2022 + `a-y-ibrahim/after-effects-mcp` + ffmpeg | AE 2022-compatible MCP; ffmpeg because AE 2022 can't export H.264 from the Render Queue |
 | Git | Umer runs every `git add / commit / tag / push`. Claude Code never does | Standing rule |
 
@@ -215,7 +215,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 | 1.3 | Home page with the name, introduction, and profile | Hero: name, title, intro, **profile card** (photo, role, city, LinkedIn/GitHub, web-CV download), CTAs | P2 | Hero screenshot | 🟨 (web CV pending) |
 | 1.4 | About Me section | Bio + key stats with animated counters | P2 | Screenshot | ✅ |
 | 1.5 | Skills and technologies section | Categorized HTML skills list + 3D constellation with hover tooltips | P2, P3 | Screenshot | 🟨 (3D in P3) |
-| 1.6 | Projects and achievements gallery | Projects grid (images, stack chips, links, detail modal) + **achievements gallery** (award/certificate images, lightbox) | P2 | Screenshots | ⬜ |
+| 1.6 | Projects and achievements gallery | Projects grid (images, stack chips, links, detail modal) + **achievements gallery** (award/certificate images, lightbox) | P2 | Screenshots | 🟨 (real screenshots pending) |
 | 1.7 | Education and experience section | Animated timeline (NED, Axisero, FYP) | P2 | Screenshot | ✅ |
 | 1.8 | Contact section | Contact form + social links | P2, P4 | Screenshot | ⬜ |
 | 1.9 | Smooth animations, navigation, and transitions | Lenis smooth scroll, sticky nav + active section, GSAP reveals, View Transitions for modals/theme, camera moves | P2, P3 | Screen recording | 🟨 |
@@ -285,11 +285,11 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 | E3 | Voice interaction with the chatbot | Push-to-talk → Groq Whisper → chat; answers read aloud with `speechSynthesis`; mute toggle; fallback message where unsupported | P6 | ⬜ |
 | E4 | Multilingual chatbot support | English, Urdu (RTL) and Roman Urdu: answers in the user's language, chat UI strings EN/UR, voice input in Urdu | P5, P6 | ⬜ |
 | E5 | Animated 3D avatar expressions or gestures | Blink, Smile, Wave, Think, Nod. Event-driven: wave on load/click, think while the bot answers, nod on answer, smile on contact success | P8 | ⬜ |
-| E6 | Project filtering and search | Category chips + tech-stack filter + live search, URL-shareable state | P2 | ⬜ |
+| E6 | Project filtering and search | Category chips + tech-stack filter + live search, URL-shareable state | P2 | ✅ |
 | E7 | Website analytics | Vercel Web Analytics (views, referrers, devices) + first-party events (chat, voice, video, project views, CV downloads, contact) charted in admin; no cookies, respects Do-Not-Track | P10 | ⬜ |
 | E8 | Accessibility enhancements | WCAG 2.2 AA: keyboard, skip link, focus, ARIA for chat/modals, captions (EN/UR) + transcript, accessible 3D alternatives, **accessibility menu** (reduce motion, pause 3D, larger text), `lang`/`dir` for Urdu, axe 0 serious | P2, P10 | ⬜ |
 | E9 | Chatbot source citations linking to portfolio content | Source chips under each answer → scroll to and highlight the `#anchor` | P5 | ⬜ |
-| E10 | Project / task ordering system | **Visitor:** sort by featured / newest / A–Z. **Admin:** drag-and-drop project order (keyboard alternative), saved to Supabase and live instantly. **Task board:** contact messages as tasks (New → In progress → Replied → Archived), drag between columns | P2, P7 | ⬜ |
+| E10 | Project / task ordering system | **Visitor:** sort by featured / newest / A–Z. **Admin:** drag-and-drop project order (keyboard alternative), saved to Supabase and live instantly. **Task board:** contact messages as tasks (New → In progress → Replied → Archived), drag between columns | P2, P7 | 🟨 (admin ordering in P7) |
 
 ### Required submission materials
 | # | Item | Phase | Status |
@@ -381,9 +381,10 @@ Weights add to 100 and drive the progress bar. A phase counts only when its **ex
 **Exit:** login needs password + MFA; non-admin token → 403; anon can't read admin tables; reorder shows on live site within one refresh.
 
 ### P8 — Blender avatar (AI twin) + world art · 14% · 2.1–2.8, E1 (avatar), E5
-- Spec: original stylized character, full body (~4 heads tall), 15–25k tris, GLB ≤ 3 MB (Draco), Principled BSDF only, textures ≤ 1024 px.
-- Steps (each checked with MCP `look`): references → blockout → head/face (separate eyes) → hair → clothes → **materials + textures** (fabric, decal, iris) → cleanup (apply transforms, normals, origin at feet) → armature ~20 bones + weights → shape keys `Blink`, `Smile` → actions `Idle`, `Wave`, `Think`, `Nod` (NLA) → export → glTF Validator → integrate (mixer cross-fades, event-driven gestures, cursor head-tracking, drag-rotate) → turntable/pose renders (also for the video) → save `.blend` with resources packed.
-- No `generate_3d` for the avatar. Quality gate: weak blockout on day 1 → MPFB2 base human, customized.
+- Spec (decision record 9-Nov-2026, DESIGN.md §7): stylized animated-film human (Pixar-inspired, not a copy of any studio or character) with Umer's likeness; realistic-leaning proportions (head ≈ 1/6.5 of height), slightly enlarged head and eyes, soft shapes, clean PBR materials (soft skin, matte wool suit, satin tie); ≤ 40k tris; GLB ≤ 3 MB (Draco + compressed textures).
+- Built by Claude (assistant) in a cloud workspace with Blender 5.2.3 Python (bpy) scripts committed under `blender/scripts/`; running them rebuilds `blender/avatar.blend`. No Blender MCP, no AI 3D generators, no imported third-party models or base meshes.
+- Steps: references → scripted blockout → head/face (separate eyes) → hair → clothes → **materials + textures** → cleanup (apply transforms, normals, origin at feet) → custom humanoid armature (glTF-compatible) + weights → shape keys `Blink`, `Smile`, `Mouth_Open` → actions `Idle`, `IdleArmsCrossed`, `Walk`, `Run`, `Jump`, `Wave`, `Talk`, `Think`, `Nod` (NLA → glTF clips) → export → glTF Validator → integrate (mixer cross-fades, event-driven gestures, cursor head-tracking, drag-rotate) → approval renders (turntable/poses, also for the video) → save `.blend` with resources packed.
+- Quality gate: Umer approves renders at blockout, face and final stages; if fidelity falls short, push stylization (never import base meshes).
 
 **Exit:** live avatar with all gestures + blink; ≤ 3 MB; 0 validator errors.
 
@@ -460,7 +461,9 @@ Overall  [██░░░░░░░░░░░░░░░░░░]  8%
 
 ## 8. MCP setup guide (Windows + Claude Code)
 
-### 8.1 Blender — `mcp-for-blender`
+### 8.1 Blender — `mcp-for-blender` (historical)
+> **Retired 9-Nov-2026.** Used only for P1 Spike A (`blender/spikes/spike-a.blend`). Removed from `.mcp.json`; the avatar is now built by Claude with Blender 5.2.3 bpy scripts in `blender/scripts/` (DESIGN.md §7). Security control C4 is kept in `docs/security.md` as history. The steps below are a record of what was done; do not repeat them.
+
 1. Install **Blender 5.2.3 LTS**: portable zip from download.blender.org, SHA-256 verified, extracted to `D:\blender\blender-5.2.3-windows-x64\`.
 2. `winget install --id=astral-sh.uv -e` → reopen PowerShell → `uv --version`.
 3. `uvx mcp-for-blender@2.2.6 install-addon` with `BLENDERMCP_ADDONS_DIR` set to `%APPDATA%\Blender Foundation\Blender\5.2\scripts\addons` (auto-detection guessed 5.1 for the portable install).
@@ -484,12 +487,11 @@ What was actually done (30-Oct-2026):
 ```json
 {
   "mcpServers": {
-    "blender": { "command": "cmd", "args": ["/c", "uvx", "mcp-for-blender@2.2.6"] },
     "aftereffects": { "command": "node", "args": ["D:/PROJECTS/tools/after-effects-mcp/build/index.js"] }
   }
 }
 ```
-Restart Claude Code in the repo folder → approve both → `/mcp` shows both connected → test: "Get Blender scene info", "Check the After Effects bridge" (expect `versionMatch: true`). No secrets in this file.
+Restart Claude Code in the repo folder → approve → `/mcp` shows `aftereffects` connected → test: "Check the After Effects bridge" (expect `versionMatch: true`). No secrets in this file. (Until 9-Nov-2026 a `blender` entry, `cmd /c uvx mcp-for-blender@2.2.6`, was registered here too; it was retired, see 8.1.)
 
 ---
 
@@ -532,8 +534,8 @@ See §5 rows S1–S10. Nothing is submitted until every row in §5 is ✅.
 
 | Risk | Fallback |
 |---|---|
-| A third-party MCP breaks | Blender: headless `blender --background --python`. AE: Claude Code writes `.jsx`, run via File → Scripts; render with aerender |
-| Avatar looks amateur after blockout | MPFB2 base human, customized |
+| A third-party MCP breaks | Blender: no longer applies (Blender MCP retired 9-Nov-2026; the avatar is built from bpy scripts). AE: Claude Code writes `.jsx`, run via File → Scripts; render with aerender |
+| Procedurally built avatar is below hand-sculpted film quality (decision 9-Nov-2026: bpy scripts only, no base meshes or imports) | Lean into stylization (soft shapes, enlarged eyes, clean materials) and get Umer's approval renders at blockout, face and final stages |
 | AE 2022 has no H.264 export | aerender lossless + ffmpeg (already planned) |
 | Supabase Free project paused | Daily keep-alive cron; "Resume project" in the dashboard as a last resort |
 | Supabase built-in auth email limits | Custom SMTP (Gmail App Password #2) from P0 |
