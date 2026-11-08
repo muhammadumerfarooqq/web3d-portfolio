@@ -8,7 +8,7 @@ import { PROJECT_CATEGORIES } from '../../src/shared/content-schema.js';
 
 const STATUS = {
   live: 'Live',
-  completed: 'Completed',
+  completed: 'Closed',
   'in-development': 'In development',
 };
 
@@ -85,25 +85,35 @@ function projectDetail(project, root) {
             </div>`;
 }
 
+/**
+ * The "Reward: …" line is an existing fact, never an invented one: the first highlight that already
+ * contains a number (a result such as "10+ businesses" or "1st of 70+ teams"), shown verbatim.
+ * No such highlight, no line.
+ */
+export const rewardOf = (project) => project.highlights.find((h) => /\d/.test(h)) ?? null;
+
 function projectCard(project, root) {
   const hero = project.featured && project.order === 1;
   const shown = project.stack.slice(0, 4);
   const more = project.stack.length - shown.length;
   const hasVideo = Boolean(project.links.video);
+  const reward = rewardOf(project);
+  const bullets = project.highlights.filter((h) => h !== reward).slice(0, 2);
   return html`<li class="gallery__item${hero ? ' gallery__item--hero' : ''}" data-project="${project.slug}">
           <article class="project-card paper" id="${project.anchor}" aria-labelledby="${project.anchor}-title">
             <div class="project-card__cover" data-project-cover>${cover(project, root)}</div>
             <div class="project-card__body">
-              <p class="project-card__meta"><span class="status status--${project.status}"><span class="status__dot" aria-hidden="true"></span>${STATUS[project.status]}</span><span class="project-card__context">${project.context} · ${project.year}</span></p>
+              <p class="project-card__meta"><span class="project-card__bounty">Bounty · ${project.categories[0]}</span><span class="status status--${project.status}"><span class="status__dot" aria-hidden="true"></span>${STATUS[project.status]}</span><span class="project-card__context">${project.context} · ${project.year}</span></p>
               <h3 class="project-card__title" id="${project.anchor}-title" data-searchable>${project.title}</h3>
               <p class="project-card__tagline" data-searchable>${project.tagline}</p>
               <ul class="chips chips--stack">${shown.map((s) => html`<li class="chip" data-searchable>${s}</li>`)}${
                 more > 0 ? html`<li class="chip chip--more"><span aria-hidden="true">+${more}</span><span class="sr-only">and ${more} more</span></li>` : ''
               }</ul>
-              <ul class="project-card__highlights">${project.highlights.slice(0, 2).map((h) => html`<li data-searchable>${h}</li>`)}</ul>
+              <ul class="project-card__highlights">${bullets.map((h) => html`<li data-searchable>${h}</li>`)}</ul>
+              ${reward ? html`<p class="project-card__reward"><span class="project-card__reward-label">Reward:</span> <span data-searchable>${reward}</span></p>` : ''}
               <div class="project-card__actions">
                 <details class="project-card__more" data-project-details>
-                  <summary class="btn btn--sm" data-project-open="${project.slug}" aria-haspopup="dialog" data-cursor>${hasVideo ? 'Details & video' : 'Details'}<span class="sr-only">: ${project.title}</span></summary>
+                  <summary class="btn btn--sm" data-project-open="${project.slug}" aria-haspopup="dialog" data-cursor>Open case ${ICONS.arrow}<span class="sr-only">${hasVideo ? ' (with video)' : ''}: ${project.title}</span></summary>
                   ${projectDetail(project, root)}
                 </details>
                 ${projectLinks(project)}

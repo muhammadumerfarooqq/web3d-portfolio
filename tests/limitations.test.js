@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 
 const url = new URL('../docs/LIMITATIONS.md', import.meta.url);
-const STATUS = /^(?:OPEN|ACCEPTED|SOLVED in P\d+(?:\.\d+)?)(?: \([^)]+\))?$/;
+const STATUS = /^(?:OPEN|ACCEPTED|SOLVED in P\d+(?:\.\d+[a-z]?)?)(?: \([^)]+\))?$/;
 
 describe('docs/LIMITATIONS.md', () => {
   it('exists and is linked from the README', () => {

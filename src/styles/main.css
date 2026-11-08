@@ -378,7 +378,7 @@
   .primary-nav__list {
     display: flex;
     align-items: center;
-    gap: var(--space-1);
+    gap: 0;
   }
 
   .nav-link {
@@ -386,12 +386,13 @@
     display: inline-flex;
     align-items: center;
     min-block-size: 44px;
-    padding-inline: var(--space-3);
+    padding-inline: var(--space-2);
     font-family: var(--font-mono);
-    font-size: 0.875rem;
+    font-size: 0.8125rem;
     font-weight: 700;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.05em;
     text-transform: uppercase;
+    white-space: nowrap;
     color: var(--text);
     transition: color var(--dur-hover) ease;
   }
@@ -399,7 +400,7 @@
   .nav-link::after {
     content: '';
     position: absolute;
-    inset-inline: var(--space-3);
+    inset-inline: var(--space-2);
     bottom: 7px;
     block-size: 3px;
     background: var(--rust);
@@ -1017,6 +1018,12 @@
     justify-content: space-between;
     gap: var(--space-6);
     padding: var(--space-6) var(--space-8);
+  }
+
+  .site-footer__legal {
+    display: block;
+    margin-block-start: 4px;
+    color: var(--text-muted);
   }
 
   .site-footer__copy {
@@ -2362,6 +2369,28 @@
     gap: var(--space-2) var(--space-3);
   }
 
+  .project-card__bounty {
+    margin-inline-end: auto;
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .project-card__reward {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+  }
+
+  .project-card__reward-label {
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--rust-text);
+  }
+
   .project-card__context {
     font-family: var(--font-mono);
     font-size: var(--fs-label);
@@ -3283,6 +3312,10 @@
     font-weight: 700;
     color: inherit;
     opacity: 0.8;
+  }
+
+  .filter-chip__count::before {
+    content: '· ' / '';
   }
 
   .tool-btn__badge {

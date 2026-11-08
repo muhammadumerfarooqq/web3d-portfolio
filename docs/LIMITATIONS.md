@@ -4,7 +4,7 @@ Every limitation or issue since P0, big or small. **Rules:** this file is update
 
 Sources: `docs/security.md` (limitations, risk register R1–R5, finding F1), `docs/PLAN.md` §12, the README progress log, and the QA of each step.
 
-Last updated: P2 Step 5, Classic re-skin (9-Nov-2026).
+Last updated: P2 Step 5b, copy-writing pass (9-Nov-2026).
 
 | ID | Limitation | Since | Impact | Viva defence | Planned fix (phase) | Status |
 |---|---|---|---|---|---|---|
@@ -97,3 +97,10 @@ Last updated: P2 Step 5, Classic re-skin (9-Nov-2026).
 | L87 | The P2.5 Lighthouse reports replaced the P2.4 ones | P2.5 | The earlier scores (desktop 99–100, mobile 95–96) are only in the README log and git history. | Same file names by design, so the folder always shows the current build; both sets pass every target. | — | ACCEPTED |
 | L88 | The decorative CASE CLOSED text uses CSS alt-text syntax | P2.5 | Older browsers (e.g. Firefox before 128) ignore `content: '…' / ''`, so a screen reader may also read "Case closed". | It only repeats the visible "Completed" status, so nothing wrong or misleading is announced. | — | ACCEPTED |
 | L89 | The PRISM micro-interactions were removed (tilt, spotlight, magnetic pull, spinning borders) | P2.5 | The page is calmer than the old look. | They fought the hard-shadow hover and the printed-paper feel; DESIGN.md §10 records the decision. Reveals, counters, cursor and the stamp thud remain. | — | ACCEPTED |
+| L90 | Nav labels are themed (Office, Workshop, Bounties, Vault, Railway, Telegraph) | P2.5b | A first-time visitor must learn the names; Video and Ask my AI stay plain, so the tone is mixed. | Each link has a plain accessible name that still contains the visible word ("Projects (Bounties)"), the section names and the section index stay plain, and a test enforces it. | — | ACCEPTED |
+| L91 | Section headings are themed ("Know your sheriff", "Cases I've closed" …) | P2.5b | Heading navigation in a screen reader lists the themed titles, not "About" or "Projects". | Landmarks carry plain names (`aria-label="Projects"`), the h1, title and meta description stay plain, and the nav labels are plain; one H2 per section is tested. | — | ACCEPTED |
+| L92 | The "Reward:" line is the first highlight that contains a number, verbatim | P2.5b | A few rewards read oddly (for example a duration instead of an outcome), and the line repeats a fact that also sits in the project details. | It is never invented: only existing text is shown, and no line appears without a numeric highlight (tested). A curated optional `reward` field in the content schema would give exact control. | P3 (optional content field) | OPEN |
+| L93 | The arrow character is missing from the latin Courier Prime subset | P2.5b | Text arrows rendered as a tiny dash in the header button and the card button. | The arrows are SVG icons (aria-hidden), the same ones the other buttons use. | — | SOLVED in P2.5b |
+| L94 | Longer nav names made "ASK MY AI" wrap in the header | P2.5b | A two-line link and uneven spacing at 1200–1440 px. | Slightly smaller nav type, tighter padding and `white-space: nowrap`; measured one line (44 px high) at 1200, 1280 and 1440 px with no overflow. | — | SOLVED in P2.5b |
+| L95 | The footer shows the filing line and the copyright line | P2.5b | Two lines instead of the single mockup line. | The © line (name and year) is kept for attribution; the year hook (`data-year`) is unchanged. | — | ACCEPTED |
+| L96 | Filter chips show "All · 8" through CSS | P2.5b | The dot is generated content, so the accessible name is "All 8". | Intentional: the dot is decoration (`content: '· ' / ''`) and the number stays readable. | — | ACCEPTED |

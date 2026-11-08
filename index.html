@@ -40,26 +40,22 @@
 
         <nav class="primary-nav" aria-label="Primary">
           <ul class="primary-nav__list">
-            <li><a class="nav-link" href="#about" data-nav-link>About</a></li>
-            <li><a class="nav-link" href="#skills" data-nav-link>Skills</a></li>
-            <li><a class="nav-link" href="#projects" data-nav-link>Projects</a></li>
-            <li><a class="nav-link" href="#achievements" data-nav-link>Achievements</a></li>
-            <li><a class="nav-link" href="#journey" data-nav-link>Journey</a></li>
+            <li><a class="nav-link" href="#about" data-nav-link aria-label="About (Office)">Office</a></li>
+            <li><a class="nav-link" href="#skills" data-nav-link aria-label="Skills (Workshop)">Workshop</a></li>
+            <li><a class="nav-link" href="#projects" data-nav-link aria-label="Projects (Bounties)">Bounties</a></li>
+            <li><a class="nav-link" href="#achievements" data-nav-link aria-label="Achievements (Vault)">Vault</a></li>
+            <li><a class="nav-link" href="#journey" data-nav-link aria-label="Journey (Railway)">Railway</a></li>
             <li><a class="nav-link" href="#video" data-nav-link>Video</a></li>
             <li><a class="nav-link" href="#chat" data-nav-link>Ask my AI</a></li>
-            <li><a class="nav-link" href="#contact" data-nav-link>Contact</a></li>
+            <li><a class="nav-link" href="#contact" data-nav-link aria-label="Contact (Telegraph)">Telegraph</a></li>
           </ul>
         </nav>
 
         <div class="header-actions">
           <span class="tooltip-wrap" data-tooltip-wrap>
             <button type="button" class="btn btn--sm" aria-disabled="true" aria-describedby="explore-tip" data-mode-toggle>
-              <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-                <path d="M12 3 20 18H4Z" />
-                <path d="M2 13h7" />
-                <path d="m15 10 7-2M16 13l6 1M15 16l5 4" />
-              </svg>
-              <span>Explore island</span>
+              <span>Ride to the island</span>
+              <svg class="btn__icon btn__icon--nudge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
             </button>
             <span class="tooltip" role="tooltip" id="explore-tip">Arrives in P3</span>
           </span>
@@ -104,14 +100,14 @@
         </button>
         <nav aria-label="Mobile">
           <ul class="mobile-menu__links">
-            <li><a class="mobile-menu__link" href="#about" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">01</span><span class="mobile-menu__text">About</span></a></li>
-            <li><a class="mobile-menu__link" href="#skills" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">02</span><span class="mobile-menu__text">Skills</span></a></li>
-            <li><a class="mobile-menu__link" href="#projects" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">03</span><span class="mobile-menu__text">Projects</span></a></li>
-            <li><a class="mobile-menu__link" href="#achievements" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">04</span><span class="mobile-menu__text">Achievements</span></a></li>
-            <li><a class="mobile-menu__link" href="#journey" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">05</span><span class="mobile-menu__text">Journey</span></a></li>
+            <li><a class="mobile-menu__link" href="#about" data-nav-link data-menu-link aria-label="About (Office)"><span class="mobile-menu__num" aria-hidden="true">01</span><span class="mobile-menu__text">Office</span></a></li>
+            <li><a class="mobile-menu__link" href="#skills" data-nav-link data-menu-link aria-label="Skills (Workshop)"><span class="mobile-menu__num" aria-hidden="true">02</span><span class="mobile-menu__text">Workshop</span></a></li>
+            <li><a class="mobile-menu__link" href="#projects" data-nav-link data-menu-link aria-label="Projects (Bounties)"><span class="mobile-menu__num" aria-hidden="true">03</span><span class="mobile-menu__text">Bounties</span></a></li>
+            <li><a class="mobile-menu__link" href="#achievements" data-nav-link data-menu-link aria-label="Achievements (Vault)"><span class="mobile-menu__num" aria-hidden="true">04</span><span class="mobile-menu__text">Vault</span></a></li>
+            <li><a class="mobile-menu__link" href="#journey" data-nav-link data-menu-link aria-label="Journey (Railway)"><span class="mobile-menu__num" aria-hidden="true">05</span><span class="mobile-menu__text">Railway</span></a></li>
             <li><a class="mobile-menu__link" href="#video" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">06</span><span class="mobile-menu__text">Video</span></a></li>
             <li><a class="mobile-menu__link" href="#chat" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">07</span><span class="mobile-menu__text">Ask my AI</span></a></li>
-            <li><a class="mobile-menu__link" href="#contact" data-nav-link data-menu-link><span class="mobile-menu__num" aria-hidden="true">08</span><span class="mobile-menu__text">Contact</span></a></li>
+            <li><a class="mobile-menu__link" href="#contact" data-nav-link data-menu-link aria-label="Contact (Telegraph)"><span class="mobile-menu__num" aria-hidden="true">08</span><span class="mobile-menu__text">Telegraph</span></a></li>
           </ul>
         </nav>
 
@@ -123,7 +119,7 @@
           <div class="mobile-menu__controls">
             <span class="chip chip--disabled">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 20 18H4Z" /><path d="M2 13h7" /></svg>
-              Explore island · P3
+              Ride to the island · P3
             </span>
             <button type="button" class="icon-btn" aria-label="Sound" aria-pressed="false" data-sound-toggle>
               <svg class="sound-icon--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -166,11 +162,11 @@
               <!--content:hero-intro-->
               <div class="hero__ctas" data-reveal="fade-up" data-reveal-delay="0.55">
                 <a class="btn btn--ink" href="#projects" data-cursor>
-                  <span>View projects</span>
+                  <span>See the bounty board</span>
                   <svg class="btn__icon btn__icon--nudge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                 </a>
                 <a class="btn" href="#chat" data-cursor>
-                  <span>Ask my AI</span>
+                  <span>Question the sheriff</span>
                   <svg class="btn__icon btn__icon--nudge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 5h16v11H9l-5 4z" /><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" /></svg>
                 </a>
               </div>
@@ -181,61 +177,61 @@
         <!--content:marquee-->
       </section>
 
-      <section id="about" class="section" data-section data-index="01" data-label="About" aria-labelledby="about-title">
+      <section id="about" class="section" data-section data-index="01" data-label="About" aria-label="About">
         <div class="container">
           <div class="section__head">
             <p class="hud-label" aria-hidden="true" data-reveal="type-on">01 · The sheriff’s office</p>
-            <h2 id="about-title" class="section__title" data-reveal="mask-lines">About me</h2>
+            <h2 id="about-title" class="section__title" data-reveal="mask-lines">Know your sheriff</h2>
           </div>
           <!--content:about-->
         </div>
       </section>
 
-      <section id="skills" class="section" data-section data-index="02" data-label="Skills" aria-labelledby="skills-title">
+      <section id="skills" class="section" data-section data-index="02" data-label="Skills" aria-label="Skills">
         <div class="container">
           <div class="section__head">
             <p class="hud-label" aria-hidden="true" data-reveal="type-on">02 · The workshop</p>
-            <h2 id="skills-title" class="section__title" data-reveal="mask-lines">Skills &amp; technologies</h2>
+            <h2 id="skills-title" class="section__title" data-reveal="mask-lines">Tools of the trade</h2>
           </div>
           <!--content:skills-->
         </div>
       </section>
 
-      <section id="projects" class="section" data-section data-index="03" data-label="Projects" aria-labelledby="projects-title">
+      <section id="projects" class="section" data-section data-index="03" data-label="Projects" aria-label="Projects">
         <div class="container">
           <div class="section__head">
             <p class="hud-label" aria-hidden="true" data-reveal="type-on">03 · The bounty board</p>
-            <h2 id="projects-title" class="section__title" data-reveal="mask-lines">Projects</h2>
+            <h2 id="projects-title" class="section__title" data-reveal="mask-lines">Cases I’ve closed</h2>
           </div>
           <!--content:projects-->
         </div>
       </section>
 
-      <section id="achievements" class="section" data-section data-index="04" data-label="Achievements" aria-labelledby="achievements-title">
+      <section id="achievements" class="section" data-section data-index="04" data-label="Achievements" aria-label="Achievements">
         <div class="container">
           <div class="section__head">
             <p class="hud-label" aria-hidden="true" data-reveal="type-on">04 · The vault</p>
-            <h2 id="achievements-title" class="section__title" data-reveal="mask-lines">Achievements</h2>
+            <h2 id="achievements-title" class="section__title" data-reveal="mask-lines">Trophies in the vault</h2>
           </div>
           <!--content:achievements-->
         </div>
       </section>
 
-      <section id="journey" class="section" data-section data-index="05" data-label="Journey" aria-labelledby="journey-title">
+      <section id="journey" class="section" data-section data-index="05" data-label="Journey" aria-label="Journey">
         <div class="container">
           <div class="section__head">
             <p class="hud-label" aria-hidden="true" data-reveal="type-on">05 · The railway</p>
-            <h2 id="journey-title" class="section__title" data-reveal="mask-lines">Journey</h2>
+            <h2 id="journey-title" class="section__title" data-reveal="mask-lines">Stations so far</h2>
           </div>
           <!--content:journey-->
         </div>
       </section>
 
-      <section id="video" class="section" data-section data-index="06" data-label="Video" aria-labelledby="video-title">
+      <section id="video" class="section" data-section data-index="06" data-label="Video" aria-label="Video">
         <div class="container">
           <div class="section__head">
             <p class="hud-label" aria-hidden="true" data-reveal="type-on">06 · The picture house</p>
-            <h2 id="video-title" class="section__title" data-reveal="mask-lines">Video</h2>
+            <h2 id="video-title" class="section__title" data-reveal="mask-lines">Now showing</h2>
           </div>
           <!--content:video-->
         </div>
@@ -266,11 +262,11 @@
         </div>
       </section>
 
-      <section id="contact" class="section" data-section data-index="08" data-label="Contact" aria-labelledby="contact-title">
+      <section id="contact" class="section" data-section data-index="08" data-label="Contact" aria-label="Contact">
         <div class="container">
           <div class="section__head">
             <p class="hud-label" aria-hidden="true" data-reveal="type-on">08 · The telegraph office</p>
-            <h2 id="contact-title" class="section__title" data-reveal="mask-lines">Contact</h2>
+            <h2 id="contact-title" class="section__title" data-reveal="mask-lines">Send a telegram</h2>
           </div>
           <div class="placeholder-card paper case-frame" data-slot="contact" data-reveal="fade-up">
             <div class="placeholder-card__icon stamp-icon" aria-hidden="true">
@@ -292,7 +288,7 @@
     <footer class="site-footer" data-inert-when-menu>
       <div class="container">
         <div class="site-footer__inner paper case-frame">
-          <p class="site-footer__copy">© <span data-year>2026</span> Muhammad Umer Farooq</p>
+          <p class="site-footer__copy">Filed by the Byte Island Sheriff’s Dept. · Karachi<span class="site-footer__legal">© <span data-year>2026</span> Muhammad Umer Farooq</span></p>
           <ul class="social-list">
             <!--content:social-footer-->
           </ul>
