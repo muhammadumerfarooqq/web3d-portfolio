@@ -8,7 +8,7 @@ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, wr
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { runInNewContext } from 'node:vm';
-import { renderIntroStage } from '../../scripts/content/gallery.mjs';
+import { INTRO_TAGLINE, renderIntroStage } from '../../scripts/content/gallery.mjs';
 import { buildSite, ROOT } from '../helpers/build-site.js';
 
 const read = (path) => readFileSync(join(ROOT, path), 'utf8');
@@ -210,10 +210,13 @@ describe('C7 intro video marker', () => {
   it('renders the placeholder sting (escaped text) when public/video/intro.mp4 is absent', () => {
     const root = mkdtempSync(join(tmpdir(), 'intro-'));
     try {
-      const out = renderIntroStage({ profile: { ...profile, title: '<b>x</b>' } }, { root }).toString();
+      const out = renderIntroStage({ profile: { ...profile, short_name: '<b>' } }, { root }).toString();
       expect(out).toContain('class="intro__stage"');
-      expect(out.match(/intro__letter/g)).toHaveLength(4);
-      expect(out).toContain('&lt;b&gt;x&lt;/b&gt;');
+      expect(out.match(/intro__letter/g)).toHaveLength(3); // one span per character of the word
+      expect(out).toContain('&lt;');
+      expect(out).not.toMatch(/<b>|<B>/);
+      expect(out).toContain(INTRO_TAGLINE);
+      expect(INTRO_TAGLINE).toBe('A new sheriff arrives in town');
       expect(out).not.toContain('<video');
     } finally {
       rmSync(root, { recursive: true, force: true });

@@ -2,17 +2,14 @@
 import { initCursor } from './ui/cursor.js';
 import { initHud } from './ui/hud.js';
 import { initLightbox } from './ui/lightbox.js';
-import { initMagnetic } from './ui/magnetic.js';
 import { initMenu } from './ui/menu.js';
 import { initMode } from './ui/mode.js';
 import { initMotion, initRevealMotion, yieldToMain } from './ui/motion.js';
 import { initNav } from './ui/nav.js';
 import { initGallery } from './ui/projects/gallery.js';
 import { initSound } from './ui/sound.js';
-import { initSpotlight } from './ui/spotlight.js';
 import { initStart } from './ui/start.js';
 import { initTheme } from './ui/theme.js';
-import { initTilt } from './ui/tilt.js';
 import { initTimeline } from './ui/timeline.js';
 import { initPlayer } from './ui/video.js';
 
@@ -49,9 +46,6 @@ const DEFERRED = [
   // Players in the #video section; project players are enhanced when their modal opens.
   ['video', () => document.querySelectorAll('#video [data-player]').forEach(initPlayer)],
   ['cursor', initCursor],
-  ['magnetic', initMagnetic],
-  ['tilt', initTilt],
-  ['spotlight', initSpotlight],
 ];
 
 for (const el of document.querySelectorAll('[data-year]')) el.textContent = String(new Date().getFullYear());

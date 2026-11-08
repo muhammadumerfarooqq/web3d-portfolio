@@ -1,4 +1,4 @@
-// Journey timeline: the aurora line draws with scroll (scrub on scaleY), nodes light up when the
+// Journey timeline: the railway track fills with scroll (scrub on scaleY), nodes light up when the
 // line reaches them, and the sticky outlined year (desktop) swaps to the active entry's year.
 // Without JS or under reduced motion the CSS shows the full line with every node lit; the year
 // still follows the scroll, just without animation.

@@ -1,6 +1,8 @@
 // Generative project covers: inline SVG built at build time, deterministic from the slug, with one
 // visual language per (first) category. Colours come only from CSS classes (theme variables), and
 // the SVG has no ids, gradients, filters or URLs, so it can be cloned and needs no external assets.
+// P2.5: printed / woodcut look. The CSS gives every shape an ink outline and a two-colour fill from
+// the case-file palette (rust, brass, forest, dusk, clay); corners are hard (rx 1) like cut blocks.
 import { raw } from './html.mjs';
 
 const W = 400;
@@ -20,7 +22,7 @@ function seededRandom(seed) {
 }
 
 const r1 = (n) => Math.round(n * 10) / 10;
-const rect = (x, y, w, h, cls, rx = 3) => `<rect class="${cls}" x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="${rx}"/>`;
+const rect = (x, y, w, h, cls, rx = 1) => `<rect class="${cls}" x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="${rx}"/>`;
 const circle = (x, y, r, cls) => `<circle class="${cls}" cx="${r1(x)}" cy="${r1(y)}" r="${r1(r)}"/>`;
 const line = (x1, y1, x2, y2, cls) => `<line class="${cls}" x1="${r1(x1)}" y1="${r1(y1)}" x2="${r1(x2)}" y2="${r1(y2)}"/>`;
 const poly = (points, cls) => `<polygon class="${cls}" points="${points.map(([x, y]) => `${r1(x)},${r1(y)}`).join(' ')}"/>`;
@@ -32,8 +34,8 @@ function aiRag(rand) {
   for (let d = 0; d < 3; d++) {
     const x = 28 + d * 14;
     const y = 52 + d * 16;
-    parts.push(rect(x, y, 70, 92, d === 2 ? 'cv-panel' : 'cv-panel cv-faint', 6));
-    for (let l = 0; l < 6; l++) parts.push(rect(x + 10, y + 14 + l * 12, 24 + rand() * 26, 3.5, 'cv-ink', 1.5));
+    parts.push(rect(x, y, 70, 92, d === 2 ? 'cv-panel' : 'cv-panel cv-faint', 1));
+    for (let l = 0; l < 6; l++) parts.push(rect(x + 10, y + 14 + l * 12, 24 + rand() * 26, 3.5, 'cv-ink', 1));
   }
   // Chunks
   const chunks = [];
@@ -41,7 +43,7 @@ function aiRag(rand) {
     const x = 150 + (i % 3) * 26 + rand() * 4;
     const y = 72 + Math.floor(i / 3) * 34 + rand() * 4;
     chunks.push([x + 9, y + 9]);
-    parts.push(rect(x, y, 18, 18, rand() > 0.6 ? 'cv-fill-a' : 'cv-panel', 4));
+    parts.push(rect(x, y, 18, 18, rand() > 0.6 ? 'cv-fill-a' : 'cv-panel', 1));
   }
   parts.push(line(132, 125, 146, 125, 'cv-line cv-dash'));
   // Constellation
@@ -116,22 +118,22 @@ function fullStack(rand) {
     const h = 120;
     const cls = layer === 2 ? '' : ' cv-faint';
     parts.push(`<g transform="matrix(1 -0.16 0 1 0 ${r1(layer * 6)})">`);
-    parts.push(rect(x, y, w, h, `cv-panel${cls}`, 8));
-    parts.push(rect(x, y, w, 16, `cv-fill-a${cls}`, 8));
+    parts.push(rect(x, y, w, h, `cv-panel${cls}`, 1));
+    parts.push(rect(x, y, w, 16, `cv-fill-a${cls}`, 1));
     for (let d = 0; d < 3; d++) parts.push(circle(x + 10 + d * 9, y + 8, 2.4, 'cv-ink'));
-    parts.push(rect(x + 8, y + 24, 38, h - 32, `cv-soft${cls}`, 4));
+    parts.push(rect(x + 8, y + 24, 38, h - 32, `cv-soft${cls}`, 1));
     for (let row = 0; row < 3; row++) {
       for (let col = 0; col < 2; col++) {
         const bx = x + 54 + col * 70;
         const by = y + 26 + row * 30;
-        parts.push(rect(bx, by, 62, 22, `cv-soft${cls}`, 4));
-        parts.push(rect(bx + 6, by + 7, 18 + rand() * 30, 3.5, 'cv-ink', 1.5));
+        parts.push(rect(bx, by, 62, 22, `cv-soft${cls}`, 1));
+        parts.push(rect(bx + 6, by + 7, 18 + rand() * 30, 3.5, 'cv-ink', 1));
       }
     }
     if (layer === 2) {
       for (let b = 0; b < 6; b++) {
         const bh = 8 + rand() * 30;
-        parts.push(rect(x + 56 + b * 12, y + h - 8 - bh, 7, bh, b % 2 ? 'cv-fill-b' : 'cv-fill-a', 2));
+        parts.push(rect(x + 56 + b * 12, y + h - 8 - bh, 7, bh, b % 2 ? 'cv-fill-b' : 'cv-fill-a', 1));
       }
     }
     parts.push('</g>');
@@ -176,12 +178,12 @@ function motion(rand) {
   for (let i = 0; i < 14; i++) {
     const y = 20 + rand() * 210;
     const x = rand() * 160;
-    parts.push(rect(x, y, 60 + rand() * 180, 2.2, i % 3 ? 'cv-fill-a cv-faint' : 'cv-fill-b', 1.1));
+    parts.push(rect(x, y, 60 + rand() * 180, 2.2, i % 3 ? 'cv-fill-a cv-faint' : 'cv-fill-b', 1));
   }
   parts.push('<g transform="rotate(-12 200 125)">');
-  parts.push(rect(20, 82, 360, 86, 'cv-panel', 6));
-  for (let f = 0; f < 5; f++) parts.push(rect(34 + f * 68, 98, 58, 54, f === 2 ? 'cv-fill-a' : 'cv-soft', 4));
-  for (let h = 0; h < 15; h++) parts.push(rect(30 + h * 23.5, 86, 10, 6, 'cv-ink', 1.5), rect(30 + h * 23.5, 158, 10, 6, 'cv-ink', 1.5));
+  parts.push(rect(20, 82, 360, 86, 'cv-panel', 1));
+  for (let f = 0; f < 5; f++) parts.push(rect(34 + f * 68, 98, 58, 54, f === 2 ? 'cv-fill-a' : 'cv-soft', 1));
+  for (let h = 0; h < 15; h++) parts.push(rect(30 + h * 23.5, 86, 10, 6, 'cv-ink', 1), rect(30 + h * 23.5, 158, 10, 6, 'cv-ink', 1));
   parts.push('</g>');
   return parts.join('');
 }

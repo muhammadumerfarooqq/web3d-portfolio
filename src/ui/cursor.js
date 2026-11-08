@@ -1,4 +1,4 @@
-// Custom cursor: dot + lagging ring (difference blend). Only for a fine pointer without reduced
+// Custom cursor: dot + lagging ring. Only for a fine pointer without reduced
 // motion. The native cursor returns over text fields; keyboard focus rings are never covered.
 import gsap from 'gsap';
 
@@ -19,7 +19,6 @@ export function initCursor({ reduced }) {
   const root = document.documentElement;
   const dot = createPart('cursor cursor--dot');
   const ring = createPart('cursor cursor--ring');
-  root.classList.add('has-cursor');
 
   const dotX = gsap.quickTo(dot, 'x', { duration: 0.12, ease: 'power3.out' });
   const dotY = gsap.quickTo(dot, 'y', { duration: 0.12, ease: 'power3.out' });
@@ -32,12 +31,19 @@ export function initCursor({ reduced }) {
   window.addEventListener(
     'pointermove',
     (event) => {
-      if (event.pointerType !== 'mouse') return;
+      if (event.pointerType !== 'mouse') {
+        // Touch or pen: the native cursor and no custom one.
+        hide();
+        root.classList.remove('has-cursor');
+        return;
+      }
       if (!placed) {
+        // First real mouse move: place both parts under the pointer, then reveal them. Until now
+        // they sat off-screen and invisible, and the native cursor stayed.
         gsap.set([dot, ring], { x: event.clientX, y: event.clientY });
         placed = true;
       }
-      root.classList.add('cursor-visible');
+      root.classList.add('has-cursor', 'cursor-visible');
       dotX(event.clientX);
       dotY(event.clientY);
       ringX(event.clientX);

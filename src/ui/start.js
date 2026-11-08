@@ -14,16 +14,17 @@ function setBackgroundInert(on) {
   for (const el of document.querySelectorAll('[data-inert-when-menu], .skip-link')) el.inert = on;
 }
 
-/** Placeholder sting: aurora sweep, UMER letter by letter, then the tagline (~6 s). */
+/** Placeholder sting: an ink band wipes the poster, UMER drops in letter by letter, then the tagline (~6 s). */
 function playSting(intro, onDone) {
   const tl = gsap.timeline({ onComplete: onDone });
   const sweep = intro.querySelector('.intro__sweep');
-  tl.fromTo(sweep, { x: 0, xPercent: -70, opacity: 1 }, { xPercent: 70, duration: 2.6, ease: 'power2.inOut' }, 0)
-    // Letters assemble from a faint, offset state rather than from opacity 0, so the first frame
-    // already has contentful text (Chrome's LCP ignores opacity-0 text).
-    .from(intro.querySelectorAll('.intro__letter'), { yPercent: 45, rotationX: -75, opacity: 0.12, duration: 1, stagger: 0.14, ease: 'expo.out' }, 0.3)
-    .from(intro.querySelector('.intro__tagline'), { y: 12, opacity: 0.12, duration: 0.9, ease: 'expo.out' }, 1.6)
-    .to(intro.querySelector('.intro__stage'), { opacity: 0, duration: 0.6, ease: 'power2.in' }, STING_SECONDS - 0.6);
+  tl.fromTo(sweep, { xPercent: -105, opacity: 1 }, { xPercent: 105, duration: 1.5, ease: 'power3.inOut' }, 0.15)
+    .set(sweep, { opacity: 0 })
+    // Letters land with a small thud, from a faint, offset state rather than from opacity 0, so
+    // the first frame already has contentful text (Chrome's LCP ignores opacity-0 text).
+    .from(intro.querySelectorAll('.intro__letter'), { yPercent: -60, opacity: 0.12, duration: 0.55, stagger: 0.16, ease: 'back.out(2.2)' }, 0.5)
+    .from(intro.querySelector('.intro__tagline'), { y: 10, opacity: 0.12, duration: 0.6, ease: 'power3.out' }, 1.8)
+    .to(intro.querySelector('.intro__stage'), { opacity: 0, duration: 0.5, ease: 'power2.in' }, STING_SECONDS - 0.5);
   return () => tl.kill();
 }
 

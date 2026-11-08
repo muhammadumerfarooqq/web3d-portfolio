@@ -20,7 +20,7 @@ import {
 // Re-exported for tests and callers that import from render.mjs.
 export { createMarkdown, escapeHtml, formatDate, html, imageSize, isSafeUrl, markdownBlocks, raw, renderBlocks, renderMarkdown, splitStat } from './html.mjs';
 
-const HUES = ['violet', 'cyan', 'magenta', 'amber', 'mint'];
+const HUES = ['rust', 'dusk', 'clay', 'brass', 'forest'];
 
 function categoryIcon(name) {
   if (/machine|\bai\b|ml/i.test(name)) return ICONS.neural;
@@ -60,7 +60,7 @@ export function renderSocial({ profile }, className = 'social-link') {
 
 export function renderHeroTitle({ profile }) {
   const [first, ...rest] = profile.name.split(' ');
-  return html`<h1 id="home-title" class="hero__title" data-reveal="mask-lines" data-reveal-delay="0.15"><span class="text-aurora">${first}</span> ${rest.join(' ')}</h1>`;
+  return html`<h1 id="home-title" class="hero__title" data-reveal="mask-lines" data-reveal-delay="0.15"><span class="text-rust">${first}</span> ${rest.join(' ')}</h1>`;
 }
 
 /** profile.headline; the part after " — " gets the gradient. */
@@ -69,7 +69,7 @@ export function renderHeroStatement({ profile }) {
   const statement =
     dash === -1
       ? html`${profile.headline}`
-      : html`${profile.headline.slice(0, dash)} — <span class="text-aurora">${profile.headline.slice(dash + 3)}</span>`;
+      : html`${profile.headline.slice(0, dash)} — <span class="text-rust">${profile.headline.slice(dash + 3)}</span>`;
   return html`<p class="hero__statement" data-reveal="mask-lines" data-reveal-delay="0.3">${statement}</p>`;
 }
 
@@ -83,32 +83,36 @@ export function renderHeroIntro({ profile }) {
 }
 
 export function renderProfileCard({ profile }, { photoSize, cvHref }) {
-  return html`<article class="profile-card glass hud-frame" aria-labelledby="profile-name" data-tilt data-reveal="fade-up" data-reveal-delay="0.4">
-              <span class="tilt-glare" aria-hidden="true"></span>
-              <div class="profile-card__top">
-                <div class="holo">
-                  <span class="holo__ring" aria-hidden="true"></span>
-                  <img class="holo__img" src="${profile.photo}" width="${photoSize.width}" height="${photoSize.height}" alt="${profile.photo_alt}" fetchpriority="high" decoding="async" />
-                  <span class="holo__dot" aria-hidden="true"></span>
+  const mode = profile.work_mode.join(' · ');
+  return html`<div class="poster-wrap" data-reveal="fade-up" data-reveal-delay="0.4">
+              <article class="profile-card paper case-frame" aria-labelledby="profile-name">
+                <span class="pin" aria-hidden="true"></span>
+                <p class="wanted__title" aria-hidden="true">Wanted</p>
+                <p class="wanted__sub" aria-hidden="true">— for building AI people use —</p>
+                <div class="wanted__photo">
+                  <img class="wanted__img" src="${profile.photo}" width="${photoSize.width}" height="${photoSize.height}" alt="${profile.photo_alt}" fetchpriority="high" decoding="async" />
+                  <span class="stamp" aria-hidden="true">${mode}</span>
                 </div>
                 <div class="profile-card__id">
                   <p class="profile-card__name" id="profile-name">${profile.name}</p>
                   <p class="profile-card__title">${profile.title}</p>
-                  <p class="profile-card__location">${ICONS.pin}<span>${profile.location}</span></p>
                 </div>
-              </div>
-              <p class="status-pill"><span class="status-pill__dot" aria-hidden="true"></span>Available for work</p>
-              <div class="profile-card__fact">
-                <p class="hud-label">Open to</p>
-                <ul class="chips chips--compact">${[...profile.open_to, ...profile.work_mode].map((item) => html`<li class="chip">${item}</li>`)}</ul>
-              </div>
-              <p class="profile-card__langs"><span class="hud-label">Languages</span><span>${profile.languages.join(' · ')}</span></p>
-              <div class="profile-card__actions">
-                <a class="icon-btn" href="${profile.links.linkedin}"${externalAttrs(profile.links.linkedin)} aria-label="LinkedIn (opens in a new tab)" data-magnetic="0.4" data-cursor>${ICONS.linkedin}</a>
-                <a class="icon-btn" href="${profile.links.github}"${externalAttrs(profile.links.github)} aria-label="GitHub (opens in a new tab)" data-magnetic="0.4" data-cursor>${ICONS.github}</a>
-                ${cvHref ? html`<a class="btn btn--sm aurora-border" href="${cvHref}" download data-magnetic data-cursor>${ICONS.download}<span>Download CV</span></a>` : ''}
-              </div>
-            </article>`;
+                <div class="profile-card__fact">
+                  <p class="hud-label">Open to</p>
+                  <ul class="chips chips--compact">${[...profile.open_to, ...profile.work_mode].map((item) => html`<li class="chip">${item}</li>`)}</ul>
+                </div>
+                <p class="profile-card__langs"><span class="hud-label">Languages</span><span>${profile.languages.join(' · ')}</span></p>
+                <div class="wanted__foot">
+                  <span>Last seen<b>${profile.location}</b></span>
+                  <span>Status<b class="status-ok">Available for work</b></span>
+                </div>
+                <div class="profile-card__actions">
+                  <a class="icon-btn" href="${profile.links.linkedin}"${externalAttrs(profile.links.linkedin)} aria-label="LinkedIn (opens in a new tab)" data-cursor>${ICONS.linkedin}</a>
+                  <a class="icon-btn" href="${profile.links.github}"${externalAttrs(profile.links.github)} aria-label="GitHub (opens in a new tab)" data-cursor>${ICONS.github}</a>
+                  ${cvHref ? html`<a class="btn btn--sm btn--ink" href="${cvHref}" download data-cursor>${ICONS.download}<span>Download CV</span></a>` : ''}
+                </div>
+              </article>
+            </div>`;
 }
 
 function uniqueSkills(skills) {
@@ -142,9 +146,8 @@ export function renderAbout({ about }) {
                 const value = number
                   ? html`${prefix}<span data-count="${number}">${number}</span>${suffix}`
                   : html`${stat.value}`;
-                return html`<li class="stat glass" data-spotlight data-reveal="fade-up" data-reveal-delay="${(i * 0.08).toFixed(2)}">
-                <span class="spotlight" aria-hidden="true"></span>
-                <p class="stat__value"><span class="sr-only">${stat.value}</span><span class="text-aurora" aria-hidden="true">${value}</span></p>
+                return html`<li class="stat" data-reveal="fade-up" data-reveal-delay="${(i * 0.08).toFixed(2)}">
+                <p class="stat__value"><span class="sr-only">${stat.value}</span><span class="text-rust" aria-hidden="true">${value}</span></p>
                 <p class="stat__label">${stat.label}</p>
               </li>`;
               })}
@@ -161,8 +164,7 @@ export function renderSkills({ skills }) {
             <div class="skills__intro prose">${renderBlocks(paragraphs(skills.body), { 'data-reveal': 'fade-up' })}</div>
             <ul class="bento">
               ${skills.categories.map(
-                (category, i) => html`<li class="bento__card glass bento__card--span-${spans[i]}" data-hue="${HUES[i % HUES.length]}" data-spotlight data-reveal="stagger">
-                <span class="spotlight" aria-hidden="true"></span>
+                (category, i) => html`<li class="bento__card paper bento__card--span-${spans[i]}" data-hue="${HUES[i % HUES.length]}" data-reveal="stagger">
                 <div class="bento__head">
                   <span class="bento__icon">${categoryIcon(category.name)}</span>
                   <h3 class="bento__title">${category.name}</h3>
@@ -223,7 +225,7 @@ export function renderJourney({ education, experience, achievements, projects })
       sort: entry.start,
       id: i === 0 ? education.anchor : null,
       kind: education.title,
-      hue: 'cyan',
+      hue: 'dusk',
       when: html`${timeEl(entry.start)} – ${timeEl(entry.end)}`,
       title: entry.degree,
       org: entry.institution,
@@ -240,7 +242,7 @@ export function renderJourney({ education, experience, achievements, projects })
       sort: role.start,
       id: i === 0 ? experience.anchor : null,
       kind: experience.title,
-      hue: 'violet',
+      hue: 'rust',
       when: html`${timeEl(role.start)} – ${timeEl(role.end)}`,
       title: role.role,
       org: `${role.company} · ${role.location}`,
@@ -256,7 +258,7 @@ export function renderJourney({ education, experience, achievements, projects })
       sort: String(item.date),
       id: null,
       kind: 'Award',
-      hue: 'amber',
+      hue: 'brass',
       when: timeEl(item.date),
       title: item.title,
       org: item.event,
@@ -275,9 +277,8 @@ export function renderJourney({ education, experience, achievements, projects })
               ${entries.map(
                 (entry) => html`<li class="timeline__item"${entry.id ? html` id="${entry.id}"` : ''} data-hue="${entry.hue}" data-entry-year="${entry.sort.slice(0, 4)}" data-timeline-item>
                 <span class="timeline__node" aria-hidden="true"></span>
-                <article class="timeline__card glass" data-spotlight data-reveal="fade-up">
-                  <span class="spotlight" aria-hidden="true"></span>
-                  <p class="timeline__meta"><span class="chip chip--kind">${entry.kind}</span><span class="timeline__when">${entry.when}</span></p>
+                <article class="timeline__card paper" data-reveal="fade-up">
+                    <p class="timeline__meta"><span class="chip chip--kind">${entry.kind}</span><span class="timeline__when">${entry.when}</span></p>
                   <h3 class="timeline__title">${entry.title}</h3>
                   <p class="timeline__org">${entry.org}</p>
                   ${entry.body}

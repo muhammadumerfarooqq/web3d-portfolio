@@ -1,4 +1,4 @@
-// HUD: aurora scroll-progress bar and the left-edge section index ("03 — PROJECTS").
+// HUD: scroll-progress rule and the left-edge section index ("03 — PROJECTS").
 
 function initProgress() {
   const bar = document.querySelector('[data-progress-bar]');

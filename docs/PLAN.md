@@ -28,7 +28,7 @@
 | Frontend | Vite (multi-page: `/` and `/admin`) + vanilla JavaScript + **Three.js** (pinned) | Same Three.js as the course; every concept visible for the viva |
 | Animation / navigation | GSAP + ScrollTrigger, Lenis smooth scroll, **View Transitions API** | Smooth section, modal and theme transitions |
 | Styling | Tailwind CSS v4 + CSS variables (theme tokens) | Fast responsive work; dark/light via tokens |
-| **Art direction** | **"PRISM" — see `docs/DESIGN.md`** (replaces "Midnight Lab", 30-Oct-2026): colourful aurora palette on a deep base, iridescent glass prism, GPU morphing particles per section, scroll-flown camera, pmndrs `postprocessing` (bloom, chromatic aberration, grain, DOF), GSAP SplitText reveals, custom cursor, magnetic UI, performance tiers via `detect-gpu` (ULTRA/HIGH/LOW/STATIC) | Umer wants a premium, colourful, effects-rich frontend; tiers + reduced-motion keep it fast, responsive and accessible |
+| **Art direction** | **"Sheriff of Byte Island" — see `docs/DESIGN.md`** (replaces "PRISM", 9-Nov-2026, P2.5; before that "Midnight Lab"): printed-paper case file in Classic mode (parchment day / desert night, WANTED poster profile, bounty-board projects, railway timeline, hard offset shadows, Rokkitt + Ultra + Courier Prime + Source Serif 4), a frontier town of 8 buildings in Explore mode, GSAP SplitText reveals, performance tiers via `detect-gpu` (ULTRA/HIGH/LOW/STATIC) | Umer wants a distinctive, memorable, premium-feeling frontend that is warm and fast to read; tiers + reduced-motion keep it fast, responsive and accessible |
 | Validation | **zod schemas shared by browser and server** (`src/shared/schemas.js`) | Same rules on both sides, written once |
 | Backend | Vercel Functions in `/api` (Node 24) | One repo, one deploy, one URL |
 | Database + vectors + auth | **Supabase**: Postgres + **pgvector** (HNSW) + Auth + Row Level Security + Storage | Real vector DB; email-confirmation login (the flow you used in your game); RLS for the admin data |
@@ -328,8 +328,8 @@ Weights add to 100 and drive the progress bar. A phase counts only when its **ex
 **Exit:** both spikes pass. Time box: 2 failed fix attempts → use the fallback (§12).
 
 ### P2 — Classic mode: UI layer, sections & content · 9%
-> Follow `docs/DESIGN.md` (PRISM v2: Hybrid Explore + Classic) for every visual decision. Classic mode = the fast scrollable portfolio (all brief sections, accessible, default for reduced-motion/no-WebGL); Explore mode reuses the same content. P2 builds the DOM/UI layer + motion language; P3 builds the WebGL world (prism stage, morphing particles, post-processing, tiers). · 1.1, 1.3–1.10, E2, E6, E8 (base), E10 (visitor sort)
-- Design tokens (dark + light), fonts self-hosted (Syne, Inter, JetBrains Mono; all OFL).
+> Follow `docs/DESIGN.md` ("Sheriff of Byte Island": Hybrid Explore + Classic) for every visual decision. Classic mode = the case file: the fast scrollable portfolio (all brief sections, accessible, default for reduced-motion/no-WebGL); Explore mode reuses the same content. P2 builds the DOM/UI layer + motion language; P3 builds the WebGL world (the frontier town, effects, tiers). · 1.1, 1.3–1.10, E2, E6, E8 (base), E10 (visitor sort)
+- Design tokens (day parchment + desert night), fonts self-hosted (Rokkitt, Ultra, Courier Prime, Source Serif 4; all OFL; latin subsets).
 - Sticky nav + active highlight + mobile menu; Lenis + GSAP reveals; View Transitions.
 - Sections: Hero + profile card · About + counters · Skills · Projects gallery · Achievements gallery + lightbox · Experience & Education timeline · Video · Chat entry · Contact · Footer.
 - Projects: category + stack filters, live search, sort (featured/newest/A–Z), URL state, detail modal, `#anchors`.
@@ -337,13 +337,24 @@ Weights add to 100 and drive the progress bar. A phase counts only when its **ex
 
 **Exit:** all real content; no horizontal scroll at 360 px; keyboard-only works; Lighthouse A11y ≥ 90 in both themes.
 
-### P3 — Explore mode: 3D world engine, character controller, zones & effects · 15%
-> Implements DESIGN.md §4 (signature moments 1–2), §5 (effects stack) and §8 (performance tiers). Three.js is dynamically imported after first paint. · 1.2, 1.9, E1, E2 (3D)
-- Renderer (antialias, capped pixel ratio, sRGB, ACES), camera + scroll camera moves, lights (hemisphere + key + rim).
+#### P2.5 — Classic re-skin: "Sheriff of Byte Island" case file · ✅ (9-Nov-2026, inside P2's 9%)
+Visual layer only (structure, content pipeline, filters/URL state, modal, lightbox, player, start screen, a11y and controls C1–C8 untouched): new tokens for day (parchment) and night (desert), four self-hosted fonts (8 latin files), hard offset shadows, WANTED poster profile card, bounty-poster project cards, ink stat strip, railway Journey, case-file modal, new intro copy, recoloured printed covers, cursor-at-top-left bug fixed, motion retuned (stamp thud, poster drop-in), contrast tests rewritten for the new palette. Lighthouse after: desktop 100/100, mobile 98/98, A11y/BP/SEO 100. Tilt, spotlight and magnetic modules removed (they fought the hard-shadow hover).
+
+### P3 — Explore mode: the frontier town (3D world engine, character controller, buildings & effects) · 15%
+> Implements DESIGN.md §6 (the frontier town), §8 (effects stack) and §12 (performance tiers). Three.js is dynamically imported after first paint; `src/ui/mode.js` (`EXPLORE_READY`) is the single hook. · 1.2, 1.9, E1, E2 (3D)
+- **Town of 8 buildings**, one per section, each with a **star badge** that becomes a **"Case closed"** stamp once its content has been opened:
+  - **Sheriff's Office** = About
+  - **Bounty Board** = Projects
+  - **Blacksmith** = Skills
+  - **Railway** = Journey
+  - **Bank vault** = Achievements
+  - **Picture House** = Promo video
+  - **Telegraph Office** = Contact
+  - **Sheriff NPC** = RAG chatbot ("Question the sheriff", P5 hooks in here)
+- Renderer (antialias, capped pixel ratio, sRGB, tone mapping), third-person follow camera, warm lights (hemisphere + key + lantern points).
 - LoadingManager → loading screen with real %.
-- Particle field with mouse parallax; skills constellation with raycast hover/click.
 - Placeholder avatar using the same AnimationMixer API (real GLB drops in later).
-- Theme-aware scene (background, fog, light colours follow dark/light).
+- Theme-aware scene (sky, fog, lantern and window lights follow day/night).
 - Resize, pause when hidden/off-screen, disposal, no-WebGL fallback, low-end mobile mode.
 
 **Exit:** ≥ 55 fps desktop, smooth on mid Android; zero console errors; fallback works.

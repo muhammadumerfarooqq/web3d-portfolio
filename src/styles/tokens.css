@@ -1,136 +1,105 @@
 /*
-  PRISM design tokens (docs/DESIGN.md §3).
-  Dark "Aurora Night" is the default; light "Daylight Prism" applies with [data-theme="light"].
+  "Sheriff of Byte Island" design tokens (docs/DESIGN.md §3).
+  Day (default for light systems) = high-noon parchment case file. Night = desert night:
+  warm dark, cream text, lantern-gold accents. Hard offset shadows, 2px radii, no gradients.
   Colour tokens stay as plain hex in the two theme blocks: tests/design-tokens.test.js reads them
-  and checks WCAG contrast for text, muted text and accent text.
+  and checks WCAG contrast for every text/background pair that the components use.
 */
 
 :root,
 [data-theme="dark"] {
   color-scheme: dark;
 
-  /* Base palette */
-  --bg: #07060F;
-  --surface: #0F0D1E;
-  --surface-2: #17142B;
-  --glass: rgba(255, 255, 255, 0.06);
-  --border: rgba(255, 255, 255, 0.10);
-  --border-strong: rgba(255, 255, 255, 0.18);
-  --text: #F3F1FF;
-  --text-muted: #A9A3C7;
+  /* Desert night */
+  --bg: #14100C;
+  --surface: #1E1812;       /* poster */
+  --surface-2: #2A2118;     /* recessed paper, input fields */
+  --ink: #D9C9A6;           /* rules, borders and outlines (cream ink on dark paper) */
+  --text: #F1E6CE;
+  --text-muted: #BDAE90;
+  --border: rgba(217, 201, 166, 0.28);
+  --border-strong: #D9C9A6;
 
-  /* Aurora */
-  --violet: #7C3AED;
-  --magenta: #FF2E93;
-  --cyan: #22D3EE;
-  --mint: #34F5C5;
-  --amber: #FFB547;
-  --focus: #22D3EE;
-  /* Small coloured text (must pass 4.5:1 on --bg) */
-  --accent-text: #22D3EE;
+  /* Case-file palette (brighter at night so every one reads on --bg and --surface) */
+  --rust: #D9785A;
+  --brass: #D9A441;
+  --forest: #6FB48F;
+  --dusk: #8FA6C9;
+  --clay: #C99A63;
+  --accent-text: #D9A441;   /* lantern gold */
+  --rust-text: #E08A6E;
+  --focus: #F3C566;
 
-  /* Display gradient. Stops live in their own token so the sRGB fallback and the OKLCH version
-     (see @supports below) share them; tests sample these stops for ≥ 3:1 on --bg. */
-  --aurora-stops: #7C3AED 0%, #FF2E93 35%, #FFB547 60%, #34F5C5 80%, #22D3EE 100%;
-  --aurora: linear-gradient(115deg, var(--aurora-stops));
-  --aurora-conic: conic-gradient(from 0deg, #7C3AED, #FF2E93, #FFB547, #34F5C5, #22D3EE, #7C3AED);
+  /* Fills that carry their own text colour */
+  --stamp-bg: #D9785A;
+  --stamp-ink: #14100C;
+  --strip-bg: #0D0A07;      /* ink stat strip */
+  --strip-text: #F1E6CE;
+  --strip-num: #D9A441;
+  --on-ink: #14100C;        /* text on an --ink fill (hover chips, active filters) */
 
-  /* Glass: 1px gradient hairline + soft inner glow */
-  --glass-strong: rgba(15, 13, 30, 0.72);
-  --menu-bg: rgba(7, 6, 15, 0.94);
-  --hairline: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.30) 0%,
-    rgba(255, 255, 255, 0.06) 38%,
-    rgba(124, 58, 237, 0.40) 72%,
-    rgba(34, 211, 238, 0.36) 100%
-  );
-  --inner-glow: inset 0 1px 0 rgba(255, 255, 255, 0.08), inset 0 0 40px rgba(124, 58, 237, 0.07);
-  --shadow-soft: 0 24px 64px -24px rgba(0, 0, 0, 0.7);
-  --aurora-border-fill: #110E22;
+  /* Hard offset shadows (no blur). */
+  --shadow-ink: #000000;
+  --shadow-hard: 8px 9px 0 var(--shadow-ink);
+  --shadow-mid: 5px 6px 0 var(--shadow-ink);
+  --shadow-sm: 3px 3px 0 var(--shadow-ink);
+  --shadow-gold: 4px 4px 0 var(--brass);
+  --lantern: 0 0 28px -6px rgba(217, 164, 65, 0.45); /* the one soft glow: night only, on the active nav/stamp */
 
-  /* Glows tinted with the aurora colours */
-  --glow-violet: 0 0 56px -12px rgba(124, 58, 237, 0.65);
-  --glow-magenta: 0 0 56px -12px rgba(255, 46, 147, 0.55);
-  --glow-cyan: 0 0 48px -12px rgba(34, 211, 238, 0.6);
-  --glow-amber: 0 0 48px -12px rgba(255, 181, 71, 0.5);
-  --focus-glow: 0 0 0 6px rgba(34, 211, 238, 0.18);
-
-  /* Classic-mode background */
-  --blob-violet: rgba(124, 58, 237, 0.55);
-  --blob-magenta: rgba(255, 46, 147, 0.38);
-  --blob-cyan: rgba(34, 211, 238, 0.34);
-  --blob-amber: rgba(255, 181, 71, 0.22);
-  --grain-opacity: 0.09;
-  --grain-blend: overlay;
-  --scrim: linear-gradient(180deg, rgba(7, 6, 15, 0) 0%, rgba(7, 6, 15, 0.55) 100%);
+  --menu-bg: #14100C;
+  --paper-grain-opacity: 0.1;
+  --paper-vignette: radial-gradient(ellipse at 20% 8%, rgba(217, 164, 65, 0.09), transparent 55%), radial-gradient(ellipse at 88% 88%, rgba(217, 120, 90, 0.07), transparent 60%);
+  --photo-filter: sepia(0.35) contrast(1.05) saturate(0.85) brightness(0.92);
 }
 
 [data-theme="light"] {
   color-scheme: light;
 
-  --bg: #F7F5FF;
-  --surface: #FFFFFF;
-  --surface-2: #EEEAFB;
-  --glass: rgba(255, 255, 255, 0.58);
-  --border: rgba(18, 16, 31, 0.10);
-  --border-strong: rgba(18, 16, 31, 0.18);
-  --text: #12101F;
-  --text-muted: #514A6E;
+  /* High noon */
+  --bg: #E9DCC0;
+  --surface: #F3E9D2;
+  --surface-2: #E0CFA9;
+  --ink: #231C15;
+  --text: #231C15;
+  --text-muted: #5A4A38;
+  --border: rgba(35, 28, 21, 0.3);
+  --border-strong: #231C15;
 
-  --violet: #6D28D9;
-  --magenta: #D61F78;
-  --cyan: #0E7490;
-  --mint: #0F766E;
-  --amber: #B45309;
-  --focus: #0E7490;
-  --accent-text: #0E7490;
+  --rust: #7E2F1A;
+  --brass: #B8862A;
+  --forest: #2F5D46;
+  --dusk: #3B4F6B;
+  --clay: #8A5A2B;
+  --accent-text: #7E2F1A;
+  --rust-text: #7E2F1A;
+  --focus: #7E2F1A;
 
-  /* Daylight prism: cyan → blue → violet → magenta → orange. On a pearl background any
-     yellow-green dark enough for 3:1 reads as olive, so this gradient never passes through it. */
-  --aurora-stops: #0E7490 0%, #2563EB 22%, #7C3AED 46%, #DB2777 74%, #DD4F0C 100%;
-  --aurora: linear-gradient(115deg, var(--aurora-stops));
-  --aurora-conic: conic-gradient(from 0deg, #0E7490, #2563EB, #7C3AED, #DB2777, #DD4F0C, #0E7490);
+  --stamp-bg: #7E2F1A;
+  --stamp-ink: #F3E9D2;
+  --strip-bg: #231C15;
+  --strip-text: #F3E9D2;
+  --strip-num: #D9A441;
+  --on-ink: #F3E9D2;
 
-  --glass-strong: rgba(247, 245, 255, 0.78);
-  --menu-bg: rgba(247, 245, 255, 0.95);
-  --hairline: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(18, 16, 31, 0.08) 40%,
-    rgba(109, 40, 217, 0.30) 72%,
-    rgba(14, 116, 144, 0.30) 100%
-  );
-  --inner-glow: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 0 40px rgba(109, 40, 217, 0.05);
-  --shadow-soft: 0 24px 56px -28px rgba(45, 30, 110, 0.35);
-  --aurora-border-fill: #FFFFFF;
+  --shadow-ink: rgba(35, 28, 21, 0.88);
+  --shadow-hard: 8px 9px 0 var(--shadow-ink);
+  --shadow-mid: 5px 6px 0 var(--shadow-ink);
+  --shadow-sm: 3px 3px 0 var(--shadow-ink);
+  --shadow-gold: 4px 4px 0 var(--brass);
+  --lantern: none;
 
-  --glow-violet: 0 0 48px -14px rgba(109, 40, 217, 0.45);
-  --glow-magenta: 0 0 48px -14px rgba(214, 31, 120, 0.4);
-  --glow-cyan: 0 0 44px -14px rgba(14, 116, 144, 0.45);
-  --glow-amber: 0 0 44px -14px rgba(180, 83, 9, 0.35);
-  --focus-glow: 0 0 0 6px rgba(14, 116, 144, 0.16);
-
-  /* Pastel aurora for daylight */
-  --blob-violet: rgba(196, 181, 253, 0.70);
-  --blob-magenta: rgba(249, 168, 212, 0.55);
-  --blob-cyan: rgba(165, 243, 252, 0.65);
-  --blob-amber: rgba(253, 230, 138, 0.55);
-  --grain-opacity: 0.05;
-  --grain-blend: multiply;
-  --scrim: linear-gradient(180deg, rgba(247, 245, 255, 0) 0%, rgba(247, 245, 255, 0.6) 100%);
+  --menu-bg: #E9DCC0;
+  --paper-grain-opacity: 0.16;
+  --paper-vignette: radial-gradient(ellipse at 20% 10%, rgba(255, 250, 235, 0.7), transparent 55%), radial-gradient(ellipse at 85% 80%, rgba(160, 110, 50, 0.18), transparent 60%);
+  --photo-filter: sepia(0.45) contrast(1.05) saturate(0.8);
 }
 
 /* Theme-independent tokens */
 :root {
-  /* Vertical aurora (timeline line); --aurora-stops resolves per theme on <html>. */
-  --aurora-v: linear-gradient(180deg, var(--aurora-stops));
-
-  /* Radii */
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
-  --radius-pill: 999px;
+  /* Radii: printed paper, not pills */
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
 
   /* 4px spacing scale */
   --space-1: 4px;
@@ -147,29 +116,34 @@
   --space-24: 96px;
   --space-32: 128px;
 
-  /* Fluid type scale */
-  --fs-display: clamp(2rem, 8.4vw, 7.75rem);
-  --fs-h1: clamp(2.5rem, 5.2vw + 0.5rem, 5.75rem);
-  --fs-h2: clamp(2rem, 3.6vw + 0.6rem, 4.25rem);
-  --fs-h3: clamp(1.25rem, 1.1vw + 0.9rem, 1.75rem);
-  --fs-body: clamp(1rem, 0.25vw + 0.94rem, 1.125rem);
-  --fs-small: clamp(0.875rem, 0.1vw + 0.85rem, 0.9375rem);
-  --fs-label: 0.75rem;
+  /* Borders */
+  --rule: 2px;
 
-  /* Fonts (self-hosted via @fontsource, OFL) */
-  --font-display: 'Syne Variable', 'Syne', ui-sans-serif, system-ui, sans-serif;
-  --font-body: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+  /* Fluid type scale (Rokkitt is condensed, so the display sizes run large) */
+  --fs-display: clamp(3.25rem, 8.4vw, 8rem);
+  --fs-h1: clamp(3rem, 6vw + 0.5rem, 6rem);
+  --fs-h2: clamp(2.5rem, 4.4vw + 0.6rem, 4.5rem);
+  --fs-h3: clamp(1.5rem, 1.2vw + 1.1rem, 2rem);
+  --fs-body: clamp(1.0625rem, 0.25vw + 1rem, 1.1875rem);
+  --fs-small: clamp(0.9375rem, 0.1vw + 0.9rem, 1rem);
+  --fs-label: 0.8125rem;
 
-  /* Motion (DESIGN.md §9) */
+  /* Fonts (self-hosted via @fontsource, OFL; latin subsets only) */
+  --font-display: 'Rokkitt', 'Rockwell', 'Roboto Slab', Georgia, serif;
+  --font-poster: 'Ultra', 'Rokkitt', Georgia, serif;
+  --font-mono: 'Courier Prime', 'Courier New', ui-monospace, monospace;
+  --font-body: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+
+  /* Motion (DESIGN.md §9): short, ease-out, a little weight */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-expo-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-power4-inout: cubic-bezier(0.77, 0, 0.175, 1);
-  --dur-hover: 0.25s;
-  --dur-enter: 0.9s;
+  --ease-thud: cubic-bezier(0.34, 1.4, 0.64, 1);
+  --dur-hover: 0.15s;
+  --dur-enter: 0.55s;
 
   /* Layout */
   --container: 1240px;
-  --gutter: clamp(16px, 5vw, 72px);
+  --gutter: clamp(16px, 4vw, 64px);
   --header-h: 72px;
 
   /* Z-index scale */
@@ -182,23 +156,4 @@
   --z-progress: 70;
   --z-cursor: 100;
   --z-skip: 110;
-}
-
-/* Interpolate the display gradients in OKLCH where supported (sRGB fallback above): no grey
-   or muddy band between hues. */
-@supports (background-image: linear-gradient(in oklch, red, blue)) {
-  :root {
-    --aurora: linear-gradient(in oklch 115deg, var(--aurora-stops));
-    --aurora-v: linear-gradient(in oklch 180deg, var(--aurora-stops));
-  }
-
-  [data-theme='dark'] {
-    --aurora: linear-gradient(in oklch 115deg, var(--aurora-stops));
-    --aurora-conic: conic-gradient(in oklch from 0deg, #7C3AED, #FF2E93, #FFB547, #34F5C5, #22D3EE, #7C3AED);
-  }
-
-  [data-theme='light'] {
-    --aurora: linear-gradient(in oklch 115deg, var(--aurora-stops));
-    --aurora-conic: conic-gradient(in oklch from 0deg, #0E7490, #2563EB, #7C3AED, #DB2777, #DD4F0C, #0E7490);
-  }
 }

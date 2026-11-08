@@ -1,8 +1,8 @@
-// Vite plugin (build only): <link rel="preload"> for the two above-the-fold font files (Syne + Inter,
-// latin subset), found by name in the bundle so the hashed URLs stay correct. Loading them before
+// Vite plugin (build only): <link rel="preload"> for the two above-the-fold font files (Rokkitt 900 +
+// Source Serif 4 400, latin subset), found by name in the bundle so the hashed URLs stay correct. Loading them before
 // first paint avoids the font-swap layout shift under the intro word and hero (Lighthouse CLS) and
 // SplitText re-splitting when the fonts arrive. Same-origin files only; no inline code.
-const PRELOAD = [/^assets\/syne-latin-wght-normal-[\w-]+\.woff2$/, /^assets\/inter-latin-wght-normal-[\w-]+\.woff2$/];
+const PRELOAD = [/^assets\/rokkitt-latin-900-normal-[\w-]+\.woff2$/, /^assets\/source-serif-4-latin-400-normal-[\w-]+\.woff2$/];
 
 export function fontPreloadPlugin() {
   return {

@@ -112,11 +112,14 @@ describe('section numbering', () => {
     expect(sections.map((s) => s.index)).toEqual(sections.map((_, i) => String(i).padStart(2, '0')));
   });
 
-  it('each section HUD label shows its own number and label', () => {
+  // P2.5: the typewriter eyebrow uses case-file wording ("03 · The bounty board"). The section number
+  // must still be its own, and the real heading (h2 / h1) next to it is unchanged.
+  it('each section eyebrow starts with its own number (home: the case-file header)', () => {
     for (const s of sections) {
       const block = html.slice(html.indexOf(`<section id="${s.id}"`));
       const hud = block.match(/class="hud-label"[^>]*>([^<]+)</)[1];
-      expect(hud).toBe(`${s.index} — ${s.label}`);
+      if (s.index === '00') expect(hud).toMatch(/^Case file No\. \d+ · /);
+      else expect(hud, s.id).toMatch(new RegExp(`^${s.index} · \\S`));
     }
   });
 

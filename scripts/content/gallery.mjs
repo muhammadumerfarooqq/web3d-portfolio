@@ -53,7 +53,7 @@ export function renderPlayer({ src, poster = null, size = null, title, noAudio =
                 (t) => html`<track kind="captions" src="${t.src}" srclang="${t.lang}" label="${t.label}" />`,
               )}</video>
             </div>
-            <figcaption class="player__caption">${noAudio ? html`<span class="chip chip--kind" data-hue="amber">No audio</span>` : ''}<span>${title}</span></figcaption>
+            <figcaption class="player__caption">${noAudio ? html`<span class="chip chip--kind" data-hue="brass">No audio</span>` : ''}<span>${title}</span></figcaption>
           </figure>`;
 }
 
@@ -91,8 +91,7 @@ function projectCard(project, root) {
   const more = project.stack.length - shown.length;
   const hasVideo = Boolean(project.links.video);
   return html`<li class="gallery__item${hero ? ' gallery__item--hero' : ''}" data-project="${project.slug}">
-          <article class="project-card glass" id="${project.anchor}" aria-labelledby="${project.anchor}-title" data-spotlight data-tilt="3">
-            <span class="spotlight" aria-hidden="true"></span>
+          <article class="project-card paper" id="${project.anchor}" aria-labelledby="${project.anchor}-title">
             <div class="project-card__cover" data-project-cover>${cover(project, root)}</div>
             <div class="project-card__body">
               <p class="project-card__meta"><span class="status status--${project.status}"><span class="status__dot" aria-hidden="true"></span>${STATUS[project.status]}</span><span class="project-card__context">${project.context} · ${project.year}</span></p>
@@ -139,7 +138,7 @@ export function renderProjects({ projects }, { root }) {
                   Stack<span class="tool-btn__badge" data-stack-badge hidden></span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
-                <div class="stack-select__popover glass" data-stack-popover hidden>
+                <div class="stack-select__popover paper" data-stack-popover hidden>
                   <ul class="stack-select__list" id="stack-listbox" role="listbox" aria-multiselectable="true" aria-labelledby="stack-button" tabindex="-1" data-stack-listbox>
                     ${stacks.map(([s, n], i) => html`<li class="stack-option" role="option" id="stack-opt-${i}" aria-selected="false" data-stack="${s}"><span class="stack-option__check" aria-hidden="true"></span><span class="stack-option__label">${s}</span><span class="stack-option__count">${n}</span></li>`)}
                   </ul>
@@ -162,11 +161,11 @@ export function renderProjects({ projects }, { root }) {
           <ul class="gallery__grid" data-gallery-grid>
             ${visible.map((p) => projectCard(p, root))}
           </ul>
-          <div class="gallery__empty glass hud-frame" data-gallery-empty hidden>
+          <div class="gallery__empty paper case-frame" data-gallery-empty hidden>
             <span class="gallery__empty-icon" aria-hidden="true">${ICONS.spark}</span>
             <p class="gallery__empty-title">No projects match</p>
             <p class="gallery__empty-text">Try another category, fewer stack filters or a shorter search.</p>
-            <button type="button" class="btn btn--sm aurora-border" data-gallery-clear>Clear filters</button>
+            <button type="button" class="btn btn--sm btn--ink" data-gallery-clear>Clear filters</button>
           </div>
         </div>`;
 }
@@ -184,14 +183,13 @@ export function renderAchievements({ achievements }, { root }) {
   const feature = (item) => {
     const size = imageSize(join(root, 'public', item.image));
     const caption = `${item.image_alt} — ${item.title}`;
-    return html`<article class="award-feature glass" id="${item.anchor}" data-spotlight>
-              <span class="spotlight" aria-hidden="true"></span>
+    return html`<article class="award-feature paper" id="${item.anchor}">
               <a class="award-feature__media" href="${item.image}" data-lightbox data-caption="${caption}" aria-label="View photo larger: ${item.title}" data-cursor>
                 <img src="${item.image}" width="${size.width}" height="${size.height}" alt="${item.image_alt}" loading="lazy" decoding="async" />
                 <span class="award-feature__zoom" aria-hidden="true">${ICONS.expand}</span>
               </a>
               <div class="award-feature__body">
-                <p class="award__kind"><span class="chip chip--kind" data-hue="amber">${ICONS.trophy}Award</span>${item.date ? html`<span class="award__date">${timeEl(item.date)}</span>` : ''}</p>
+                <p class="award__kind"><span class="chip chip--kind" data-hue="brass">${ICONS.trophy}Award</span>${item.date ? html`<span class="award__date">${timeEl(item.date)}</span>` : ''}</p>
                 <h3 class="award__title">${item.title}</h3>
                 <p class="award__event">${item.event}</p>
                 ${item.detail ? html`<p class="award__detail">${item.detail}</p>` : ''}
@@ -201,9 +199,8 @@ export function renderAchievements({ achievements }, { root }) {
 
   const stat = (item) => {
     const m = item.title.match(ORDINAL);
-    return html`<article class="award-stat glass" id="${item.anchor}" data-spotlight>
-              <span class="spotlight" aria-hidden="true"></span>
-              <h3 class="award-stat__title">${m ? html`<span class="award-stat__big text-aurora">${m[1]}</span> <span class="award-stat__rest">${m[2]}</span>` : item.title}</h3>
+    return html`<article class="award-stat paper" id="${item.anchor}">
+              <h3 class="award-stat__title">${m ? html`<span class="award-stat__big text-rust">${m[1]}</span> <span class="award-stat__rest">${m[2]}</span>` : item.title}</h3>
               <p class="award__event">${item.event}</p>
               ${item.date ? html`<p class="award__date">${timeEl(item.date)}</p>` : ''}
               ${item.detail ? html`<p class="award__detail">${item.detail}</p>` : ''}
@@ -211,8 +208,7 @@ export function renderAchievements({ achievements }, { root }) {
   };
 
   // Credentials: issuer, year and type only; no "verified" claim without a verification link.
-  const cred = (item) => html`<li class="cred glass" id="${item.anchor}" data-spotlight>
-                <span class="spotlight" aria-hidden="true"></span>
+  const cred = (item) => html`<li class="cred paper" id="${item.anchor}">
                 <span class="cred__icon" aria-hidden="true">${ICONS.badge}</span>
                 <h3 class="cred__title">${item.title}</h3>
                 <p class="cred__issuer">${item.event}</p>
@@ -244,7 +240,7 @@ export function renderVideoSection({ root }) {
           </div>`;
   }
   return html`<div class="video-stage">
-            <div class="video-soon glass hud-frame">
+            <div class="video-soon paper case-frame">
               <span class="video-soon__icon" aria-hidden="true">${ICONS.film}</span>
               <p class="hud-label">Promo film · arrives in P9</p>
               <p class="video-soon__title">A 45-second film about my work</p>
@@ -262,8 +258,10 @@ export const INTRO_VIDEO = '/video/intro.mp4';
 /**
  * Inner stage of the first-visit intro (src/ui/start.js). If public/video/intro.mp4 exists at
  * build time it plays instead of the placeholder sting (muted, playsinline, like promo.mp4).
- * The visible word is profile.short_name, the tagline is profile.title.
+ * The visible word is profile.short_name; the tagline is fixed case-file copy.
  */
+export const INTRO_TAGLINE = 'A new sheriff arrives in town';
+
 export function renderIntroStage({ profile }, { root }) {
   if (existsSync(join(root, 'public', INTRO_VIDEO))) {
     return html`<video class="intro__video" data-intro-video src="${INTRO_VIDEO}" muted playsinline preload="auto" aria-hidden="true"></video>`;
@@ -272,6 +270,6 @@ export function renderIntroStage({ profile }, { root }) {
   return html`<div class="intro__stage" aria-hidden="true">
             <span class="intro__sweep"></span>
             <p class="intro__word">${[...word].map((ch) => html`<span class="intro__letter">${ch}</span>`)}</p>
-            <p class="intro__tagline">${profile.title}</p>
+            <p class="intro__tagline">${INTRO_TAGLINE}</p>
           </div>`;
 }

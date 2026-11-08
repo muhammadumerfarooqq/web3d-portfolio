@@ -7,8 +7,8 @@
     <!-- description + og:description are generated from content/profile.md (scripts/content/plugin.mjs) -->
     <!--content:head-->
     <meta name="color-scheme" content="dark light" />
-    <meta name="theme-color" content="#07060F" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#F7F5FF" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#14100C" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#E9DCC0" media="(prefers-color-scheme: light)" />
 
     <!-- Open Graph (absolute image URL is set once the production domain is final) -->
     <meta property="og:type" content="website" />
@@ -25,21 +25,18 @@
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
 
-    <!-- Classic-mode aurora background (CSS only) -->
-    <div class="aurora" aria-hidden="true">
-      <span class="aurora__blob aurora__blob--violet"></span>
-      <span class="aurora__blob aurora__blob--magenta"></span>
-      <span class="aurora__blob aurora__blob--cyan"></span>
-      <span class="aurora__blob aurora__blob--amber"></span>
-      <span class="grain"></span>
-    </div>
+    <!-- Classic-mode backdrop: parchment + paper grain (CSS only) -->
+    <div class="paper-bg" aria-hidden="true"><span class="grain"></span></div>
 
     <div class="scroll-progress" aria-hidden="true"><span class="scroll-progress__bar" data-progress-bar></span></div>
     <span class="top-sentinel" data-top-sentinel aria-hidden="true"></span>
 
     <header class="site-header" data-header data-inert-when-menu>
       <div class="site-header__inner">
-        <a class="monogram text-aurora" href="#home" aria-label="Umer, back to the top">UMER</a>
+        <a class="monogram" href="#home" aria-label="Umer, back to the top">
+          <svg class="monogram__star" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 1.5l2.6 6.1 6.6.5-5 4.3 1.6 6.4L12 15.4l-5.8 3.4 1.6-6.4-5-4.3 6.6-.5z" /><circle cx="12" cy="10.6" r="2.2" /></svg>
+          <span aria-hidden="true">UMER</span>
+        </a>
 
         <nav class="primary-nav" aria-label="Primary">
           <ul class="primary-nav__list">
@@ -56,7 +53,7 @@
 
         <div class="header-actions">
           <span class="tooltip-wrap" data-tooltip-wrap>
-            <button type="button" class="btn btn--sm" aria-disabled="true" aria-describedby="explore-tip" data-magnetic="0.25" data-mode-toggle>
+            <button type="button" class="btn btn--sm" aria-disabled="true" aria-describedby="explore-tip" data-mode-toggle>
               <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                 <path d="M12 3 20 18H4Z" />
                 <path d="M2 13h7" />
@@ -161,18 +158,18 @@
     <main id="main" tabindex="-1" data-inert-when-menu>
       <section id="home" class="section section--hero" data-section data-index="00" data-label="Home" aria-labelledby="home-title" data-reveal-immediate>
         <div class="container hero">
-          <p class="hud-label" aria-hidden="true" data-reveal="type-on">00 — Home</p>
+          <p class="hud-label" aria-hidden="true" data-reveal="type-on">Case file No. 021 · Byte Island Sheriff’s Dept.</p>
           <!--content:hero-title-->
           <div class="hero__row">
             <div class="hero__lead">
               <!--content:hero-statement-->
               <!--content:hero-intro-->
               <div class="hero__ctas" data-reveal="fade-up" data-reveal-delay="0.55">
-                <a class="btn aurora-border" href="#projects" data-magnetic data-cursor>
+                <a class="btn btn--ink" href="#projects" data-cursor>
                   <span>View projects</span>
                   <svg class="btn__icon btn__icon--nudge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
                 </a>
-                <a class="btn" href="#chat" data-magnetic data-cursor>
+                <a class="btn" href="#chat" data-cursor>
                   <span>Ask my AI</span>
                   <svg class="btn__icon btn__icon--nudge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M4 5h16v11H9l-5 4z" /><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" /></svg>
                 </a>
@@ -187,7 +184,7 @@
       <section id="about" class="section" data-section data-index="01" data-label="About" aria-labelledby="about-title">
         <div class="container">
           <div class="section__head">
-            <p class="hud-label" aria-hidden="true" data-reveal="type-on">01 — About</p>
+            <p class="hud-label" aria-hidden="true" data-reveal="type-on">01 · The sheriff’s office</p>
             <h2 id="about-title" class="section__title" data-reveal="mask-lines">About me</h2>
           </div>
           <!--content:about-->
@@ -197,7 +194,7 @@
       <section id="skills" class="section" data-section data-index="02" data-label="Skills" aria-labelledby="skills-title">
         <div class="container">
           <div class="section__head">
-            <p class="hud-label" aria-hidden="true" data-reveal="type-on">02 — Skills</p>
+            <p class="hud-label" aria-hidden="true" data-reveal="type-on">02 · The workshop</p>
             <h2 id="skills-title" class="section__title" data-reveal="mask-lines">Skills &amp; technologies</h2>
           </div>
           <!--content:skills-->
@@ -207,7 +204,7 @@
       <section id="projects" class="section" data-section data-index="03" data-label="Projects" aria-labelledby="projects-title">
         <div class="container">
           <div class="section__head">
-            <p class="hud-label" aria-hidden="true" data-reveal="type-on">03 — Projects</p>
+            <p class="hud-label" aria-hidden="true" data-reveal="type-on">03 · The bounty board</p>
             <h2 id="projects-title" class="section__title" data-reveal="mask-lines">Projects</h2>
           </div>
           <!--content:projects-->
@@ -217,7 +214,7 @@
       <section id="achievements" class="section" data-section data-index="04" data-label="Achievements" aria-labelledby="achievements-title">
         <div class="container">
           <div class="section__head">
-            <p class="hud-label" aria-hidden="true" data-reveal="type-on">04 — Achievements</p>
+            <p class="hud-label" aria-hidden="true" data-reveal="type-on">04 · The vault</p>
             <h2 id="achievements-title" class="section__title" data-reveal="mask-lines">Achievements</h2>
           </div>
           <!--content:achievements-->
@@ -227,7 +224,7 @@
       <section id="journey" class="section" data-section data-index="05" data-label="Journey" aria-labelledby="journey-title">
         <div class="container">
           <div class="section__head">
-            <p class="hud-label" aria-hidden="true" data-reveal="type-on">05 — Journey</p>
+            <p class="hud-label" aria-hidden="true" data-reveal="type-on">05 · The railway</p>
             <h2 id="journey-title" class="section__title" data-reveal="mask-lines">Journey</h2>
           </div>
           <!--content:journey-->
@@ -237,7 +234,7 @@
       <section id="video" class="section" data-section data-index="06" data-label="Video" aria-labelledby="video-title">
         <div class="container">
           <div class="section__head">
-            <p class="hud-label" aria-hidden="true" data-reveal="type-on">06 — Video</p>
+            <p class="hud-label" aria-hidden="true" data-reveal="type-on">06 · The picture house</p>
             <h2 id="video-title" class="section__title" data-reveal="mask-lines">Video</h2>
           </div>
           <!--content:video-->
@@ -247,11 +244,11 @@
       <section id="chat" class="section" data-section data-index="07" data-label="Ask my AI" aria-labelledby="chat-title">
         <div class="container">
           <div class="section__head">
-            <p class="hud-label" aria-hidden="true" data-reveal="type-on">07 — Ask my AI</p>
+            <p class="hud-label" aria-hidden="true" data-reveal="type-on">07 · Question the sheriff</p>
             <h2 id="chat-title" class="section__title" data-reveal="mask-lines">Ask my AI</h2>
           </div>
-          <div class="placeholder-card glass hud-frame" data-slot="chat" data-reveal="fade-up">
-            <div class="placeholder-card__icon holo-mini" aria-hidden="true">
+          <div class="placeholder-card paper case-frame" data-slot="chat" data-reveal="fade-up">
+            <div class="placeholder-card__icon stamp-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M4 5h16v11H9l-5 4z" /><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" /></svg>
             </div>
             <div class="placeholder-card__body">
@@ -272,11 +269,11 @@
       <section id="contact" class="section" data-section data-index="08" data-label="Contact" aria-labelledby="contact-title">
         <div class="container">
           <div class="section__head">
-            <p class="hud-label" aria-hidden="true" data-reveal="type-on">08 — Contact</p>
+            <p class="hud-label" aria-hidden="true" data-reveal="type-on">08 · The telegraph office</p>
             <h2 id="contact-title" class="section__title" data-reveal="mask-lines">Contact</h2>
           </div>
-          <div class="placeholder-card glass hud-frame" data-slot="contact" data-reveal="fade-up">
-            <div class="placeholder-card__icon holo-mini" aria-hidden="true">
+          <div class="placeholder-card paper case-frame" data-slot="contact" data-reveal="fade-up">
+            <div class="placeholder-card__icon stamp-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" focusable="false"><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="m4 7 8 6 8-6" /></svg>
             </div>
             <div class="placeholder-card__body">
@@ -294,12 +291,12 @@
 
     <footer class="site-footer" data-inert-when-menu>
       <div class="container">
-        <div class="site-footer__inner glass">
+        <div class="site-footer__inner paper case-frame">
           <p class="site-footer__copy">© <span data-year>2026</span> Muhammad Umer Farooq</p>
           <ul class="social-list">
             <!--content:social-footer-->
           </ul>
-          <a class="btn aurora-border" href="#home" data-magnetic data-cursor>
+          <a class="btn btn--ink" href="#home" data-cursor>
             <span>Back to top</span>
             <svg class="btn__icon btn__icon--lift" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 19V5M6 11l6-6 6 6" /></svg>
           </a>
@@ -351,14 +348,14 @@
     <!-- Start screen: sound + mode (src/ui/start.js, mode via src/ui/mode.js). Never opened without JS. -->
     <dialog class="start" aria-labelledby="start-title" aria-describedby="start-desc" data-start>
       <div class="start__card">
-        <p class="start__eyebrow">Welcome</p>
+        <p class="start__eyebrow">Notice · Byte Island Sheriff’s Dept.</p>
         <h2 class="start__title" id="start-title">How would you like to look around?</h2>
         <p class="start__desc" id="start-desc">Pick a mode and whether you want sound. You can change both later from the header.</p>
 
         <div class="start__returning" data-start-returning hidden>
           <p class="start__summary">Last time: <span data-start-summary></span></p>
           <div class="start__actions">
-            <button type="button" class="btn aurora-border" data-start-continue>Continue</button>
+            <button type="button" class="btn btn--ink" data-start-continue>Continue</button>
             <button type="button" class="btn" data-start-change>Change</button>
           </div>
         </div>
@@ -379,7 +376,7 @@
           </fieldset>
           <p class="start__status" role="status" aria-live="polite" data-start-status></p>
           <div class="start__actions">
-            <button type="button" class="btn aurora-border" data-start-enter="on">Enter with sound</button>
+            <button type="button" class="btn btn--ink" data-start-enter="on">Enter with sound</button>
             <button type="button" class="btn" data-start-enter="off">Enter silently</button>
           </div>
         </div>
