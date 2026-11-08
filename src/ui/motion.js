@@ -16,6 +16,21 @@ export function getLenis() {
 }
 
 const delayOf = (el) => Number.parseFloat(el.dataset.revealDelay) || 0;
+
+// While the intro / start screen covers the page (html[data-boot], src/ui/start.js), hero reveals
+// wait, then play when start.js dispatches "bootdone".
+const held = new Set();
+function hold(el, tween) {
+  if (document.documentElement.dataset.boot && el.closest('[data-reveal-immediate]')) {
+    tween.pause(0);
+    held.add(tween);
+  }
+  return tween;
+}
+window.addEventListener('bootdone', () => {
+  for (const tween of held) tween.restart(true);
+  held.clear();
+});
 // Inside [data-reveal-immediate] (the hero) reveals play on load; elsewhere they wait for scroll.
 const triggerFor = (el) =>
   el.closest('[data-reveal-immediate]') ? undefined : { trigger: el, start: 'top 88%', once: true };
@@ -26,14 +41,14 @@ const triggerFor = (el) =>
 // and focusing one scrolls it into view, which plays its reveal.
 const REVEALS = {
   'fade-up': (el) =>
-    gsap.from(el, {
+    hold(el, gsap.from(el, {
       y: 48,
       opacity: 0,
       duration: 1.1,
       ease: 'expo.out',
       delay: delayOf(el),
       scrollTrigger: triggerFor(el),
-    }),
+    })),
 
   'mask-lines': (el) =>
     SplitText.create(el, {
@@ -42,14 +57,14 @@ const REVEALS = {
       linesClass: 'split-line',
       autoSplit: true,
       onSplit: (self) =>
-        gsap.from(self.lines, {
+        hold(el, gsap.from(self.lines, {
           yPercent: 110,
           duration: 1.1,
           ease: 'expo.out',
           stagger: 0.08,
           delay: delayOf(el),
           scrollTrigger: triggerFor(el),
-        }),
+        })),
     }),
 
   chars: (el) =>
@@ -57,7 +72,7 @@ const REVEALS = {
       type: 'words,chars',
       autoSplit: true,
       onSplit: (self) =>
-        gsap.from(self.chars, {
+        hold(el, gsap.from(self.chars, {
           yPercent: 70,
           opacity: 0,
           duration: 0.9,
@@ -65,34 +80,41 @@ const REVEALS = {
           stagger: 0.03,
           delay: delayOf(el),
           scrollTrigger: triggerFor(el),
-        }),
+        })),
     }),
 
   // The card rises, then its [data-reveal-item] children (chips) follow in a quick stagger.
   stagger: (el) =>
-    gsap
+    hold(el, gsap
       .timeline({ delay: delayOf(el), scrollTrigger: triggerFor(el) })
       .from(el, { y: 40, opacity: 0, duration: 1, ease: 'expo.out' })
-      .from(el.querySelectorAll('[data-reveal-item]'), { y: 14, opacity: 0, duration: 0.6, ease: 'expo.out', stagger: 0.04 }, '-=0.7'),
+      .from(el.querySelectorAll('[data-reveal-item]'), { y: 14, opacity: 0, duration: 0.6, ease: 'expo.out', stagger: 0.04 }, '-=0.7')),
 
   'type-on': (el) =>
     SplitText.create(el, {
       type: 'words,chars',
       onSplit: (self) =>
-        gsap.from(self.chars, {
+        hold(el, gsap.from(self.chars, {
           opacity: 0,
           duration: 0.01,
           stagger: 0.035,
           ease: 'none',
           delay: delayOf(el),
           scrollTrigger: triggerFor(el),
-        }),
+        })),
     }),
 };
 
-function initReveals() {
+/** Yield to the main thread so start-up never becomes one long task (Lighthouse TBT). */
+export const yieldToMain = () =>
+  globalThis.scheduler?.yield ? globalThis.scheduler.yield() : new Promise((resolve) => setTimeout(resolve, 0));
+
+// Each SplitText measures layout after the previous one mutated the DOM, so every reveal costs a
+// layout pass: one element per task keeps each task short.
+async function initReveals() {
   for (const el of document.querySelectorAll('[data-reveal]')) {
     REVEALS[el.dataset.reveal]?.(el);
+    await yieldToMain();
   }
 }
 
@@ -114,6 +136,7 @@ function initCounters() {
   }
 }
 
+/** Lenis + ticker (synchronous: the start screen and nav need the instance). */
 export function initMotion({ reduced }) {
   if (reduced) return;
 
@@ -121,8 +144,12 @@ export function initMotion({ reduced }) {
   lenis.on('scroll', ScrollTrigger.update);
   gsap.ticker.add((time) => lenis.raf(time * 1000));
   gsap.ticker.lagSmoothing(0);
+}
 
-  initReveals();
+/** Reveal start states + counters, spread over many short tasks. Resolve before data-motion=ready. */
+export async function initRevealMotion({ reduced }) {
+  if (reduced) return;
+  await initReveals();
   initCounters();
 
   // Line breaks and trigger positions settle once the web fonts are in.

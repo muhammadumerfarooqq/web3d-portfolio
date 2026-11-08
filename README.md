@@ -88,3 +88,15 @@ Every known limitation and issue since P0, with its impact, a plain-English defe
   - **Security:** control C8 (DOM-sink and URL-state hygiene), tested in `tests/security/p2-gallery.test.js`.
   - **Decision record (9-Nov-2026):** the avatar becomes a stylized animated-film human built from Blender bpy scripts (DESIGN.md §7). The Blender MCP is retired (removed from `.mcp.json`, C4 retired, R5 closed).
   - **New doc:** [docs/LIMITATIONS.md](docs/LIMITATIONS.md).
+- **P2 Step 4 (P2 exit): intro, start screen, mode shell, responsive + accessibility pass, Lighthouse.**
+  - **Intro (first visit):** a ~6 s CSS/GSAP placeholder sting (aurora sweep, "UMER" assembling letter by letter, the title as tagline). It is replaced automatically by `public/video/intro.mp4` (muted, playsinline) once that file exists. **Skip intro** is visible and focused from 0 s and Esc skips. It plays once (`intro="seen"`) and never under reduced motion. `public/theme-init.js` sets `html[data-boot]` before first paint, so there is no flash of the page.
+  - **Start screen:** a glass dialog with the mode (Explore the island: "Arrives in P3", choice saved; Classic portfolio) and Enter with sound / Enter silently (sets the sound preference). Returning visitors get a one-tap **Continue** plus **Change**. It is a labelled modal with a live region, and focus then returns to the top of the page. With JS off there is no intro or start screen.
+  - **Mode shell:** `src/ui/mode.js` is the single place that sets `html[data-mode]` and dispatches `modechange` (the P3 hook). It defaults to Classic under reduced motion, without WebGL2 (detected, context released) or with Save-Data.
+  - **QA:** headless Chrome at 320, 360, 390, 768, 1024, 1366 and 1440 px in both themes. No horizontal scroll anywhere. The keyboard walkthrough (start → skip link → nav → every control → footer) has visible focus throughout. Semantics: one h1, no heading jumps, landmarks, labelled dialogs.
+  - **Lighthouse** (local production build, reports in `docs/reports/lighthouse/`): desktop 99–100, mobile 95–96 for Performance; Accessibility, Best Practices and SEO are 100 in all four runs. Fixes made for it:
+    - font preloads (CLS 0.47 → 0);
+    - no blur filter on the sweep (mobile TBT 2.9 s → 0.2 s);
+    - start-up split into short tasks;
+    - a contentful first intro frame (mobile LCP 3.4 s → 1.8 s);
+    - `robots.txt`.
+  - **Tests and security:** `tests/start.test.js`, `tests/security/p2-exit.test.js` and `tests/assets.test.js` (avatar GLB/.blend). C6 is extended to the `intro` and `mode` keys. `lighthouse@13.6.0` is a dev dependency (exact pin, no install scripts).

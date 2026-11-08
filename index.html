@@ -56,7 +56,7 @@
 
         <div class="header-actions">
           <span class="tooltip-wrap" data-tooltip-wrap>
-            <button type="button" class="btn btn--sm" aria-disabled="true" aria-describedby="explore-tip" data-magnetic="0.25">
+            <button type="button" class="btn btn--sm" aria-disabled="true" aria-describedby="explore-tip" data-magnetic="0.25" data-mode-toggle>
               <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                 <path d="M12 3 20 18H4Z" />
                 <path d="M2 13h7" />
@@ -339,6 +339,50 @@
         <button type="button" class="icon-btn lightbox__nav lightbox__nav--next" aria-label="Next photo" data-lightbox-next hidden>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m9 6 6 6-6 6" /></svg>
         </button>
+      </div>
+    </dialog>
+
+    <!-- First-visit intro (src/ui/start.js). Hidden without JS; theme-init.js shows it before first paint. -->
+    <div class="intro" role="dialog" aria-modal="true" aria-label="Intro" data-intro hidden>
+      <!--content:intro-->
+      <button type="button" class="btn btn--sm intro__skip" data-intro-skip>Skip intro <kbd>Esc</kbd></button>
+    </div>
+
+    <!-- Start screen: sound + mode (src/ui/start.js, mode via src/ui/mode.js). Never opened without JS. -->
+    <dialog class="start" aria-labelledby="start-title" aria-describedby="start-desc" data-start>
+      <div class="start__card">
+        <p class="start__eyebrow">Welcome</p>
+        <h2 class="start__title" id="start-title">How would you like to look around?</h2>
+        <p class="start__desc" id="start-desc">Pick a mode and whether you want sound. You can change both later from the header.</p>
+
+        <div class="start__returning" data-start-returning hidden>
+          <p class="start__summary">Last time: <span data-start-summary></span></p>
+          <div class="start__actions">
+            <button type="button" class="btn aurora-border" data-start-continue>Continue</button>
+            <button type="button" class="btn" data-start-change>Change</button>
+          </div>
+        </div>
+
+        <div class="start__choices" data-start-choices>
+          <fieldset class="start__group">
+            <legend class="start__legend">Mode</legend>
+            <div class="start__options">
+              <button type="button" class="start-option" aria-pressed="false" aria-disabled="true" aria-describedby="explore-note" data-mode-option="explore">
+                <span class="start-option__name">Explore the island</span>
+                <span class="start-option__note" id="explore-note" data-explore-note>Arrives in P3 · your choice is saved</span>
+              </button>
+              <button type="button" class="start-option" aria-pressed="true" data-mode-option="classic">
+                <span class="start-option__name">Classic portfolio</span>
+                <span class="start-option__note">Scroll through every section</span>
+              </button>
+            </div>
+          </fieldset>
+          <p class="start__status" role="status" aria-live="polite" data-start-status></p>
+          <div class="start__actions">
+            <button type="button" class="btn aurora-border" data-start-enter="on">Enter with sound</button>
+            <button type="button" class="btn" data-start-enter="off">Enter silently</button>
+          </div>
+        </div>
       </div>
     </dialog>
 

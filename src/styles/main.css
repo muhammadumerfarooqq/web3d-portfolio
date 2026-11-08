@@ -304,8 +304,9 @@
     transition: transform 0.35s var(--ease-expo-out);
   }
 
-  .skip-link:focus-visible,
-  .skip-link:focus {
+  /* :focus-visible only: start.js returns focus here after the start screen, and a mouse user
+     should not see it pop in (keyboard users do, and their next Tab reaches the nav). */
+  .skip-link:focus-visible {
     transform: translateY(0);
   }
 
@@ -1233,8 +1234,9 @@
     cursor: default !important;
   }
 
-  /* Reveal targets wait for src/ui/motion.js (theme-init.js adds .js unless reduced motion). */
-  html.js:not([data-motion='ready']) [data-reveal] {
+  /* Reveal targets wait for src/ui/motion.js (theme-init.js adds .js unless reduced motion).
+     The hero h1 is exempt so it can be the LCP element on first paint. */
+  html.js:not([data-motion='ready']) [data-reveal]:not(.hero__title) {
     visibility: hidden;
   }
 
@@ -3383,6 +3385,295 @@
 
   .placeholder-card__questions {
     margin-block-start: var(--space-2);
+  }
+}
+
+/* ─────────────────────────── Intro + start screen (P2.4) ─────────────────────────── */
+@layer components {
+  /* theme-init.js sets html[data-boot] before first paint, so the intro covers the page from frame 1.
+     Without JS the attribute never exists and [hidden] keeps both layers out of the page. */
+  .intro {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .intro[hidden] {
+    display: none;
+  }
+
+  html[data-boot='intro'] .intro[hidden] {
+    display: grid;
+  }
+
+  .intro__stage {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: var(--space-4);
+    padding-inline: var(--space-4);
+    container-type: inline-size;
+  }
+
+  .intro__sweep {
+    position: absolute;
+    inset: -20% -40%;
+    /* Soft by its wide colour stops alone: a blur filter here would be re-rasterised every frame. */
+    background: linear-gradient(100deg, transparent 22%, color-mix(in srgb, var(--violet) 34%, transparent) 38%, color-mix(in srgb, var(--magenta) 28%, transparent) 50%, color-mix(in srgb, var(--cyan) 26%, transparent) 62%, transparent 78%);
+    opacity: 0; /* start.js sweeps it across; stays invisible if the sting never runs */
+    will-change: transform, opacity;
+    pointer-events: none;
+  }
+
+  .intro__word {
+    position: relative;
+    display: flex;
+    perspective: 600px;
+    padding-block: 0.06em;
+    font-family: var(--font-display);
+    font-size: min(12rem, 20cqi);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .intro__letter {
+    display: inline-block;
+    color: var(--accent-text);
+  }
+
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    .intro__letter {
+      background-image: var(--aurora);
+      background-size: 400% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .intro__letter:nth-child(2) { background-position: 33% 0; }
+    .intro__letter:nth-child(3) { background-position: 66% 0; }
+    .intro__letter:nth-child(n + 4) { background-position: 100% 0; }
+  }
+
+  .intro__tagline {
+    position: relative;
+    font-family: var(--font-mono);
+    font-size: var(--fs-small);
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    text-align: center;
+    color: var(--text-muted);
+  }
+
+  .intro__video {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    object-fit: cover;
+  }
+
+  .intro__skip {
+    position: absolute;
+    inset-block-end: max(var(--space-6), env(safe-area-inset-bottom));
+    inset-inline-end: var(--space-6);
+    z-index: 1;
+  }
+
+  /* Focused from 0 s by start.js: show the ring even for that programmatic focus. */
+  .intro__skip:focus {
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  .intro__skip kbd {
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 0.75em;
+    color: var(--text-muted);
+    box-shadow: inset 0 0 0 1px var(--border-strong);
+  }
+
+  /* Start screen: glass card over the aurora */
+  .start {
+    inline-size: min(560px, calc(100vw - 32px));
+    max-inline-size: none;
+    max-block-size: calc(100dvh - 32px);
+    margin: auto;
+    padding: 0;
+    border: 0;
+    border-radius: var(--radius-lg);
+    color: var(--text);
+    background: transparent;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .start::backdrop {
+    background: color-mix(in srgb, var(--bg) 55%, transparent);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+
+  .start__card {
+    display: grid;
+    gap: var(--space-4);
+    padding: clamp(var(--space-6), 6vw, var(--space-10));
+    border-radius: var(--radius-lg);
+    background: var(--glass-strong);
+    -webkit-backdrop-filter: blur(24px) saturate(1.3);
+    backdrop-filter: blur(24px) saturate(1.3);
+    box-shadow: inset 0 0 0 1px var(--border-strong), var(--inner-glow), var(--shadow-soft);
+  }
+
+  .start__eyebrow {
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent-text);
+  }
+
+  .start__title {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 5vw, 2rem);
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+
+  .start__desc,
+  .start__summary {
+    color: var(--text-muted);
+  }
+
+  .start__summary span {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .start__returning,
+  .start__choices {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .start__returning[hidden],
+  .start__choices[hidden] {
+    display: none;
+  }
+
+  .start__group {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-inline-size: 0;
+  }
+
+  .start__legend {
+    margin-block-end: var(--space-2);
+    font-family: var(--font-mono);
+    font-size: var(--fs-label);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .start__options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+    gap: var(--space-3);
+  }
+
+  .start-option {
+    display: grid;
+    gap: var(--space-1);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    text-align: start;
+    color: var(--text);
+    background: var(--glass);
+    box-shadow: inset 0 0 0 1px var(--border);
+    transition: box-shadow 0.3s var(--ease-expo-out);
+  }
+
+  .start-option:hover {
+    box-shadow: inset 0 0 0 1px var(--border-strong);
+  }
+
+  .start-option[aria-pressed='true'] {
+    box-shadow: inset 0 0 0 2px var(--accent-text), var(--glow-cyan);
+  }
+
+  .start-option[aria-disabled='true'] .start-option__name {
+    opacity: 0.75;
+  }
+
+  .start-option__name {
+    font-weight: 600;
+  }
+
+  .start-option__note {
+    font-size: var(--fs-small);
+    color: var(--text-muted);
+  }
+
+  .start__status {
+    min-block-size: 1.5em;
+    font-size: var(--fs-small);
+    color: var(--accent-text);
+  }
+
+  .start__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .start__actions > .btn {
+    flex: 1 1 180px;
+  }
+
+  /* Short or narrow screens: tighter card so both choices and both buttons fit without scrolling */
+  @media (max-height: 720px), (max-width: 400px) {
+    .start__card {
+      gap: var(--space-3);
+      padding: var(--space-5);
+    }
+    .start__title {
+      font-size: 1.375rem;
+    }
+    .start-option {
+      padding: var(--space-3);
+    }
+    .start__status:empty {
+      display: none;
+    }
+  }
+
+  @media (max-height: 600px) {
+    .start__desc {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .start[open] {
+      animation: dialog-in 0.45s var(--ease-expo-out);
+    }
+  }
+
+  @media (forced-colors: active) {
+    .start-option[aria-pressed='true'] {
+      outline: 2px solid Highlight;
+    }
   }
 }
 

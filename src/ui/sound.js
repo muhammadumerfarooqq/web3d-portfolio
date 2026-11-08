@@ -7,21 +7,27 @@ export const SOUND_VALUES = ['on', 'off'];
 export const readSound = (storage) => readPref(SOUND_KEY, SOUND_VALUES, 'off', storage);
 export const writeSound = (value, storage) => writePref(SOUND_KEY, value, SOUND_VALUES, storage);
 
-function sync(state) {
+let state = 'off';
+
+function sync() {
   for (const btn of document.querySelectorAll('[data-sound-toggle]')) {
     btn.setAttribute('aria-pressed', String(state === 'on'));
   }
 }
 
+/** Set the preference (start screen or toggles); every toggle stays in sync. */
+export function setSound(value) {
+  if (!SOUND_VALUES.includes(value)) return;
+  state = value;
+  writeSound(state);
+  sync();
+  window.dispatchEvent(new CustomEvent('soundchange', { detail: { sound: state } }));
+}
+
 export function initSound() {
-  let state = readSound();
-  sync(state);
+  state = readSound();
+  sync();
   for (const btn of document.querySelectorAll('[data-sound-toggle]')) {
-    btn.addEventListener('click', () => {
-      state = state === 'on' ? 'off' : 'on';
-      writeSound(state);
-      sync(state);
-      window.dispatchEvent(new CustomEvent('soundchange', { detail: { sound: state } }));
-    });
+    btn.addEventListener('click', () => setSound(state === 'on' ? 'off' : 'on'));
   }
 }

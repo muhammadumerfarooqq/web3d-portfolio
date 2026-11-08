@@ -4,7 +4,7 @@ Every limitation or issue since P0, big or small. **Rules:** this file is update
 
 Sources: `docs/security.md` (limitations, risk register R1–R5, finding F1), `docs/PLAN.md` §12, the README progress log, and the QA of each step.
 
-Last updated: P2 Step 3 (9-Nov-2026).
+Last updated: P2 Step 4, P2 exit (9-Nov-2026).
 
 | ID | Limitation | Since | Impact | Viva defence | Planned fix (phase) | Status |
 |---|---|---|---|---|---|---|
@@ -36,13 +36,13 @@ Last updated: P2 Step 3 (9-Nov-2026).
 | L26 | Spike B video metadata race ("Loading…" could stay forever) | P1 | The info line could miss the duration if metadata loaded before the listener was attached. | The reusable player reads the duration at once when `readyState ≥ 1` and only otherwise waits for `loadedmetadata`. The dev-only spike page is kept unchanged as a record. | — | SOLVED in P2.3 |
 | L27 | The Spike B test page uses an inline module script | P1 | It would break a strict CSP. | It is a dev-only page that never enters the production build (tested). | — | ACCEPTED |
 | L28 | The OG image URL is relative | P2.1 | Some platforms need an absolute image URL for link previews. | It becomes absolute once the production domain is final. | P10, P11 | OPEN |
-| L29 | Lighthouse has not been run | P2.1 | No measured performance, accessibility or SEO scores yet. | Targets are in the plan (A11y ≥ 95, Perf ≥ 85) and measured in P11; headless checks already cover overflow, focus and console errors each step. | P10, P11 | OPEN |
+| L29 | Lighthouse has not been run | P2.1 | No measured performance, accessibility or SEO scores yet. | Targets are in the plan (A11y ≥ 95, Perf ≥ 85) and measured in P11; headless checks already cover overflow, focus and console errors each step. | P10, P11 | SOLVED in P2.4 (desktop 99–100, mobile 95–96; A11y, BP, SEO 100) |
 | L30 | Tested in Chrome only (Safari and Firefox untested) | P2.1 | Engine-specific bugs could be missed. | Standard CSS and JS with fallbacks (sRGB gradient fallback, View Transition fallback); cross-browser testing is scheduled. | P11 | OPEN |
 | L31 | No real-device testing (headless Chrome emulation only) | P2.1 | Touch and performance on real phones are unverified. | Layouts are checked at 320–1440 px every step; real devices are tested in P11. | P11 | OPEN |
 | L32 | Font and GSAP licence notes are missing from `docs/licenses/` | P2.1 | Licence evidence is incomplete for submission. | All fonts are OFL and GSAP is used under its free standard licence; the notes will be filed. | P12 | OPEN |
 | L33 | The "UMER" monogram uses gradient text below 32 px | P2.1 | Contrast varies along the word. | It is a logo, which WCAG exempts from contrast rules, and it has an accessible name. | — | ACCEPTED |
 | L34 | Contrast of text on glass over the moving aurora is not automated | P2.1 | Token pairs are tested, but not every composite background. | Glass panels sit on a deep (or pearl) base with low-opacity light; axe audits run in P10. | P10 | OPEN |
-| L35 | "Explore island" mode is disabled | P2.1 | No 3D mode yet. | Classic mode is the complete, accessible path; Explore arrives in P3. | P3 | OPEN |
+| L35 | "Explore island" mode is disabled | P2.1 | No 3D mode yet. | Classic mode is the complete, accessible path; Explore arrives in P3. | P3 | OPEN (mode shell + stored choice ready in P2.4) |
 | L36 | Content hot-reload in dev not exercised | P2.2 | Editing content may need a manual refresh in dev. | The plugin watches `content/` and sends a full reload; it has not been tested by hand yet. | P2.4 | OPEN |
 | L37 | "Available for work" is UI wording, not a content field | P2.2 | Availability cannot be switched off from content. | It is derived from `open_to`; a `profile.md` field can be added if needed. | P10 | OPEN |
 | L38 | Skills duplicated across categories (Python, JavaScript, TypeScript, SQL) | P2.2 | The same item appears twice in the skills bento. | It is a content choice (languages vs stacks); the marquee de-duplicates. | — | ACCEPTED |
@@ -71,3 +71,19 @@ Last updated: P2 Step 3 (9-Nov-2026).
 | L61 | Scope creep | P0 | Core features could be left unfinished. | No new feature until the current exit test passes; nothing outside §5 gets built. | Ongoing | ACCEPTED |
 | L62 | Time could run short | P0 | Polish might be cut. | The order of sacrifice is defined (micro-interactions → OG image → extra eval questions); a brief requirement is never cut. | Ongoing | ACCEPTED |
 | L63 | The After Effects MCP could break | P1 | Video automation could stop. | Fallback: Claude writes `.jsx` run via File → Scripts, rendered with aerender. | P9 | ACCEPTED |
+| L64 | Lighthouse runs on a local production build with simulated throttling | P2.4 | Scores on the live Vercel URL and real networks may differ. | Reports (JSON + HTML) are saved in `docs/reports/lighthouse/`; the same audit is repeated on the live URL before submission. | P11 | OPEN |
+| L65 | Lighthouse (fresh profile) always audits the first-visit intro | P2.4 | LCP and CLS are measured on the intro, not on the hero a returning visitor sees. | Both are measured: the intro in Lighthouse, the hero in headless QA (h1 exempt from hidden-until-ready, so it can paint at once). | P11 (also audit a returning visit) | ACCEPTED |
+| L66 | The intro is a CSS/GSAP placeholder sting | P2.4 | No rendered After Effects intro yet. | `public/video/intro.mp4` replaces it automatically at build time (muted, playsinline), the same pattern as the promo; tested. | P9 | OPEN |
+| L67 | The start screen appears on every visit | P2.4 | One extra tap before the page (returning visitors get a focused one-tap Continue). | The brief's mode choice and sound consent need a gate; Continue is pre-focused, Esc enters, and with JS off there is no gate at all. | — | ACCEPTED |
+| L68 | Choosing Explore only stores the preference | P2.4 | Picking Explore still shows Classic until P3. | The card says "Arrives in P3 · your choice is saved" and a live region confirms it; `src/ui/mode.js` is the single hook P3 flips (`EXPLORE_READY`). | P3 | OPEN |
+| L69 | The sound choice has no audio yet | P2.4 | "Enter with sound" changes nothing audible. | The preference is stored and synced to every toggle and a `soundchange` event is dispatched; sounds arrive with the 3D world (DESIGN.md §11). | P3 | OPEN |
+| L70 | Clicking the start-screen backdrop enters the site | P2.4 | A stray click outside the card dismisses it (keeping the current sound setting, Classic). | Same path as Esc, which a dialog must support; nothing is lost and both choices stay in the header. | — | ACCEPTED |
+| L71 | Deep links (`#project-…`) open after the start screen | P2.4 | One tap before the shared project modal opens. | The modal opens straight after Continue/Enter (tested); stacking two modals would trap focus confusingly. | — | ACCEPTED |
+| L72 | The intro letters start faint (12 % opacity), not invisible | P2.4 | The "assembling" effect is slightly less dramatic. | Chrome's LCP ignores opacity-0 text: a faint start makes the first frame contentful (mobile LCP 3.4 s → 1.8 s). | — | ACCEPTED |
+| L73 | The intro word and hero shifted when the web fonts arrived | P2.4 | Desktop CLS 0.47 in Lighthouse. | Syne and Inter (latin) are preloaded from the bundle at build time (same-origin, tested); CLS is now 0–0.004. | — | SOLVED in P2.4 |
+| L74 | The intro sweep's blur filter made the main thread stall on phones | P2.4 | Mobile TBT 2.9 s while the sting played. | The blur was dropped (the gradient is soft on its own) and the band is a compositor layer; mobile TBT is now 140–200 ms. | — | SOLVED in P2.4 |
+| L75 | Start-up ran as one long task | P2.4 | Mobile TBT ≈ 480 ms before this step. | Critical modules run first; the rest run one per task, and each reveal is set up in its own task (`yieldToMain`). | — | SOLVED in P2.4 |
+| L76 | After the start screen, Tab skipped the header nav | P2.4 | Keyboard users landed inside `#main`. | Focus returns to the skip link (shown on `:focus-visible` only), so the next Tab reaches the logo and nav; walkthrough verified. | — | SOLVED in P2.4 |
+| L77 | The start card scrolled inside the dialog at 320×640 | P2.4 | The eyebrow was cut off on small phones. | Compact spacing for short or narrow screens; the whole card fits at 320×640. | — | SOLVED in P2.4 |
+| L78 | No `robots.txt` (preview served the HTML instead) | P2.4 | Lighthouse SEO 91. | `public/robots.txt` added (allow all); SEO is 100. A sitemap comes with the final domain. | P11 (sitemap) | SOLVED in P2.4 |
+| L79 | The intro sting's timing was checked by sampling in headless Chrome | P2.4 | Headless frame pacing is uneven, so the motion was verified by numbers, not by eye. | The sweep position and the end-to-start-screen flow are measured; Umer checks it by eye in a real browser (SHOTLIST P2-13). | P2.4 (manual check) | OPEN |

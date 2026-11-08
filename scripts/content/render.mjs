@@ -1,7 +1,7 @@
 // Build-time renderer: /content → static HTML blocks for index.html. Every front-matter string is
 // escaped by escapeHtml() (through the html`` template); markdown goes through the safe markdown-it.
 import { ContentError } from './load.mjs';
-import { renderAchievements, renderProjects, renderVideoSection } from './gallery.mjs';
+import { renderAchievements, renderIntroStage, renderProjects, renderVideoSection } from './gallery.mjs';
 import {
   ICONS,
   SOCIAL,
@@ -305,6 +305,7 @@ export function renderSections(content, { photoSize, cvHref, root }) {
     achievements: renderAchievements(content, { root }),
     journey: renderJourney(content),
     video: renderVideoSection({ root }),
+    intro: renderIntroStage(content, { root }),
     'social-menu': renderSocial(content),
     'social-contact': renderSocial(content),
     'social-footer': renderSocial(content),

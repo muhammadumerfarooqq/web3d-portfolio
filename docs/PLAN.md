@@ -210,16 +210,16 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 ### Module 1 — 3D Web-Based Portfolio
 | # | Brief line | How we meet it | Phase | Evidence | Status |
 |---|---|---|---|---|---|
-| 1.1 | Responsive and visually appealing personal portfolio website | Design system (tokens, type scale, grid), polished UI, Lighthouse targets | P2, P11 | Screenshots at 3 breakpoints; Lighthouse report | 🟨 |
+| 1.1 | Responsive and visually appealing personal portfolio website | Design system (tokens, type scale, grid), polished UI, Lighthouse targets | P2, P11 | Screenshots at 3 breakpoints; Lighthouse report | ✅ (P2.4: Lighthouse desktop 99–100 / mobile 95–96, A11y/BP/SEO 100) |
 | 1.2 | Interactive 3D environment or 3D elements | Three.js scene: avatar, particle field, skills constellation, scroll-driven camera, raycasting | P3 | Screenshots + screen recording | ⬜ |
-| 1.3 | Home page with the name, introduction, and profile | Hero: name, title, intro, **profile card** (photo, role, city, LinkedIn/GitHub, web-CV download), CTAs | P2 | Hero screenshot | 🟨 (web CV pending) |
+| 1.3 | Home page with the name, introduction, and profile | Hero: name, title, intro, **profile card** (photo, role, city, LinkedIn/GitHub, web-CV download), CTAs | P2 | Hero screenshot | 🟨 (CV pending) |
 | 1.4 | About Me section | Bio + key stats with animated counters | P2 | Screenshot | ✅ |
 | 1.5 | Skills and technologies section | Categorized HTML skills list + 3D constellation with hover tooltips | P2, P3 | Screenshot | 🟨 (3D in P3) |
 | 1.6 | Projects and achievements gallery | Projects grid (images, stack chips, links, detail modal) + **achievements gallery** (award/certificate images, lightbox) | P2 | Screenshots | 🟨 (real screenshots pending) |
 | 1.7 | Education and experience section | Animated timeline (NED, Axisero, FYP) | P2 | Screenshot | ✅ |
 | 1.8 | Contact section | Contact form + social links | P2, P4 | Screenshot | ⬜ |
-| 1.9 | Smooth animations, navigation, and transitions | Lenis smooth scroll, sticky nav + active section, GSAP reveals, View Transitions for modals/theme, camera moves | P2, P3 | Screen recording | 🟨 |
-| 1.10 | Responsive design for desktop, tablet, and mobile | 360/768/1024/1440 layouts, touch interactions, lighter 3D on mobile | P2, P11 | Device screenshots | 🟨 |
+| 1.9 | Smooth animations, navigation, and transitions | Lenis smooth scroll, sticky nav + active section, GSAP reveals, View Transitions for modals/theme, camera moves | P2, P3 | Screen recording | ✅ (Classic; Explore camera moves in P3) |
+| 1.10 | Responsive design for desktop, tablet, and mobile | 360/768/1024/1440 layouts, touch interactions, lighter 3D on mobile | P2, P11 | Device screenshots | ✅ (P2.4: 320–1440 px, both themes, no horizontal scroll) |
 
 ### Module 2 — Custom 3D Avatar Using Blender
 | # | Brief line | How we meet it | Phase | Evidence | Status |
@@ -287,7 +287,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 | E5 | Animated 3D avatar expressions or gestures | Blink, Smile, Wave, Think, Nod. Event-driven: wave on load/click, think while the bot answers, nod on answer, smile on contact success | P8 | ⬜ |
 | E6 | Project filtering and search | Category chips + tech-stack filter + live search, URL-shareable state | P2 | ✅ |
 | E7 | Website analytics | Vercel Web Analytics (views, referrers, devices) + first-party events (chat, voice, video, project views, CV downloads, contact) charted in admin; no cookies, respects Do-Not-Track | P10 | ⬜ |
-| E8 | Accessibility enhancements | WCAG 2.2 AA: keyboard, skip link, focus, ARIA for chat/modals, captions (EN/UR) + transcript, accessible 3D alternatives, **accessibility menu** (reduce motion, pause 3D, larger text), `lang`/`dir` for Urdu, axe 0 serious | P2, P10 | ⬜ |
+| E8 | Accessibility enhancements | WCAG 2.2 AA: keyboard, skip link, focus, ARIA for chat/modals, captions (EN/UR) + transcript, accessible 3D alternatives, **accessibility menu** (reduce motion, pause 3D, larger text), `lang`/`dir` for Urdu, axe 0 serious | P2, P10 | 🟨 (base done in P2.4; accessibility menu later) |
 | E9 | Chatbot source citations linking to portfolio content | Source chips under each answer → scroll to and highlight the `#anchor` | P5 | ⬜ |
 | E10 | Project / task ordering system | **Visitor:** sort by featured / newest / A–Z. **Admin:** drag-and-drop project order (keyboard alternative), saved to Supabase and live instantly. **Task board:** contact messages as tasks (New → In progress → Replied → Archived), drag between columns | P2, P7 | 🟨 (admin ordering in P7) |
 

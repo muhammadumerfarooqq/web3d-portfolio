@@ -35,5 +35,11 @@ Required actions (glTF clips): Idle, IdleArmsCrossed, Walk, Run, Jump, Wave, Tal
 Suit `#2B2B2E` · Shirt `#141414` · Tie `#1A1A1A` · Silver `#C9CCD1` · Skin and hair sampled from the photos at P8.
 
 ## Animations / expressions (E5)
-Idle (loop) · Walk (loop) · Run (loop) · Jump · Wave · Talk (loop, with Mouth_Open) · Think (loop) · Nod · Blink · Smile.
+Idle (loop) · IdleArmsCrossed (loop) · Walk (loop) · Run (loop) · Jump · Wave · Talk (loop, with Mouth_Open) · Think (loop) · Nod · Blink · Smile.
 The "buttoning the jacket" pose from the photos is a good candidate for the hero idle pose or a gesture.
+
+## Status: built (9-Nov-2026)
+The avatar now exists:
+- `blender/avatar.blend`: the Blender source file.
+- `public/models/avatar.glb`: 1.6 MB, Draco-compressed, 9 clips (Idle, IdleArmsCrossed, Walk, Run, Jump, Wave, Talk, Think, Nod) and morph targets Blink, Smile, Mouth_Open.
+- `blender/scripts/`: the bpy scripts that rebuild both; the rebuild steps are in `blender/scripts/README.md`.

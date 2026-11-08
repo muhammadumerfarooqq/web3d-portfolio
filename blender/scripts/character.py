@@ -423,6 +423,55 @@ def watch(P):
     return smin(band, face, 0.003)
 
 
+
+# ============================================================== sheriff hat + badge
+def _hat_crown(P):
+    q = P - H
+    d = ellipsoid(q, v(0, 0.010, 0.118), (0.116, 0.136, 0.120))
+    d = smax(d, 0.080 - q[:, 2], 0.004)                         # open bottom at brim level
+    # cattleman crease along the top + two front pinches
+    d = ssub(d, ellipsoid(q, v(0, 0.0, 0.246), (0.020, 0.115, 0.034)), 0.020)
+    for s_ in (1, -1):
+        d = ssub(d, ellipsoid(q, v(s_ * 0.120, -0.060, 0.170), (0.022, 0.050, 0.060)), 0.018)
+    return d
+
+
+def hat(P):
+    q = P - H
+    x, y, z = q[:, 0], q[:, 1], q[:, 2]
+    a, b = 0.235, 0.215
+    # brim surface: sides curl up, front dips a little
+    z0 = 0.082 + 0.050 * (x / a) ** 2 - 0.010 * np.clip(-y / b, 0, 1) ** 2 + 0.006 * np.clip(y / b, 0, 1) ** 2
+    shell = np.abs(z - z0) * 0.93 - 0.0036
+    e = (np.sqrt((x / a) ** 2 + (y / b) ** 2) - 1.0) * 0.20
+    brim = smax(shell, e, 0.006)
+    return smin(brim, _hat_crown(P), 0.010)
+
+
+def hatband(P):
+    q = P - H
+    slab = np.abs(q[:, 2] - 0.104) - 0.017
+    return smax(_hat_crown(P) - 0.0032, slab, 0.003)
+
+
+def badge(P):
+    """Five-point sheriff star (rounded arms, ball tips) pinned to the left lapel."""
+    cx, cz = 0.092, 1.318
+    y0 = surface_y(torso_shape, cx, cz) - 0.0045
+    Q = P.copy()
+    Q[:, 1] = y0 + (P[:, 1] - y0) * 3.2            # flatten into a thin plate
+    R_tip = 0.046
+    c0 = v(cx, y0, cz)
+    d = None
+    for i in range(5):
+        ang = np.radians(90 + 72 * i)
+        tip = v(cx + R_tip * np.cos(ang), y0, cz + R_tip * np.sin(ang))
+        arm = round_cone(Q, c0, tip, 0.0125, 0.0030)
+        d = arm if d is None else smin(d, arm, 0.004)
+        d = smin(d, sphere(P, tip, 0.0062), 0.002)
+    return d
+
+
 # ============================================================== eyes (UV spheres, built in Blender)
 # ============================================================== export
 PARTS = {
@@ -441,6 +490,9 @@ PARTS = {
     "hand_L": (lambda P: hand(P, "L"), None, None, 0.0014),
     "hand_R": (lambda P: hand(P, "R"), None, None, 0.0014),
     "watch": (watch, None, None, 0.0008),
+    "hat": (hat, H + v(-0.25, -0.24, 0.02), H + v(0.25, 0.24, 0.29), 0.0017),
+    "hatband": (hatband, H + v(-0.14, -0.16, 0.07), H + v(0.14, 0.17, 0.14), 0.0010),
+    "badge": (badge, v(0.050, -0.16, 1.275), v(0.135, -0.06, 1.362), 0.0006),
 }
 
 

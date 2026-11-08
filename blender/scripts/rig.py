@@ -142,7 +142,7 @@ TORSO = ["hips", "spine", "chest", "neck"]
 
 for name, obj in objs.items():
     P = coords(obj)
-    if name in ("hair", "eyebrows"):
+    if name in ("hair", "eyebrows", "hat", "hatband"):
         w = rigid(P, "head")
     elif name.startswith("eye_"):
         w = rigid(P, "eye." + name[-1])
@@ -161,7 +161,7 @@ for name, obj in objs.items():
             for b in ARM_BONES[1:]:
                 w[b.format(s)] *= (1 - inside)
             w[f"clavicle.{s}"] *= 0.5
-    elif name in ("tie", "tie_clip", "button"):
+    elif name in ("tie", "tie_clip", "button", "badge"):
         z = P[:, 2]
         wc = smoothstep(1.16, 1.30, z)
         w = {"chest": wc, "spine": 1 - wc}

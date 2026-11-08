@@ -134,7 +134,9 @@ export function initProjectModal({ reduced, root, bySlug }) {
     if (m && bySlug.has(m[1]) && currentSlug !== m[1]) open(m[1], null, { morph: false });
   };
   window.addEventListener('hashchange', openFromHash);
-  openFromHash();
+  // A deep link opens once the intro / start screen (src/ui/start.js) has been dismissed.
+  if (document.documentElement.dataset.boot) window.addEventListener('bootdone', openFromHash, { once: true });
+  else openFromHash();
 
   return { open };
 }

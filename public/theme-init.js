@@ -3,11 +3,13 @@
 (function () {
   var root = document.documentElement;
   var theme = null;
+  var introSeen = false;
 
-  // Only the two known values are ever accepted from storage.
+  // Only known values are ever accepted from storage.
   try {
     var stored = window.localStorage.getItem('theme');
     if (stored === 'light' || stored === 'dark') theme = stored;
+    introSeen = window.localStorage.getItem('intro') === 'seen';
   } catch (e) {
     // Storage blocked (privacy mode, sandbox): fall through to the system preference.
   }
@@ -18,13 +20,21 @@
   }
   root.setAttribute('data-theme', theme);
 
-  // Reveal targets stay hidden until src/ui/motion.js has set their start states.
-  // Skipped under reduced motion; failsafe shows everything if the motion module never loads.
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (!reduceMotion) {
-    root.classList.add('js');
-    window.setTimeout(function () {
-      if (root.getAttribute('data-motion') !== 'ready') root.classList.remove('js');
-    }, 4000);
-  }
+
+  // Boot layer (src/ui/start.js): first visit with motion → the intro covers the page from the first
+  // frame; otherwise straight to the start screen. Without JS this never runs and the Classic page shows.
+  root.setAttribute('data-boot', introSeen || reduceMotion ? 'start' : 'intro');
+
+  // Reveal targets stay hidden until src/ui/motion.js has set their start states (skipped under
+  // reduced motion).
+  if (!reduceMotion) root.classList.add('js');
+
+  // Failsafes: if the module never loads (or stalls), show everything and drop the boot layer.
+  // data-shell="ready" means start.js has taken over the boot layer; data-motion="ready" means
+  // every reveal has its start state.
+  window.setTimeout(function () {
+    if (root.getAttribute('data-shell') !== 'ready') root.removeAttribute('data-boot');
+    if (root.getAttribute('data-motion') !== 'ready') root.classList.remove('js');
+  }, 4000);
 })();

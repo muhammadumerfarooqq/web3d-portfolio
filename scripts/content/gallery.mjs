@@ -254,3 +254,24 @@ export function renderVideoSection({ root }) {
             <div class="video-stage__transcript" data-slot="video-transcript"></div>
           </div>`;
 }
+
+/* ────────────────────────── Intro sting ────────────────────────── */
+
+export const INTRO_VIDEO = '/video/intro.mp4';
+
+/**
+ * Inner stage of the first-visit intro (src/ui/start.js). If public/video/intro.mp4 exists at
+ * build time it plays instead of the placeholder sting (muted, playsinline, like promo.mp4).
+ * The visible word is profile.short_name, the tagline is profile.title.
+ */
+export function renderIntroStage({ profile }, { root }) {
+  if (existsSync(join(root, 'public', INTRO_VIDEO))) {
+    return html`<video class="intro__video" data-intro-video src="${INTRO_VIDEO}" muted playsinline preload="auto" aria-hidden="true"></video>`;
+  }
+  const word = profile.short_name.toUpperCase();
+  return html`<div class="intro__stage" aria-hidden="true">
+            <span class="intro__sweep"></span>
+            <p class="intro__word">${[...word].map((ch) => html`<span class="intro__letter">${ch}</span>`)}</p>
+            <p class="intro__tagline">${profile.title}</p>
+          </div>`;
+}

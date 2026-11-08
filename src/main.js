@@ -1,47 +1,68 @@
-// Portfolio entry (Classic mode shell). The 3D island and section content arrive in P2.2/P3.
+// Portfolio entry (Classic mode shell). The 3D island arrives in P3 through src/ui/mode.js.
 import { initCursor } from './ui/cursor.js';
 import { initHud } from './ui/hud.js';
 import { initLightbox } from './ui/lightbox.js';
 import { initMagnetic } from './ui/magnetic.js';
 import { initMenu } from './ui/menu.js';
-import { initMotion } from './ui/motion.js';
+import { initMode } from './ui/mode.js';
+import { initMotion, initRevealMotion, yieldToMain } from './ui/motion.js';
 import { initNav } from './ui/nav.js';
 import { initGallery } from './ui/projects/gallery.js';
 import { initSound } from './ui/sound.js';
 import { initSpotlight } from './ui/spotlight.js';
+import { initStart } from './ui/start.js';
 import { initTheme } from './ui/theme.js';
 import { initTilt } from './ui/tilt.js';
 import { initTimeline } from './ui/timeline.js';
 import { initPlayer } from './ui/video.js';
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const root = document.documentElement;
 
 // One failing module must not take the rest of the shell down with it.
-function safely(name, init) {
+async function safely(name, init) {
   try {
-    init({ reduced });
+    await init({ reduced });
   } catch (error) {
     console.error(`[${name}] failed to initialise`, error);
   }
 }
 
-safely('theme', initTheme);
-safely('sound', initSound);
-safely('motion', initMotion); // before nav/menu: they use the Lenis instance
-safely('nav', initNav);
-safely('menu', initMenu);
-safely('hud', initHud);
-safely('timeline', initTimeline);
-safely('gallery', initGallery);
-safely('lightbox', initLightbox);
-// Players in the #video section; project players are enhanced when their modal opens.
-safely('video', () => document.querySelectorAll('#video [data-player]').forEach(initPlayer));
-safely('cursor', initCursor);
-safely('magnetic', initMagnetic);
-safely('tilt', initTilt);
-safely('spotlight', initSpotlight);
+// Critical path: what the first screen needs.
+const CRITICAL = [
+  ['theme', initTheme],
+  ['sound', initSound],
+  ['motion', initMotion], // Lenis: before nav/menu/start, which use the instance
+  ['nav', initNav],
+  ['menu', initMenu],
+  ['mode', initMode], // html[data-mode] + "modechange": the hook P3 uses
+  ['start', initStart], // intro + start screen
+];
+
+// The rest, one module per task (and one reveal per task), so start-up never blocks input for long.
+const DEFERRED = [
+  ['reveals', initRevealMotion],
+  ['hud', initHud],
+  ['timeline', initTimeline],
+  ['gallery', initGallery],
+  ['lightbox', initLightbox],
+  // Players in the #video section; project players are enhanced when their modal opens.
+  ['video', () => document.querySelectorAll('#video [data-player]').forEach(initPlayer)],
+  ['cursor', initCursor],
+  ['magnetic', initMagnetic],
+  ['tilt', initTilt],
+  ['spotlight', initSpotlight],
+];
 
 for (const el of document.querySelectorAll('[data-year]')) el.textContent = String(new Date().getFullYear());
 
+for (const [name, init] of CRITICAL) await safely(name, init);
+root.dataset.shell = 'ready'; // theme-init.js failsafe: start.js now owns the boot layer
+
+for (const [name, init] of DEFERRED) {
+  await yieldToMain();
+  await safely(name, init);
+}
+
 // Reveal start states are set: let theme-init.js's hidden-until-ready rule go.
-document.documentElement.dataset.motion = 'ready';
+root.dataset.motion = 'ready';

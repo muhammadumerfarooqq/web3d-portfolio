@@ -71,6 +71,9 @@ MAT = {
     "shirt": material("Shirt_Black", (0.060, 0.060, 0.066), rough=0.62, sheen=0.2),
     "tie": material("Tie_Satin", (0.030, 0.030, 0.034), rough=0.26, coat=0.35, spec=0.6),
     "silver": material("Silver", (0.80, 0.81, 0.83), rough=0.22, metal=1.0),
+    "felt": material("Hat_Felt", (0.30, 0.19, 0.105), rough=0.88, sheen=0.5),
+    "leather": material("Hat_Band", (0.045, 0.028, 0.020), rough=0.45, coat=0.2),
+    "gold": material("Badge_Gold", (0.95, 0.68, 0.22), rough=0.24, metal=1.0),
     "steel": material("Steel", (0.70, 0.71, 0.73), rough=0.30, metal=1.0),
     "shoe": material("Shoe_Leather", (0.022, 0.022, 0.024), rough=0.16, coat=0.6),
     "sole": material("Sole", (0.03, 0.028, 0.026), rough=0.8),
@@ -82,12 +85,12 @@ MAT = {
 TARGET_TRIS = {
     "head": 11000, "hair": 7500, "eyebrows": 700, "jacket": 8000, "shirt": 2400, "tie": 900,
     "tie_clip": 120, "button": 80, "trousers": 3200, "shoes": 1800, "soles": 700,
-    "hand_L": 2600, "hand_R": 2600, "watch": 500,
+    "hand_L": 2600, "hand_R": 2600, "watch": 500, "hat": 4200, "hatband": 600, "badge": 700,
 }
 PART_MAT = {
     "head": "skin", "hair": "hair", "eyebrows": "brow", "jacket": "suit", "shirt": "shirt", "tie": "tie",
     "tie_clip": "silver", "button": "button", "trousers": "suit", "shoes": "shoe", "soles": "sole",
-    "hand_L": "skin", "hand_R": "skin", "watch": "steel",
+    "hand_L": "skin", "hand_R": "skin", "watch": "steel", "hat": "felt", "hatband": "leather", "badge": "gold",
 }
 
 
