@@ -11,6 +11,7 @@ OUT = Path(sys.argv[1]); OUT.mkdir(parents=True, exist_ok=True)
 SAMPLES = int(sys.argv[sys.argv.index("--samples") + 1]) if "--samples" in sys.argv else 32
 random.seed(7)
 NIGHT = "--night" in sys.argv
+RENDER = "--no-render" not in sys.argv
 TAG = "night" if NIGHT else "day"
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
@@ -80,6 +81,9 @@ M = {
   "hay": mat_wood("Hay", (0.55, 0.42, 0.14), (0.86, 0.70, 0.30), 0.95, 22),
   "mesa": mat_ground("Mesa", (0.38, 0.17, 0.10), (0.74, 0.38, 0.20), 0.5),
   "water": mat_flat("Water", (0.04, 0.22, 0.30), 0.08),
+  "lh_red": mat_wood("LH_Red", (0.42, 0.07, 0.05), (0.62, 0.14, 0.09), 0.7, 6),
+  "lh_cream": mat_wood("LH_Cream", (0.70, 0.62, 0.48), (0.88, 0.82, 0.68), 0.7, 6),
+  "rope": mat_flat("Rope", (0.45, 0.36, 0.22), 0.95),
   "sea": mat_flat("Sea", (0.02, 0.16, 0.24), 0.05),
   "rut": mat_flat("Rut", (0.40, 0.26, 0.16), 0.95),
   "scrub": mat_wood("Scrub", (0.25, 0.28, 0.10), (0.55, 0.50, 0.22), 0.95, 12),
@@ -479,6 +483,94 @@ def station(c):
     new_obj("rails", bm, M["iron"])
 station(44.0)
 
+
+# ------------------------------------------------------------ ground height helper
+def ground_z(x, y):
+    dg = bpy.context.evaluated_depsgraph_get()
+    hit, loc, *_ = scene.ray_cast(dg, Vector((x, y, 60)), Vector((0, 0, -1)))
+    return loc.z if hit else 0.0
+
+# ------------------------------------------------------------ the dock (the sheriff arrives by boat)
+def dock(x0=3.0, y0=-27.0, length=19.0, width=3.2):
+    rg = random.Random(9); deck = 0.55
+    bm = bmesh.new()
+    n = int(length / 0.26)
+    for i in range(n):                      # deck planks across the pier, small gaps and jitter
+        yy = y0 - i * 0.26
+        if rg.random() < 0.03: continue     # a missing plank here and there
+        box(bm, Vector((x0 + rg.uniform(-0.02, 0.02), yy, deck + rg.uniform(-0.01, 0.01))), (width + rg.uniform(-0.1, 0.1), 0.22, 0.07), rz=rg.uniform(-0.01, 0.01))
+    for sx in (-1, 1):                      # stringers
+        box(bm, Vector((x0 + sx * (width / 2 - 0.15), y0 - length / 2, deck - 0.12)), (0.18, length, 0.18))
+    new_obj("dock_deck", bm, M["wood_b"])
+    bm = bmesh.new()
+    for i in range(0, int(length / 2.4) + 1):   # piles down into the sea
+        yy = y0 - i * 2.4
+        for sx in (-1, 1):
+            cyl(bm, Vector((x0 + sx * (width / 2 + 0.05), yy, deck - 1.6)), 0.16, 3.6, 10)
+            if i % 2 == 0: cyl(bm, Vector((x0 + sx * (width / 2 + 0.05), yy, deck + 0.55)), 0.13, 1.1, 10)   # rope posts
+    new_obj("dock_piles", bm, M["wood_d"])
+    cu = bpy.data.curves.new("dock_rope", "CURVE"); cu.dimensions = "3D"; cu.bevel_depth = 0.025
+    for sx in (-1, 1):
+        sp = cu.splines.new("POLY"); pts = [(x0 + sx * (width / 2 + 0.05), y0 - k * 2.4, deck + 1.0 - (0.18 if k % 2 else 0)) for k in range(0, int(length / 2.4) + 1)]
+        sp.points.add(len(pts) - 1)
+        for p, c in zip(sp.points, pts): p.co = (*c, 1)
+    ro = bpy.data.objects.new("dock_rope", cu); coll.objects.link(ro); ro.data.materials.append(M["rope"])
+    # dock lanterns + light
+    for yy in (y0 - 3, y0 - length + 1.5):
+        bm = bmesh.new(); cyl(bm, Vector((0, 0, 1.3)), 0.08, 2.6, 8); box(bm, Vector((0.3, 0, 2.55)), (0.6, 0.06, 0.06))
+        new_obj("dock_lamppost", bm, M["iron"], (x0 - width / 2 + 0.25, yy, deck))
+        bm = bmesh.new(); cyl(bm, Vector((0.55, 0, 2.35)), 0.12, 0.3, 8); new_obj("dock_lamp", bm, M["lantern"], (x0 - width / 2 + 0.25, yy, deck))
+        pl = bpy.data.lights.new("dockL", "POINT"); pl.energy = 180; pl.color = (1, 0.6, 0.25)
+        lo = bpy.data.objects.new("dockL", pl); coll.objects.link(lo); lo.location = (x0 - width / 2 + 0.8, yy, deck + 2.35)
+    # cargo on the dock
+    crate((x0 + 0.9, y0 - 5.0, deck + 0.04), 0.7, 0.3); crate((x0 + 1.0, y0 - 5.8, deck + 0.04), 0.55, 0.9); barrel((x0 - 0.9, y0 - 9.0, deck + 0.04))
+    # rowboat moored at the end
+    bm = bmesh.new(); r = bmesh.ops.create_uvsphere(bm, u_segments=20, v_segments=10, radius=1.0)
+    for v in r["verts"]:
+        v.co.x *= 0.75; v.co.y *= 2.3; v.co.z *= 0.55
+        if v.co.z > 0: v.co.z = 0.0
+    new_obj("rowboat", bm, M["wood_c"], (x0 + width / 2 + 1.4, y0 - length + 3, -0.30), 0.12)
+    bm = bmesh.new()
+    for yy in (-0.8, 0.3, 1.2): box(bm, Vector((0, yy, -0.05)), (1.25, 0.22, 0.06))
+    new_obj("rowboat_seats", bm, M["wood_b"], (x0 + width / 2 + 1.4, y0 - length + 3, -0.30), 0.12)
+
+# ------------------------------------------------------------ lighthouse on the south-west point
+def lighthouse(x=-24.0, y=-28.0):
+    rg = random.Random(4); gz = ground_z(x, y)
+    for k in range(9):
+        rock((x + rg.uniform(-3.5, 3.5), y + rg.uniform(-3.5, 3.5), gz - 0.2), rg.uniform(1.2, 2.6))
+    base = gz + 1.0; H = 11.0; segs = 6
+    for i in range(segs):                   # tapered, banded tower
+        z0 = base + i * H / segs; r0 = 1.9 - 0.75 * i / segs; r1 = 1.9 - 0.75 * (i + 1) / segs
+        bm = bmesh.new(); res = bmesh.ops.create_cone(bm, cap_ends=True, segments=24, radius1=r0, radius2=r1, depth=H / segs)
+        bmesh.ops.translate(bm, vec=(0, 0, z0 + H / segs / 2), verts=res["verts"])
+        new_obj(f"lighthouse_band{i}", bm, M["lh_red" if i % 2 == 0 else "lh_cream"], (x, y, 0))
+    top = base + H
+    bm = bmesh.new(); cyl(bm, Vector((0, 0, top + 0.12)), 1.75, 0.24, 24)            # gallery deck
+    for k in range(20):
+        a = k * math.tau / 20; box(bm, Vector((math.cos(a) * 1.65, math.sin(a) * 1.65, top + 0.62)), (0.05, 0.05, 0.8))
+    res = bmesh.ops.create_cone(bm, cap_ends=False, segments=24, radius1=1.68, radius2=1.68, depth=0.06)
+    bmesh.ops.translate(bm, vec=(0, 0, top + 1.02), verts=res["verts"])
+    res = bmesh.ops.create_cone(bm, cap_ends=True, segments=16, radius1=1.25, radius2=0.12, depth=1.3)   # roof cap
+    bmesh.ops.translate(bm, vec=(0, 0, top + 2.95), verts=res["verts"])
+    new_obj("lighthouse_iron", bm, M["iron"], (x, y, 0))
+    bm = bmesh.new(); cyl(bm, Vector((0, 0, top + 1.25)), 0.95, 1.9, 16)            # lamp room glass
+    new_obj("lighthouse_lamp", bm, M["lantern"], (x, y, 0))
+    pl = bpy.data.lights.new("beacon", "POINT"); pl.energy = 900; pl.color = (1, 0.72, 0.4); pl.shadow_soft_size = 0.6
+    lo = bpy.data.objects.new("beacon", pl); coll.objects.link(lo); lo.location = (x, y, top + 1.3)
+    bm = bmesh.new(); box(bm, Vector((0, 0, 0.0)), (0.8, 0.06, 1.6)); new_obj("lighthouse_door", bm, M["wood_d"], (x, y - 1.85, base + 0.8))
+    # keeper's hut
+    bm = bmesh.new(); boards(bm, -1.6, 1.6, -1.4, 0.0, 2.4)
+    for sx in (-1, 1):
+        for k in range(14): box(bm, Vector((sx * 1.6, -1.4 + 0.1 + k * 0.2, 1.2)), (0.06, 0.19, 2.4))
+    for i in range(16): box(bm, Vector((-1.6 + 0.1 + i * 0.2, 1.4, 1.2)), (0.19, 0.06, 2.4))
+    new_obj("keeper_hut", bm, M["wood_b"], (x + 4.2, y + 2.0, gz + 0.1), 0.3)
+    bm = bmesh.new()
+    for sx in (-1, 1): box(bm, Vector((sx * 0.9, 0, 2.8)), (2.0, 3.3, 0.09), ry=sx * 0.45)
+    new_obj("keeper_roof", bm, M["roof"], (x + 4.2, y + 2.0, gz + 0.1), 0.3)
+
+dock(); lighthouse()
+
 # ------------------------------------------------------------ world / light / camera
 w = bpy.data.worlds.new("sky"); scene.world = w; w.use_nodes = True
 nt = w.node_tree; bg = nt.nodes["Background"]
@@ -513,6 +605,9 @@ scene.render.engine = "CYCLES"; scene.cycles.samples = SAMPLES; scene.cycles.use
 scene.view_settings.view_transform = "AgX"; scene.view_settings.look = "AgX - High Contrast"
 scene.render.resolution_x, scene.render.resolution_y = 1280, 720
 VIEWS = {"street": ((0.8, -24, 1.7), (0, 14, 2.8), 30), "hero": ((-2.8, -10.5, 1.7), (-9.0, 0.5, 2.8), 28)}
+VIEWS["dock"] = ((9.0, -52.0, 3.2), (-2.0, -22.0, 3.0), 28)
+VIEWS["lighthouse"] = ((-6.0, -46.0, 4.0), (-24.0, -28.0, 6.0), 32)
+if not RENDER: VIEWS = {}
 for tag, (loc, tgt, lens) in VIEWS.items():
     cam.location = Vector(loc); cd.lens = lens
     cam.rotation_euler = (Vector(tgt) - cam.location).to_track_quat("-Z", "Y").to_euler()

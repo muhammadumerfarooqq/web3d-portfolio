@@ -1,0 +1,30 @@
+{
+ "clips": [
+  "Walk",
+  "Trot",
+  "Gallop",
+  "Idle",
+  "HeadShake"
+ ],
+ "tris": 20340,
+ "units": "metres; three.js Y-up",
+ "rider": {
+  "attach_bone": "spine",
+  "avatar_clip": "Ride",
+  "root_offset_three": [
+   0.0,
+   0.57,
+   -0.02
+  ],
+  "note": "place the avatar root at this offset in horse space (validated in Blender render); feet reach the stirrups"
+ },
+ "whistle": {
+  "avatar_clip": "Whistle",
+  "horse_reply_clip": "HeadShake"
+ },
+ "gaits": {
+  "Walk": "~1.6 m/s",
+  "Trot": "~3.5 m/s",
+  "Gallop": "~8 m/s"
+ }
+}

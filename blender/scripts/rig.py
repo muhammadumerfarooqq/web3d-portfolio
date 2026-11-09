@@ -457,6 +457,28 @@ for f in range(1, 62, 10):
          keys={"Smile": 0.3})
 finish(act, 61)
 
+
+# ---------------------------------------------------------------- Whistle (one-shot 45): two fingers to the lips, calls the horse
+act = new_action("Whistle")
+whistle_aims = {"upper_arm.R": (-0.12, -0.55, -0.82), "forearm.R": (0.42, -0.10, 0.90), "hand.R": (0.40, -0.45, 0.80)}
+for f, on in ((1, 0.0), (9, 1.0), (31, 1.0), (45, 0.0)):
+    hd_ = {"head": [(X, -8 * on), (Z, -4 * on)], "neck": [(X, -3 * on)], "chest": [(X, 2 * on)],
+            "upper_arm.L": [(X, -8 * on)], "forearm.L": [(X, -30 * on)]}
+    pose(f, merged(ARMS_DOWN, hd_), aims=whistle_aims if on > 0.5 else None, keys={"Mouth_Open": 0.12 * on, "Smile": 0.1})
+finish(act, 45)
+
+# ---------------------------------------------------------------- Ride (loop 32): seated in the saddle, reins in both hands
+act = new_action("Ride")
+ride_aims = {"upper_arm.L": (0.12, -0.30, -0.95), "forearm.L": (-0.20, -0.96, 0.18), "hand.L": (-0.10, -0.95, -0.15),
+             "upper_arm.R": (-0.12, -0.30, -0.95), "forearm.R": (0.20, -0.96, 0.18), "hand.R": (0.10, -0.95, -0.15)}
+for f in range(1, 34, 4):
+    ph = math.sin((f - 1) / 32 * 2 * math.pi)
+    legs = {"thigh.L": [(Y, -26), (X, -72)], "thigh.R": [(Y, 26), (X, -72)],
+            "shin.L": [(X, 70)], "shin.R": [(X, 70)], "foot.L": [(X, -12)], "foot.R": [(X, -12)],
+            "spine": [(X, -4 - 2 * ph)], "chest": [(X, -3)], "head": [(X, 4 + 2 * ph)]}
+    pose(f, legs, loc={"hips": (0, 0, 0.012 * ph)}, aims=ride_aims, keys={"Smile": 0.35})
+finish(act, 33)
+
 # opening the .blend shows the Idle clip on the timeline
 arm.animation_data.action = bpy.data.actions["Idle"]
 KEYS.animation_data.action = bpy.data.actions["Idle_face"]

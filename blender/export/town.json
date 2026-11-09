@@ -1,0 +1,159 @@
+{
+ "units": "metres, Y up (three.js)",
+ "street_axis": "+Z is NEGATIVE blender Y; street runs from spawn (z=+26) towards the station (z=-44)",
+ "landmarks": {
+  "spawn": {
+   "pos": [
+    3.0,
+    0.62,
+    43.0
+   ],
+   "yaw_deg": 0,
+   "facing": [
+    0,
+    0,
+    -1
+   ],
+   "note": "end of the dock, facing the town (the sheriff arrives by boat)"
+  },
+  "dock": {
+   "zone": null,
+   "title": "The Dock",
+   "center": [
+    3.0,
+    0.55,
+    36.5
+   ]
+  },
+  "lighthouse": {
+   "zone": null,
+   "title": "Lighthouse",
+   "center": [
+    -24.0,
+    0.0,
+    28.0
+   ]
+  },
+  "office": {
+   "zone": "about",
+   "title": "Sheriff's Office",
+   "door": [
+    -2.8,
+    0.0,
+    2.5
+   ],
+   "center": [
+    -8.6,
+    0.0,
+    2.5
+   ]
+  },
+  "bounty": {
+   "zone": "projects",
+   "title": "Bounty Board",
+   "door": [
+    -1.2,
+    0.0,
+    -20.6
+   ],
+   "center": [
+    -1.2,
+    0.0,
+    -23.0
+   ]
+  },
+  "smith": {
+   "zone": "skills",
+   "title": "Blacksmith's Workshop",
+   "door": [
+    -2.3,
+    0.0,
+    -5.25
+   ],
+   "center": [
+    -8.6,
+    0.0,
+    -5.25
+   ]
+  },
+  "bank": {
+   "zone": "achievements",
+   "title": "The Bank Vault",
+   "door": [
+    -2.55,
+    0.0,
+    -13.95
+   ],
+   "center": [
+    -8.6,
+    0.0,
+    -13.95
+   ]
+  },
+  "telegraph": {
+   "zone": "contact",
+   "title": "Telegraph Office",
+   "door": [
+    3.05,
+    0.0,
+    3.0
+   ],
+   "center": [
+    8.6,
+    0.0,
+    3.0
+   ]
+  },
+  "picture": {
+   "zone": "promo",
+   "title": "The Picture House",
+   "door": [
+    2.3,
+    0.0,
+    -5.0
+   ],
+   "center": [
+    8.6,
+    0.0,
+    -5.0
+   ]
+  },
+  "station": {
+   "zone": "journey",
+   "title": "Byte Island Station",
+   "door": [
+    0.0,
+    0.0,
+    -36.1
+   ],
+   "center": [
+    0.0,
+    0.0,
+    -44.0
+   ]
+  },
+  "sheriff_npc": {
+   "zone": "chat",
+   "title": "The Sheriff",
+   "door": [
+    -5.2,
+    0.0,
+    4.0
+   ],
+   "center": [
+    -5.8,
+    0.0,
+    4.0
+   ]
+  },
+  "saloon": {
+   "zone": null,
+   "title": "Saloon (decor)",
+   "center": [
+    8.6,
+    0.0,
+    -14.75
+   ]
+  }
+ }
+}
