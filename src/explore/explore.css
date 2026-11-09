@@ -367,58 +367,6 @@
 }
 
 /* Zone stub panel (overlays arrive in P3.2) */
-.xp-stub {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  translate: -50% -50%;
-  display: grid;
-  gap: 12px;
-  inline-size: min(460px, calc(100vw - 32px));
-  padding: 24px;
-  border: 2px solid #231C15;
-  color: #231C15;
-  background: #F3E9D2;
-  box-shadow: 8px 9px 0 rgba(0, 0, 0, 0.85);
-  rotate: -0.6deg;
-}
-
-.xp-stub .xp-eyebrow {
-  color: #7E2F1A;
-}
-
-.xp-stub__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 2rem;
-  font-weight: 900;
-  line-height: 0.95;
-  text-transform: uppercase;
-}
-
-.xp-stub__text {
-  margin: 0;
-}
-
-.xp-stub__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.xp-stub .xp-btn {
-  color: #231C15;
-  background: #F3E9D2;
-  border-color: #231C15;
-  box-shadow: 3px 3px 0 #231C15;
-}
-
-.xp-stub .xp-btn--ink {
-  color: #F3E9D2;
-  background: #231C15;
-  box-shadow: 4px 4px 0 #B8862A;
-}
-
 /* Tutorial key caps */
 .xp-tutorial {
   position: absolute;
@@ -590,8 +538,425 @@
 @media (forced-colors: active) {
   .xp-btn,
   .xp-chip,
-  .xp-prompt,
-  .xp-stub {
+  .xp-prompt {
+    border: 2px solid CanvasText;
+  }
+}
+
+/* ── Star counter (a button: opens the case board, or the certificate at 8/8) ── */
+.xp-badge.is-complete {
+  color: #14100C;
+  background: #D9A441;
+}
+
+.xp-badge.is-complete .xp-star {
+  fill: #14100C;
+  stroke: #D9A441;
+}
+
+/* ── Zone chips: one scrolling row with a fade on the hidden side (never wraps into other HUD) ── */
+.xp-zones {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  scroll-padding-inline: 24px;
+  padding-block: 2px 6px;
+  max-inline-size: 100%;
+  touch-action: pan-x;
+  --fade-l: 32px;
+  --fade-r: 40px;
+  mask-image: linear-gradient(90deg, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
+}
+
+.xp-zones::-webkit-scrollbar {
+  display: none;
+}
+
+.xp-zones.is-start {
+  --fade-l: 0px;
+}
+
+.xp-zones.is-end {
+  --fade-r: 0px;
+}
+
+.xp-chip {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+/* The debug overlay sits bottom-right: keep the chip row clear of it. */
+.xp:has(.xp-debug:not([hidden])) .xp-bottom {
+  inset-inline-end: min(460px, 72vw);
+}
+
+/* ── Ceremony: HUD chrome steps aside ── */
+.xp.is-cinematic .xp-hud {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+/* ── Case-file overlay (native <dialog>, Classic tokens) ── */
+.xp-case {
+  inline-size: min(1120px, calc(100vw - 32px));
+  max-inline-size: none;
+  block-size: min(88vh, 980px);
+  max-block-size: none;
+  margin: auto;
+  padding: 0;
+  border: 2px solid var(--border-strong);
+  color: var(--text);
+  background: var(--bg);
+  box-shadow: 10px 12px 0 #000;
+  overflow: hidden;
+  user-select: text;
+  font-family: var(--font-body);
+}
+
+.xp-case::backdrop {
+  background: rgba(10, 8, 6, 0.62);
+}
+
+.xp-case[open] {
+  animation: xp-case-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes xp-case-in {
+  from { opacity: 0; transform: translateY(18px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+.xp-case__sheet {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  block-size: 100%;
+  min-block-size: 0;
+}
+
+.xp-case__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px clamp(14px, 3vw, 28px);
+  border-block-end: 2px solid var(--border-strong);
+  background: var(--surface);
+}
+
+.xp-case__eyebrow {
+  margin: 0;
+  color: var(--accent-text);
+}
+
+.xp-case .xp-btn {
+  color: var(--text);
+  background: var(--surface);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.xp-case .xp-btn--ink {
+  color: var(--on-ink);
+  background: var(--ink);
+  box-shadow: var(--shadow-gold);
+}
+
+.xp-case__body {
+  min-block-size: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y pinch-zoom;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* The moved Classic section keeps its own layout; a little less air than on the long page. */
+.xp-case__section.section {
+  padding-block: clamp(20px, 4vh, 44px);
+  border: 0;
+}
+
+.xp-case__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px 16px;
+  padding: 12px clamp(14px, 3vw, 28px);
+  border-block-start: 2px solid var(--border-strong);
+  background: var(--surface);
+}
+
+.xp-case__foot:empty {
+  display: none;
+}
+
+.xp-case__note {
+  margin: 0 auto 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--accent-text);
+}
+
+/* Sheriff's Office: a WANTED poster header over the About case file */
+.xp-case__wanted {
+  margin: 0;
+  padding-block: clamp(18px, 3vh, 30px) 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 9vw, 6.5rem);
+  font-weight: 900;
+  line-height: 0.85;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rust-text);
+  text-shadow: 3px 3px 0 #000;
+}
+
+.xp-case[data-kind='wanted'] .xp-case__body {
+  background:
+    repeating-linear-gradient(0deg, transparent 0 22px, rgba(217, 164, 65, 0.035) 22px 23px),
+    var(--bg);
+}
+
+/* Telegraph: interview draft */
+.xp-case__interview {
+  display: grid;
+  gap: 10px;
+  margin: clamp(16px, 3vh, 28px) auto 0;
+  padding: 18px;
+  inline-size: min(760px, calc(100% - 2 * var(--gutter, 16px)));
+}
+
+.xp-case__label {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.xp-case__draft {
+  inline-size: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--border-strong);
+  color: var(--text);
+  background: var(--surface-2);
+  font: 1rem/1.5 var(--font-body);
+  resize: vertical;
+}
+
+/* Case board */
+.xp-board {
+  display: grid;
+  gap: 14px;
+  padding: clamp(18px, 4vh, 40px) clamp(16px, 4vw, 44px);
+}
+
+.xp-board__title,
+.xp-cert__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 6vw, 3.6rem);
+  font-weight: 900;
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+
+.xp-board__text {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.xp-board__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.xp-board__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+}
+
+.xp-board__item .xp-star {
+  flex: none;
+  fill: transparent;
+  stroke: var(--text-muted);
+}
+
+.xp-board__item.is-earned {
+  border-color: var(--brass);
+}
+
+.xp-board__item.is-earned .xp-star {
+  fill: #D9A441;
+  stroke: #14100C;
+}
+
+.xp-board__name {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.xp-board__go {
+  min-block-size: 36px;
+  padding-inline: 10px;
+  font-size: 0.72rem;
+}
+
+/* Deputy's Commission */
+.xp-cert {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  margin: clamp(16px, 4vh, 44px) auto;
+  padding: clamp(22px, 5vw, 48px);
+  inline-size: min(820px, calc(100% - 32px));
+  text-align: center;
+}
+
+.xp-cert__text {
+  margin: 0;
+  max-inline-size: 36ch;
+  font-size: clamp(1.1rem, 2.4vw, 1.45rem);
+  line-height: 1.45;
+}
+
+.xp-cert__seals {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.xp-cert__seals li {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.xp-cert__seals .xp-star {
+  inline-size: 16px;
+  block-size: 16px;
+}
+
+.xp-cert__stamp {
+  position: absolute;
+  inset-block-start: 18px;
+  inset-inline-end: 18px;
+  margin: 0;
+  padding: 6px 12px;
+  border: 3px solid var(--rust);
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--rust-text);
+  transform: rotate(-9deg);
+  opacity: 0.85;
+}
+
+.xp-cert__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+/* Flying star (inside the dialog → top layer). Transform + opacity only. */
+.xp-flystar {
+  position: fixed;
+  inset: 0 auto auto 0;
+  inline-size: 48px;
+  block-size: 48px;
+  pointer-events: none;
+  z-index: 2;
+  will-change: transform, opacity;
+}
+
+.xp-flystar .xp-star {
+  inline-size: 48px;
+  block-size: 48px;
+  filter: drop-shadow(0 0 10px rgba(243, 197, 102, 0.85));
+}
+
+/* CASE CLOSED stamp */
+.xp-stamp {
+  position: absolute;
+  inset-block-start: 46%;
+  inset-inline-start: 50%;
+  z-index: 8;
+  padding: 0.1em 0.35em;
+  border: 0.09em solid #D9785A;
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 12vw, 9rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #D9785A;
+  background: rgba(20, 16, 12, 0.35);
+  text-shadow: 4px 4px 0 #000;
+  box-shadow: 8px 9px 0 #000;
+  transform: translate(-50%, -50%) rotate(-10deg);
+  pointer-events: none;
+}
+
+/* Phones: the case file is a full-screen sheet */
+@media (max-width: 720px) {
+  .xp-case {
+    inline-size: 100vw;
+    block-size: 100dvh;
+    margin: 0;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .xp-case__bar,
+  .xp-case__foot {
+    padding-inline: 12px;
+  }
+
+  .xp-case__bar {
+    padding-block-start: max(12px, env(safe-area-inset-top));
+  }
+
+  .xp-case__foot {
+    padding-block-end: max(12px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .xp-case[open] {
+    animation: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .xp-case,
+  .xp-board__item {
     border: 2px solid CanvasText;
   }
 }

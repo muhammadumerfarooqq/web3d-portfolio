@@ -8,6 +8,7 @@ import { readPref, writePref } from '../ui/prefs.js';
 import { setSound } from '../ui/sound.js';
 import { createAmbient } from './ambient.js';
 import { createAudio } from './audio.js';
+import { BADGES_EMPTY, BADGES_KEY, BADGES_VALUES, createBadges } from './badges.js';
 import { createCameraRig } from './camera-rig.js';
 import { PLAYER, QUALITY_KEY, QUALITY_VALUES, TIERS, TIME_KEY, TIME_VALUES, TOWN_JSON_URL, TUTORIAL_KEY, TUTORIAL_VALUES } from './config.js';
 import { castDown, inputVector } from './controller-math.js';
@@ -15,7 +16,7 @@ import { createHud } from './hud.js';
 import { createInput } from './input.js';
 import { createLights } from './lights.js';
 import { createProgress } from './loader-progress.js';
-import { createMaterialUniforms } from './materials.js';
+import { createMaterialUniforms, createRimUniforms } from './materials.js';
 import { createParticles } from './particles.js';
 import { createPlayer } from './player.js';
 import { createPost } from './post.js';
@@ -68,7 +69,9 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
   // town.json first (tiny): the HUD needs the zone list.
   const zonesRes = await fetch(TOWN_JSON_URL, { signal: abort.signal, credentials: 'same-origin' }).then((r) => r.json()).catch(() => ({ landmarks: {} }));
   const { spawn, zones } = loadZones(zonesRes);
-  const visited = new Set();
+  const stationLandmark = zonesRes.landmarks?.station;
+  // Stars persist (explore.badges, whitelisted); the chips and the edge arrow follow them.
+  const badges = createBadges(readPref(BADGES_KEY, BADGES_VALUES, BADGES_EMPTY), { onChange: (v) => writePref(BADGES_KEY, v, BADGES_VALUES) });
 
   let api = null; // filled once the world exists
   const hud = createHud({
@@ -87,7 +90,9 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
     onQuality: (q) => api?.setQuality(q),
     onSkipTutorial: () => api?.finishTutorial(),
     onInteract: () => api?.interact(),
+    onStars: () => api?.openStars(),
   });
+  hud.setStars(badges.set);
 
   const dispose = () => {
     if (disposed) return;
@@ -170,9 +175,10 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
     if (farSea) scene.add(farSea);
     const sky = createSky();
     scene.add(sky.mesh);
-    const lights = createLights(scene, renderer, settings, town.lanterns, town.heightAt);
+    const lights = createLights(scene, renderer, settings, town.lanterns, town.heightAt, (x, y, z) => castDown(town.bvh, new Vector3(x, y, z), 6)?.point.y ?? null);
 
-    const avatarData = prepareAvatar(assets.avatarGltf);
+    const rimU = createRimUniforms();
+    const avatarData = prepareAvatar(assets.avatarGltf, rimU);
     scene.add(avatarData.avatar);
     const player = createPlayer({ avatarData, bvh: town.bvh, depthAt: town.depthAt, spawn });
     rig.yaw = 0;
@@ -227,9 +233,10 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       wu.sunColor.value.setRGB(...p.sunColor);
       wu.deep.value.setRGB(0.02 + (0.004 - 0.02) * p.t, 0.06 + (0.012 - 0.06) * p.t, 0.09 + (0.035 - 0.09) * p.t);
       wu.shallow.value.setRGB(0.06 + (0.01 - 0.06) * p.t, 0.2 + (0.05 - 0.2) * p.t, 0.17 + (0.08 - 0.17) * p.t);
-      wu.glitter.value = 1 - 0.55 * p.t;
+      wu.glitter.value = 1 - 0.25 * p.t; // the moon lays a glitter path beside the dock
       wu.foam.value = 0.55 - 0.42 * p.t;
       matU.night.value = p.t;
+      rimU.moon.value = p.t;
       matU.wetness.value = p.wetness;
       matU.windowGlow.value = p.windowGlow;
       matU.lantern.value = p.lanternIntensity;
@@ -272,9 +279,6 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       hud.setSound(e.detail.sound === 'on');
     });
     listen(window, 'themechange', (e) => api?.setNight(e.detail.theme === 'dark', true));
-    listen(window, 'keydown', (e) => {
-      if (e.key === 'Escape' && hud.stubOpen) hud.closeStub();
-    });
 
     const resize = () => {
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -308,8 +312,103 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       // The shadow map is resized in place (the god-ray node keeps a reference to it).
       if (lights.sun.castShadow && settings.shadowMap > 0) lights.sun.shadow.mapSize.set(settings.shadowMap, settings.shadowMap);
       renderer.setPixelRatio(basePR() * resScale);
+      fireworks?.setEmissiveMrt(settings.bloom === 'full');
       palette = applyPalette(tState.t);
     };
+
+    // ── case files, stars and the Case Closed ceremony (lazy chunks) ──
+    let caseFiles = null;
+    let caseFilesLoad = null;
+    let overlayOpen = false;
+    let ceremony = false;
+    let ceremonyPending = false;
+    let fireworks = null;
+    let train = null;
+    let trainLoad = null;
+    const loadCaseFiles = () =>
+      (caseFilesLoad ??= import('./case-files.js').then((m) => {
+        if (disposed) return null;
+        caseFiles = m.createCaseFiles({
+          host: hud.root,
+          canvasHost: hud.canvasHost,
+          starButton: hud.starButton,
+          zones,
+          sound: audio,
+          announce: (t) => hud.announce(t),
+          reducedMotion,
+          getStars: () => badges.set,
+          onClassic: (anchor) => onExit(anchor),
+          onTravel: (z) => api.travel(z),
+          onOpenChange: (open, info) => {
+            overlayOpen = open;
+            input.setPaused(open || ceremony);
+            if (info?.zone === 'journey') {
+              if (open) train?.overlayOpened();
+              else train?.overlayClosed();
+            }
+            if (!open && ceremonyPending) runCeremony();
+          },
+          onEngaged: (zoneId) => {
+            const r = badges.award(zoneId);
+            if (!r.awarded) return;
+            hud.setStars(badges.set);
+            caseFiles.flyStar();
+            const z = zones.find((x) => x.zone === zoneId);
+            hud.announce(`Star earned: ${z?.title ?? zoneId}. ${r.count} of ${badges.total}.`);
+            if (r.completedNow) ceremonyPending = true;
+          },
+          onReset: () => {
+            badges.reset();
+            hud.setStars(badges.set);
+          },
+        });
+        return caseFiles;
+      }));
+    const openCase = (zone, opts) =>
+      loadCaseFiles()
+        .then((cf) => cf?.open(zone, opts))
+        .catch((error) => console.error('[explore] case file', error));
+
+    // 8/8: fireworks, the sheriff waves, the CASE CLOSED stamp, then the Deputy's Commission.
+    async function runCeremony() {
+      ceremonyPending = false;
+      ceremony = true;
+      input.setPaused(true);
+      hud.setCinematic(true);
+      hud.announce('Case closed. Every case on Byte Island is closed.');
+      try {
+        const { createFireworks, showOrigin } = await import('./fireworks.js');
+        if (disposed) return;
+        fireworks?.dispose();
+        fireworks = createFireworks({ scene, origin: showOrigin(camera, player.position), reducedMotion, audio, emissiveMrt: settings.bloom === 'full' });
+        rig.setView({ pitch: 0.06, distance: Math.max(rig.distance, 8) });
+        setTimeout(() => player.wave(true), 350);
+        await caseFiles.stamp();
+        await new Promise((r) => setTimeout(r, reducedMotion ? 300 : 1800));
+      } catch (error) {
+        console.error('[explore] ceremony', error);
+      }
+      if (disposed) return;
+      ceremony = false;
+      hud.setCinematic(false);
+      caseFiles.openCertificate();
+    }
+
+    // The train loads only once the sheriff is near the station; it arrives on entering the zone.
+    const station = zones.find((z) => z.zone === 'journey');
+    const loadTrain = () =>
+      (trainLoad ??= import('./train.js')
+        .then((m) => m.createTrain({ loaders, scene, station: stationLandmark, audio, reducedMotion, signal: abort.signal }))
+        .then((t) => {
+          if (disposed) {
+            t.dispose();
+            return null;
+          }
+          train = t;
+          if (currentZone && currentZone === station) train.arrive();
+          return t;
+        })
+        .catch((error) => console.warn('[explore] train', error)));
 
     api = {
       travel(z) {
@@ -341,14 +440,20 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
         hud.hideTutorial();
       },
       interact() {
-        if (!currentZone) return;
+        if (!currentZone || overlayOpen || ceremony) return;
         audio.blip();
-        visited.add(currentZone.zone);
-        hud.setVisited(visited);
         window.dispatchEvent(new CustomEvent('explore:zone', { detail: { zone: currentZone.zone, title: currentZone.title, anchor: currentZone.anchor } }));
-        hud.openStub(currentZone, (z) => onExit(z.anchor));
+        openCase(currentZone);
+      },
+      /** Star counter: the certificate at 8/8, otherwise the case board. */
+      openStars() {
+        if (ceremony) return;
+        loadCaseFiles().then((cf) => (badges.complete ? cf?.openCertificate() : cf?.openBoard()));
       },
       destroy() {
+        caseFiles?.dispose();
+        train?.dispose();
+        fireworks?.dispose();
         renderer.setAnimationLoop(null);
         delete window.__explore;
         input.dispose();
@@ -394,6 +499,15 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
         view: (o) => rig.setView(o),
         night: (n) => api.setNight(n, true),
         quality: (q) => api.setQuality(q),
+        open: (id) => openCase(zones.find((z) => z.zone === id)),
+        stars: () => api.openStars(),
+        award: (id) => {
+          const r = badges.award(id);
+          hud.setStars(badges.set);
+          if (r.completedNow) loadCaseFiles().then(() => (overlayOpen ? (ceremonyPending = true) : runCeremony()));
+          return r;
+        },
+        state: () => ({ fireworks: fireworks ? Number(fireworks.duration.toFixed(1)) : null, stars: badges.value, overlay: overlayOpen, kind: caseFiles?.current?.kind ?? null, ceremony, train: train?.machine.state ?? (trainLoad ? 'loading' : 'none'), trainX: train?.machine.x ?? null }),
       };
       cleanups.push(() => delete window.__exploreDebug);
     }
@@ -420,7 +534,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       // input + player
       const s = input.state;
       const iv = inputVector(s);
-      const blocked = hud.stubOpen;
+      const blocked = overlayOpen || ceremony;
       const moveInput = blocked ? { x: 0, z: 0, magnitude: 0, run: false, jump: false } : { ...iv, run: s.run, jump: input.take('jump') };
       const ev = player.update(dt, moveInput, rig.yaw, surfaceUnder);
       if (ev.footstep) {
@@ -438,6 +552,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       if (near !== currentZone) {
         currentZone = near;
         hud.setPrompt(near);
+        if (near && near === station) train?.arrive();
         if (near) {
           hud.announce(`${near.title}. Press E to open.`);
           player.wave();
@@ -445,13 +560,39 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
           audio.blip();
         }
       }
-      const next = currentZone ? null : nextUnvisited([player.position.x, 0, player.position.z], zones, visited);
+      const next = currentZone ? null : nextUnvisited([player.position.x, 0, player.position.z], zones, badges.set);
       hud.setArrow(next ? arrowAngle([player.position.x, 0, player.position.z], next.door, rig.yaw) : null, next ? next.title : '');
 
       // time of day
       if (!tState.done) {
         tState = stepTransition(tState, dt, 2);
         palette = applyPalette(tState.t);
+      }
+
+      // character key light: the nearest lantern warms the sheriff at night (shader-only, see rimMaterial)
+      let best = Infinity;
+      for (const l of town.lanterns) {
+        const d = l.distanceToSquared(player.position);
+        if (d < best) {
+          best = d;
+          rimU.keyDir.value.copy(l).sub(player.position).normalize();
+        }
+      }
+      const dist = Math.sqrt(best);
+      rimU.key.value = palette.lanternIntensity * Math.min(1, Math.max(0, (9 - dist) / 6));
+
+      // the train: load when close to the station, then run it
+      if (station && stationLandmark?.train && !trainLoad && Math.hypot(player.position.x - station.door[0], player.position.z - station.door[2]) < 24) loadTrain();
+      if (train) {
+        for (const e of train.update(dt, palette.t)) if (e === 'openOverlay' && !overlayOpen && !ceremony) openCase(station);
+        if (train.blocks(player.position)) player.teleport([player.position.x, player.position.y, stationLandmark.train.rail_z - 2.4]);
+      }
+      if (fireworks) {
+        fireworks.update(dt);
+        if (fireworks.done) {
+          fireworks.dispose();
+          fireworks = null;
+        }
       }
 
       // world systems
@@ -470,8 +611,10 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       // post uniforms
       const pu = post.uniforms;
       pu.ca.value = Math.min(1, player.speed / PLAYER.runSpeed) * 0.9;
-      pu.focus.value = rig.distance;
-      pu.focal.value = Math.max(28, rig.distance * 3.5); // only the far background (mesas, sea) softens
+      // DOF: everything up to ~30 m past the player stays sharp (post.js clamps the near field); only
+      // the far mesas and sea soften, gently.
+      pu.focus.value = rig.distance + 24;
+      pu.focal.value = 70;
       if (glitchT > 0) {
         glitchT -= dt;
         if (glitchT <= 0) pu.glitch.value = 0;

@@ -1,13 +1,15 @@
 // Explore mode configuration: every asset URL, every node/material name the code hooks, and the
-// quality tiers. The town will be swapped for a baked final under the SAME node and material names,
-// so TOWN_URL is the only line to change. tests/explore-assets.test.js checks every name below
-// against the GLBs.
+// quality tiers. tests/explore-assets.test.js checks every name below against the GLBs.
+// P3.2: the baked final town (blender/export, Draco + WebP atlases) replaced the placeholder.
 
-/** The town scene. Swap for the baked final here (same node and material names). */
-export const TOWN_URL = '/models/town_placeholder.glb';
+/** The town scene (baked: one Baked_<Group> material per building/prop group with an albedo × AO atlas). */
+export const TOWN_URL = '/models/town.glb';
 export const TOWN_JSON_URL = '/models/town.json';
 export const AVATAR_URL = '/models/avatar.glb';
-/** Self-hosted Draco decoder (copied from three/examples/jsm/libs/draco). */
+/** The station train (loaded lazily, only near the station). */
+export const TRAIN_URL = '/models/train.glb';
+export const TRAIN_JSON_URL = '/models/train.json';
+/** Self-hosted Draco decoder (copied from three/examples/jsm/libs/draco). Town, avatar and train use it. */
 export const DRACO_PATH = '/draco/';
 
 export const SEA_LEVEL = -0.6;
@@ -15,13 +17,12 @@ export const SEA_LEVEL = -0.6;
 /** Material names (exact) and what the upgrade pass does with them. */
 export const MATERIALS = {
   emissive: ['Window_Warm', 'Lantern', 'Gold'],
-  wood: ['Wood_Weathered', 'Wood_Grey', 'Wood_Red', 'Wood_Dark'],
-  trim: ['Trim_Cream'],
-  roof: ['Roof_Shingle'],
-  ground: ['Sand', 'Dirt', 'Rock', 'Mesa', 'Rut', 'Scrub'],
+  /** Baked atlases: kept as exported (their map is the look); the dock gets a wet sheen at night. */
+  baked: ['Baked_Bank', 'Baked_Blacksmith', 'Baked_Dock', 'Baked_Lighthouse', 'Baked_PictureHouse', 'Baked_Props', 'Baked_Rocks', 'Baked_Saloon', 'Baked_SheriffOffice', 'Baked_Station', 'Baked_Telegraph'],
+  ground: ['Sand', 'Dirt', 'Rut'],
   street: ['Dirt', 'Rut'], // wet sheen at night
   water: ['Sea', 'Water'],
-  misc: ['Hay', 'Iron', 'Cactus'],
+  misc: ['Iron', 'Rope', 'FlagC', 'FlagR'],
 };
 
 /** Node names (exact) or prefixes the engine looks up. */
@@ -29,29 +30,41 @@ export const NODES = {
   sea: 'sea',
   ground: 'ground',
   street: 'street',
-  lanternPrefixes: ['lamp', '_lantern'], // "lamp", "lamp.001" … and "<Building>_lantern"
+  dock: 'Dock_baked',
+  dockRope: 'dock_rope',
+  lighthouseLamp: 'lighthouse_lamp',
   flagPrefixes: ['flags_c', 'flags_r'],
-  signSuffix: '_sign',
-  smoke: ['Blacksmith_roof', 'Saloon_roof'], // chimney smoke rises from the top of these
+  signSuffix: '_sign', // hanging signs swing (none in the baked town; kept for future art)
+  smoke: ['Blacksmith_baked', 'Saloon_baked'], // chimney smoke rises from the top of these groups
   /** Never collide with these (thin, decorative or water). */
-  noCollide: ['sea', 'wire', 'rope', 'flags_c', 'flags_r', 'scrub', 'trough_w'],
+  noCollide: ['sea', 'wire', 'rope', 'dock_rope', 'flags_c', 'flags_r', 'trough_w'],
 };
 
-/** Avatar clip and morph names (exact). */
+/** Lantern nodes: street lamps ("lamp", "lamp.001" …), dock lamps and "<Building>_lantern" (not the posts). */
+export const isLanternNode = (name) => !/lamppost|lamp_post/.test(name) && (/^lamp(\.\d+)?$/.test(name) || /^dock_lamp(\.\d+)?$/.test(name) || name.endsWith('_lantern'));
+
+/** Avatar clip and morph names (exact). Whistle and Ride are used in P3.3 (the horse). */
 export const AVATAR = {
-  clips: ['Idle', 'IdleArmsCrossed', 'Walk', 'Run', 'Jump', 'Wave', 'Talk', 'Think', 'Nod'],
+  clips: ['Idle', 'IdleArmsCrossed', 'Walk', 'Run', 'Jump', 'Wave', 'Talk', 'Think', 'Nod', 'Whistle', 'Ride'],
   morphs: ['Blink', 'Smile', 'Mouth_Open'],
 };
 
-/** Footstep surface per material name. */
+/** Train node prefix for the wheels (spun by distance / radius from train.json). */
+export const TRAIN = { wheelPrefix: 'wheel_', root: 'Train' };
+
+/** Footstep surface per material name (everything else is sand). */
 export const SURFACES = {
-  Wood_Weathered: 'wood',
-  Wood_Grey: 'wood',
-  Wood_Red: 'wood',
-  Wood_Dark: 'wood',
-  Trim_Cream: 'wood',
-  Rock: 'stone',
-  Mesa: 'stone',
+  Baked_Dock: 'wood',
+  Baked_Station: 'wood',
+  Baked_Bank: 'wood',
+  Baked_Blacksmith: 'wood',
+  Baked_PictureHouse: 'wood',
+  Baked_Saloon: 'wood',
+  Baked_SheriffOffice: 'wood',
+  Baked_Telegraph: 'wood',
+  Baked_Lighthouse: 'stone',
+  Baked_Rocks: 'stone',
+  Baked_Props: 'wood',
   Iron: 'stone',
 };
 

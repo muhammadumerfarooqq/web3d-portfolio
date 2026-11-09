@@ -32,8 +32,22 @@ window.addEventListener('bootdone', () => {
   held.clear();
 });
 // Inside [data-reveal-immediate] (the hero) reveals play on load; elsewhere they wait for scroll.
+// [data-reveal-done] (a section shown in an Explore case file) never waits: a re-split plays at once.
 const triggerFor = (el) =>
-  el.closest('[data-reveal-immediate]') ? undefined : { trigger: el, start: 'top 88%', once: true };
+  el.closest('[data-reveal-immediate], [data-reveal-done]') ? undefined : { trigger: el, start: 'top 88%', once: true };
+
+// Explore shows a Classic section inside a case-file dialog, outside the page scroll: finish every
+// pending reveal and counter in it at once (they would otherwise wait for a scroll that never comes).
+window.addEventListener('revealall', (e) => {
+  const root = e.detail?.root;
+  if (!(root instanceof Element)) return;
+  root.setAttribute('data-reveal-done', '');
+  for (const st of ScrollTrigger.getAll()) {
+    if (!(st.trigger instanceof Element) || !root.contains(st.trigger)) continue;
+    st.animation?.progress(1);
+    st.kill();
+  }
+});
 
 // data-reveal="…" → animation factory. Split reveals return their tween from onSplit, so
 // SplitText can revert and rebuild it when fonts load or the line breaks change.

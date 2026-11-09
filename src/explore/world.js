@@ -2,14 +2,14 @@
 // mesh merging by material and region (fewer draw calls, still frustum-cullable), the collision BVH
 // (three-mesh-bvh), a terrain height grid for water depth and the island's soft wall, and the anchor
 // points other systems need (lanterns, chimneys, flags, signs).
-import { Box3, BufferGeometry, Group, Mesh, Vector3 } from 'three/webgpu';
+import { Box3, BoxGeometry, BufferGeometry, Group, Mesh, Vector3 } from 'three/webgpu';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
-import { AVATAR_URL, DRACO_PATH, NODES, SEA_LEVEL, SURFACES, TOWN_JSON_URL, TOWN_URL } from './config.js';
+import { AVATAR_URL, DRACO_PATH, NODES, SEA_LEVEL, SURFACES, TOWN_JSON_URL, TOWN_URL, isLanternNode } from './config.js';
 import { castDown, sampleGrid } from './controller-math.js';
-import { upgradeMaterial } from './materials.js';
+import { rimMaterial, upgradeMaterial } from './materials.js';
 
 const HEIGHT_GRID = 160;
 const HEIGHT_HALF = 70;
@@ -38,7 +38,7 @@ export async function loadAssets(loaders, onProgress, signal) {
 }
 
 const startsWithAny = (name, prefixes) => prefixes.some((p) => name.startsWith(p));
-const isLanternNode = (name) => (name.startsWith('lamp') && !name.startsWith('lamp_post')) || name.endsWith('_lantern');
+
 
 /** Keep only attributes every geometry in the group shares, so mergeGeometries can join them. */
 function commonAttributes(geometries) {
@@ -75,6 +75,8 @@ export function prepareTown(gltf, uniforms, { lite = false } = {}) {
   const center = new Vector3();
   let groundMesh = null;
   let seaMesh = null;
+  let dockBox = null;
+  let ropeBox = null;
 
   // Static meshes grouped by (material, region) for merging; collision geometry separately.
   const groups = new Map();
@@ -92,6 +94,8 @@ export function prepareTown(gltf, uniforms, { lite = false } = {}) {
       lanterns.push(center.clone());
     }
     if (name.endsWith('_walls')) wallBoxes.set(name, box.clone());
+    if (name === NODES.dock) dockBox = box.clone();
+    if (name === NODES.dockRope) ropeBox = box.clone();
     if (NODES.smoke.includes(name)) {
       chimneys.push(new Vector3((box.min.x + box.max.x) / 2 + (box.max.x - box.min.x) * 0.25, box.max.y + 0.3, (box.min.z + box.max.z) / 2));
     }
@@ -176,6 +180,28 @@ export function prepareTown(gltf, uniforms, { lite = false } = {}) {
     root.add(m);
   }
 
+  // Invisible dock rails: the rope rails are visual only (thin, non-colliding), so collision-only
+  // walls follow them along both sides and close the far end. The shore end stays open.
+  if (dockBox && ropeBox) {
+    const y0 = ropeBox.min.y - 1.0;
+    const h = ropeBox.max.y - y0 + 0.4;
+    const z0 = ropeBox.min.z;
+    const z1 = dockBox.max.z + 0.1;
+    const wall = (sx, sz, cx, cz) => {
+      const g = new BoxGeometry(sx, h, sz).translate(cx, y0 + h / 2, cz);
+      const pos = new BufferGeometry();
+      pos.setAttribute('position', g.attributes.position);
+      pos.setIndex(g.index);
+      const tris = g.index.count / 3;
+      surfaceRanges.push([collideTris, tris, 'wood']);
+      collideTris += tris;
+      collide.push(pos);
+    };
+    wall(0.1, z1 - z0, ropeBox.min.x - 0.05, (z0 + z1) / 2);
+    wall(0.1, z1 - z0, ropeBox.max.x + 0.05, (z0 + z1) / 2);
+    wall(ropeBox.max.x - ropeBox.min.x + 0.2, 0.1, (ropeBox.min.x + ropeBox.max.x) / 2, z1);
+  }
+
   // Collision BVH over every collidable triangle (indirect: keeps triangle order for surface lookup).
   const collider = mergeGeometries(collide.map((g) => (g.index ? g.toNonIndexed() : g)), false);
   for (const g of collide) g.dispose();
@@ -235,12 +261,20 @@ export function disposeObject(root) {
 }
 
 /** Bake a few avatar attributes the controller needs. */
-export function prepareAvatar(gltf) {
+export function prepareAvatar(gltf, rim) {
   const avatar = gltf.scene;
   avatar.name = 'explore_avatar';
   const morphMeshes = [];
+  const swapped = new Map();
   avatar.traverse((o) => {
     if (o.isMesh) {
+      if (rim) {
+        const one = (mat) => {
+          if (!swapped.has(mat)) swapped.set(mat, rimMaterial(mat, rim));
+          return swapped.get(mat);
+        };
+        o.material = Array.isArray(o.material) ? o.material.map(one) : one(o.material);
+      }
       o.castShadow = true;
       o.receiveShadow = true;
       o.frustumCulled = false;

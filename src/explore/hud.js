@@ -1,10 +1,10 @@
 // Explore DOM layer (createElement / textContent only; no HTML strings). "Back to Classic" is the
 // first focusable element. Contains the case-file loader, the HUD (logo, control legend, zone chips
-// for fast travel, sound / day-night / quality controls, badge counter), the interactive tutorial,
-// the zone prompt, the edge arrow, the zone stub panel, an aria-live announcer, touch controls and the
-// ?debug=1 overlay.
+// for fast travel, sound / day-night / quality controls, the star counter), the interactive tutorial,
+// the zone prompt, the edge arrow, an aria-live announcer, touch controls and the ?debug=1 overlay.
+// The case-file overlays, star animation and Case Closed ceremony live in case-files.js (lazy).
 
-function el(tag, attrs = {}, children = []) {
+export function el(tag, attrs = {}, children = []) {
   const node = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
     if (v === null || v === undefined || v === false) continue;
@@ -16,7 +16,7 @@ function el(tag, attrs = {}, children = []) {
   return node;
 }
 
-const STAR = () => {
+export const STAR = () => {
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('viewBox', '0 0 24 24');
   svg.setAttribute('aria-hidden', 'true');
@@ -36,7 +36,7 @@ const KEYCAPS = [
   ['Space', 'Space', 'jump'],
 ];
 
-export function createHud({ zones, tiers, quality, sound, night, touch, debug, onExit, onTravel, onSound, onTime, onQuality, onSkipTutorial, onInteract, showTutorial }) {
+export function createHud({ zones, tiers, quality, sound, night, touch, debug, onExit, onTravel, onSound, onTime, onQuality, onSkipTutorial, onInteract, onStars, showTutorial }) {
   const root = el('div', { class: 'xp', 'data-explore': true, role: 'application', 'aria-label': 'Explore the island: 3D town' });
 
   const back = el('button', { type: 'button', class: 'xp-btn xp-back', 'data-explore-back': true }, [el('span', { 'aria-hidden': 'true', text: '←' }), el('span', { text: 'Back to Classic' })]);
@@ -61,6 +61,8 @@ export function createHud({ zones, tiers, quality, sound, night, touch, debug, o
 
   // ── HUD ──
   const badge = el('span', { class: 'xp-badge__count', text: `0/${zones.length}` });
+  const starBtn = el('button', { type: 'button', class: 'xp-btn xp-badge', 'aria-label': `Stars: 0 of ${zones.length}. Open the case board` }, [STAR(), badge]);
+  starBtn.addEventListener('click', () => onStars?.());
   const soundBtn = el('button', { type: 'button', class: 'xp-btn xp-icon', 'aria-pressed': String(sound), 'aria-label': 'Sound' }, [el('span', { 'aria-hidden': 'true', text: '♪' })]);
   soundBtn.addEventListener('click', () => onSound(soundBtn.getAttribute('aria-pressed') !== 'true'));
   const timeBtn = el('button', { type: 'button', class: 'xp-btn', 'aria-pressed': String(night), 'aria-label': 'Night' }, [el('span', { text: night ? 'Night' : 'Golden hour' })]);
@@ -77,33 +79,31 @@ export function createHud({ zones, tiers, quality, sound, night, touch, debug, o
 
   const top = el('div', { class: 'xp-top' }, [
     el('div', { class: 'xp-top__left' }, [el('span', { class: 'xp-logo' }, [STAR(), el('span', { text: 'UMER' })])]),
-    el('div', { class: 'xp-top__right' }, [el('span', { class: 'xp-badge', title: 'Zones visited' }, [STAR(), badge]), soundBtn, timeBtn, qSelect]),
+    el('div', { class: 'xp-top__right' }, [starBtn, soundBtn, timeBtn, qSelect]),
   ]);
   const legend = el('p', { class: 'xp-legend' }, [
     el('span', { text: touch ? 'Stick to walk · drag to look · Open to enter a building' : 'WASD / arrows walk · Shift run · Space jump · E open · drag to look' }),
   ]);
   const notice = el('p', { class: 'xp-notice', text: 'Everything here is also in the Classic portfolio.' });
-  const zoneNav = el('nav', { class: 'xp-zones', 'aria-label': 'Fast travel to a building' }, chips);
+  // One scrolling row (never wraps into the legend or the prompt); the fade marks the hidden side.
+  const zoneNav = el('nav', { class: 'xp-zones is-start', 'aria-label': 'Fast travel to a building' }, chips);
+  const updateFade = () => {
+    const max = zoneNav.scrollWidth - zoneNav.clientWidth;
+    zoneNav.classList.toggle('is-start', zoneNav.scrollLeft <= 2);
+    zoneNav.classList.toggle('is-end', zoneNav.scrollLeft >= max - 2);
+  };
+  zoneNav.addEventListener('scroll', updateFade, { passive: true });
+  const fadeObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(updateFade) : null;
+  fadeObserver?.observe(zoneNav);
   const bottom = el('div', { class: 'xp-bottom' }, [zoneNav, el('div', { class: 'xp-bottom__meta' }, [legend, notice])]);
 
-  // ── Prompt, arrow, stub panel, announcer ──
+  // ── Prompt, arrow, announcer ──
   const promptTitle = el('span', { class: 'xp-prompt__title' });
   const promptBtn = el('button', { type: 'button', class: 'xp-prompt' }, [el('kbd', { text: touch ? 'Tap' : 'E' }), promptTitle]);
   promptBtn.hidden = true;
   promptBtn.addEventListener('click', () => onInteract());
   const arrow = el('div', { class: 'xp-arrow', 'aria-hidden': 'true' }, [el('span', { class: 'xp-arrow__tip' }), el('span', { class: 'xp-arrow__label' })]);
   const announcer = el('p', { class: 'sr-only', 'aria-live': 'polite', role: 'status' });
-
-  const stubTitle = el('p', { class: 'xp-stub__title' });
-  const stubLink = el('a', { class: 'xp-btn xp-btn--ink', href: '#' }, [el('span', { text: 'Read it in Classic' })]);
-  const stubClose = el('button', { type: 'button', class: 'xp-btn' }, [el('span', { text: 'Close' })]);
-  const stub = el('div', { class: 'xp-stub', role: 'dialog', 'aria-modal': 'false', 'aria-labelledby': 'xp-stub-title' }, [
-    el('p', { class: 'xp-eyebrow', text: 'Case file · opens in P3.2' }),
-    Object.assign(stubTitle, { id: 'xp-stub-title' }),
-    el('p', { class: 'xp-stub__text', text: 'The full case file for this building arrives in the next step. The same content is in the Classic portfolio now.' }),
-    el('div', { class: 'xp-stub__actions' }, [stubLink, stubClose]),
-  ]);
-  stub.hidden = true;
 
   // ── Tutorial ──
   const caps = new Map();
@@ -134,30 +134,18 @@ export function createHud({ zones, tiers, quality, sound, night, touch, debug, o
   const debugBox = el('pre', { class: 'xp-debug', 'aria-hidden': 'true' });
   debugBox.hidden = !debug;
 
-  const hud = el('div', { class: 'xp-hud' }, [top, bottom, promptBtn, arrow, tutorial, stub, touchLayer]);
+  const hud = el('div', { class: 'xp-hud' }, [top, bottom, promptBtn, arrow, tutorial, touchLayer]);
   hud.hidden = true;
   // Order matters: Back to Classic is the first focusable element and is visible during loading too.
   root.append(back, canvasHost, hud, loader, announcer, debugBox);
   document.body.append(root);
 
-  let stubReturn = null;
-  let stubZone = null;
-  let stubClassic = null;
-  stubClose.addEventListener('click', () => closeStub());
-  stubLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    if (stubZone && stubClassic) stubClassic(stubZone);
-  });
-  function closeStub() {
-    stub.hidden = true;
-    stubReturn?.focus?.({ preventScroll: true });
-  }
-
   return {
     root,
     canvasHost,
     back,
-    stub,
+    hud,
+    starButton: starBtn,
     surface: canvasHost,
     touchEls: { joystickBase: stickBase, joystickKnob: knob, buttons: { jump: jumpBtn, run: runBtn, interact: useBtn } },
     setProgress(v) {
@@ -207,22 +195,16 @@ export function createHud({ zones, tiers, quality, sound, night, touch, debug, o
       arrow.lastChild.style.rotate = `${-angle}rad`; // label stays upright
       arrow.lastChild.textContent = label;
     },
-    setVisited(visited) {
-      badge.textContent = `${visited.size}/${zones.length}`;
-      for (const c of chips) c.classList.toggle('is-visited', visited.has(c.dataset.zone));
+    /** Earned stars: the counter, its label and a star on each chip. */
+    setStars(earned) {
+      badge.textContent = `${earned.size}/${zones.length}`;
+      starBtn.setAttribute('aria-label', `Stars: ${earned.size} of ${zones.length}. ${earned.size === zones.length ? "Open the Deputy's Commission" : 'Open the case board'}`);
+      starBtn.classList.toggle('is-complete', earned.size === zones.length);
+      for (const c of chips) c.classList.toggle('is-visited', earned.has(c.dataset.zone));
     },
-    openStub(zone, onClassic) {
-      stubReturn = document.activeElement;
-      stubTitle.textContent = zone.title;
-      stubLink.setAttribute('href', zone.anchor);
-      stubZone = zone;
-      stubClassic = onClassic;
-      stub.hidden = false;
-      stubClose.focus({ preventScroll: true });
-    },
-    closeStub,
-    get stubOpen() {
-      return !stub.hidden;
+    /** Hide the HUD chrome during the Case Closed ceremony. */
+    setCinematic(on) {
+      root.classList.toggle('is-cinematic', on);
     },
     keycap(action, down) {
       caps.get(action)?.classList.toggle('is-down', down);
@@ -249,6 +231,7 @@ export function createHud({ zones, tiers, quality, sound, night, touch, debug, o
       if (!debugBox.hidden) debugBox.textContent = text;
     },
     dispose() {
+      fadeObserver?.disconnect();
       root.remove();
     },
   };

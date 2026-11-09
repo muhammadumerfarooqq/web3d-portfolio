@@ -4,11 +4,35 @@
  "landmarks": {
   "spawn": {
    "pos": [
-    0.8,
-    0.0,
-    26.0
+    3.0,
+    0.62,
+    43.0
    ],
-   "yaw_deg": 0
+   "yaw_deg": 0,
+   "facing": [
+    0,
+    0,
+    -1
+   ],
+   "note": "end of the dock, facing the town (the sheriff arrives by boat)"
+  },
+  "dock": {
+   "zone": null,
+   "title": "The Dock",
+   "center": [
+    3.0,
+    0.55,
+    36.5
+   ]
+  },
+  "lighthouse": {
+   "zone": null,
+   "title": "Lighthouse",
+   "center": [
+    -24.0,
+    0.0,
+    28.0
+   ]
   },
   "office": {
    "zone": "about",
@@ -106,30 +130,30 @@
     0.0,
     0.0,
     -44.0
-   ]
-  },
-  "sheriff_npc": {
-   "zone": "chat",
-   "title": "The Sheriff",
-   "door": [
-    -5.2,
-    0.0,
-    4.0
    ],
-   "center": [
-    -5.8,
-    0.0,
-    4.0
-   ]
+   "train": {
+    "rail_z": -33.0,
+    "rail_top_y": 0.35,
+    "enter_from_x": -75.0,
+    "stop_x": 0.0,
+    "exit_to_x": 75.0,
+    "note": "train.glb root origin = centre of the passenger car; stop_x=0 puts the car at the platform; locomotive leads towards +X"
+   }
   },
   "saloon": {
-   "zone": null,
-   "title": "Saloon (decor)",
+   "zone": "chat",
+   "title": "The Saloon",
+   "door": [
+    2.3,
+    0.0,
+    -14.75
+   ],
    "center": [
     8.6,
     0.0,
     -14.75
-   ]
+   ],
+   "note": "ask the barkeep anything about Umer (RAG chatbot, P5)"
   }
  }
 }

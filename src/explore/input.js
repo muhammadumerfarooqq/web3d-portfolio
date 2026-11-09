@@ -24,11 +24,12 @@ export function createInput({ surface, joystickBase, joystickKnob, buttons, onOr
     el.addEventListener(type, fn, opts);
     listeners.push(() => el.removeEventListener(type, fn, opts));
   };
+  let paused = false; // a case-file overlay or the ceremony owns the keyboard
   const typing = (e) => e.target instanceof HTMLElement && e.target.closest('input, select, textarea, [contenteditable="true"]');
 
   on(window, 'keydown', (e) => {
     const action = KEYMAP[e.code];
-    if (!action || typing(e)) return;
+    if (paused || !action || typing(e)) return;
     // Space and arrows would scroll or activate the focused button: claim them while playing.
     if (e.target instanceof HTMLElement && e.target.closest('button, a, select') && (e.code === 'Space' || e.code === 'Enter')) return;
     if (action !== 'interact') e.preventDefault();
@@ -38,7 +39,8 @@ export function createInput({ surface, joystickBase, joystickKnob, buttons, onOr
   on(window, 'keyup', (e) => {
     const action = KEYMAP[e.code];
     if (!action) return;
-    state[action] = false;
+    // One-shot actions stay latched until the frame loop takes them (a tap shorter than a frame counts).
+    if (action !== 'interact' && action !== 'jump') state[action] = false;
     onKey?.(action, false);
   });
   on(window, 'blur', () => {
@@ -134,6 +136,14 @@ export function createInput({ surface, joystickBase, joystickKnob, buttons, onOr
   return {
     state,
     /** Consume one-shot actions (jump, interact) so holding the key does not repeat them. */
+    /** Pause (overlay open): keys reach the page untouched and held keys are released. */
+    setPaused(on) {
+      paused = on;
+      for (const k of Object.keys(state)) if (typeof state[k] === 'boolean' && k !== 'runLatched') state[k] = false;
+      state.x = 0;
+      state.y = 0;
+      state.run = state.runLatched === true;
+    },
     take(action) {
       const v = state[action];
       state[action] = false;

@@ -98,11 +98,16 @@ export function castDown(bvh, origin, length) {
 export function stepUpHeight(bvh, feet, dirX, dirZ, radius, stepHeight) {
   const len = Math.hypot(dirX, dirZ);
   if (len < 1e-3) return 0;
-  const probe = new Vector3(feet.x + (dirX / len) * (radius + 0.12), feet.y + stepHeight + 0.05, feet.z + (dirZ / len) * (radius + 0.12));
-  const hit = castDown(bvh, probe, stepHeight + 0.1);
-  if (!hit) return 0;
-  const rise = hit.point.y - feet.y;
-  return rise > 0.04 && rise <= stepHeight ? rise : 0;
+  // Probe a few distances ahead: a thin ledge (a rail, a plank edge) is only under one of them.
+  let best = 0;
+  for (const d of [radius * 0.6, radius + 0.02, radius + 0.12]) {
+    const probe = new Vector3(feet.x + (dirX / len) * d, feet.y + stepHeight + 0.05, feet.z + (dirZ / len) * d);
+    const hit = castDown(bvh, probe, stepHeight + 0.1);
+    if (!hit) continue;
+    const rise = hit.point.y - feet.y;
+    if (rise > 0.04 && rise <= stepHeight && rise > best) best = rise;
+  }
+  return best;
 }
 
 /**

@@ -366,6 +366,15 @@ Visual layer only (structure, content pipeline, filters/URL state, modal, lightb
 - **Budgets measured:** Explore chunk 333 KB gz (≤ 350), Classic entry +1.1 KB gz, Classic Lighthouse unchanged (desktop 100s, mobile 98–99 / 100 / 100 / 100). Frame rates from headless Chrome are not representative (see LIMITATIONS L97).
 - **Next (P3.2):** zone overlays (case files), star badges / Case closed, baked town v6 swap (`blender/export/town.glb`, Draco + WebP: compatible, see L104), horse.
 
+#### P3.2 — Final art, case files, star badges, Case Closed, train · ✅ step done (9-Nov-2026), P3 continues in P3.3
+- **Final art:** baked town (`public/models/town.glb`, Draco + WebP atlases; placeholder deleted), spawn at the end of the dock, dock / lighthouse landmarks, chat at the Saloon, station train block; Draco avatar with Whistle and Ride; `train.glb` / `train.json`. Material pass keeps `Baked_*` atlases (dock wet sheen only); collisions re-walked (invisible dock rails, three-point step probe for the rails).
+- **Visual fixes:** far-only DOF (near field clamped; none on MEDIUM), shader rim + lantern key on the sheriff, emissive / bloom-threshold retune, dock light pools on the boards, jittered moon glitter path, seamless sea horizon (edge-calmed waves, shared far-ocean shading), lighter golden-hour fog, indigo night grade.
+- **Case files (`case-files.js`, lazy):** one native modal `<dialog>` holding the Classic section itself (moved in, restored on close / exit); focus trap, Esc, focus return, input paused, phone sheet; WANTED header for About; Saloon stub line; interview draft for the Telegraph.
+- **Stars and Case Closed:** `badges.js` (`explore.badges`, 256 whitelisted values), star flight + chime + aria-live, case board with reset; at 8/8 exactly once: fireworks (`fireworks.js`, lazy GPU sprites), Wave, CASE CLOSED stamp, Deputy's Commission (interview button; CV / Email hidden without a phone-free CV or a site email).
+- **Train (`train.js` + pure `train-machine.js`, lazy within 24 m):** enter → ease-out arrival (6 s) → stop → Journey case file → depart east → despawn; wheels by distance / radius, smoke, steam, synthesised whistle and chuffs.
+- **Budgets measured:** Explore start 338.5 KB gz (≤ 350; shared chunks counted), lazy chunks 3.6 / 2.5 / 1.6 KB gz, Classic entry +1.9 KB gz, Classic Lighthouse desktop 100s, mobile 99 / 100 / 100 / 100; 416 tests.
+- **Next (P3.3):** real-GPU and phone review of the look (L97, L98, L127), the horse (Ride clip), polish.
+
 ### P4 — Supabase foundation + contact & email · 9% · 5.1–5.8
 - Supabase project; migrations: all tables, RLS policies, SQL functions (`hit_rate_limit`, `log_event`), `admins` table.
 - Shared zod schemas; `/api/contact` per §2.5; Turnstile; Nodemailer; all UI states.

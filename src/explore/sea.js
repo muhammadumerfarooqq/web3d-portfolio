@@ -4,6 +4,7 @@
 import { Color, DataTexture, LinearFilter, Mesh, MeshStandardNodeMaterial, PlaneGeometry, RedFormat, UnsignedByteType } from 'three/webgpu';
 import {
   Fn,
+  abs,
   cameraPosition,
   clamp,
   cos,
@@ -12,6 +13,7 @@ import {
   max,
   mix,
   mx_noise_float,
+  mx_noise_vec3,
   normalize,
   positionLocal,
   positionWorld,
@@ -56,6 +58,21 @@ const WAVES = [
   [0.9, 0.9, 0.06, 3.3],
 ];
 
+/**
+ * Sky reflection plus the sun's (or moon's) glitter path, for a surface normal n seen along view.
+ * The glints use a noise-jittered reflection vector, so instead of one mirror disc the light breaks
+ * into a long, sparkling path towards the viewer (the jitter stands in for sub-pixel ripples).
+ */
+function seaReflection(u, view, n) {
+  const r = reflect(view.negate(), n);
+  const light = normalize(vec3(u.sunDir));
+  const skyRefl = mix(vec3(u.skyHorizon), vec3(u.skyZenith), smoothstep(0.0, 0.6, max(r.y, 0.0)));
+  const ripple = mx_noise_vec3(vec3(positionWorld.x.mul(1.8), positionWorld.z.mul(1.8), time.mul(0.9))).mul(vec3(0.13, 0.0, 0.13));
+  const glints = pow(max(dot(normalize(r.add(ripple)), light), 0.0), 900.0).mul(12.0);
+  const glow = pow(max(dot(r, light), 0.0), 16.0).mul(0.05);
+  return skyRefl.add(vec3(u.sunColor).mul(glints.add(glow)).mul(u.glitter));
+}
+
 export function createSea({ depthTexture, half, size = 240, segments = 192 }) {
   const u = {
     deep: uniform(new Color(0.004, 0.02, 0.05)),
@@ -75,7 +92,10 @@ export function createSea({ depthTexture, half, size = 240, segments = 192 }) {
   // Vertex: sum of Gerstner waves (GPU Gems 1, ch. 1) with an analytic tangent frame. The plane is
   // rotated −90° about X, so local (x, y, 0) is world (x, 0, −y).
   const world = vec3(positionLocal.x, 0, positionLocal.y.negate());
-  const calm = smoothstep(0.0, 2.5, texture(depthTexture, depthUV(world)).level(0).r.mul(4.0)).mul(0.85).add(0.15);
+  // Waves calm in the shallows and die out over the plane's outer 40 m, so its edge meets the flat far
+  // ocean with the same normal (no visible seam at the horizon).
+  const edge = smoothstep(size / 2, size / 2 - 40, max(abs(world.x), abs(world.z)));
+  const calm = smoothstep(0.0, 2.5, texture(depthTexture, depthUV(world)).level(0).r.mul(4.0)).mul(0.85).add(0.15).mul(edge);
   let offset = vec3(0, 0, 0);
   let tangent = vec3(1, 0, 0);
   let binormal = vec3(0, 0, 1);
@@ -115,11 +135,7 @@ export function createSea({ depthTexture, half, size = 240, segments = 192 }) {
   })();
 
   material.emissiveNode = Fn(() => {
-    const r = reflect(view.negate(), worldNormal);
-    const skyRefl = mix(vec3(u.skyHorizon), vec3(u.skyZenith), smoothstep(0.0, 0.6, max(r.y, 0.0)));
-    const sun = pow(max(dot(r, normalize(vec3(u.sunDir))), 0.0), 380.0).mul(14.0).mul(u.glitter);
-    const sunWide = pow(max(dot(r, normalize(vec3(u.sunDir))), 0.0), 24.0).mul(0.25).mul(u.glitter);
-    const refl = skyRefl.add(vec3(u.sunColor).mul(sun.add(sunWide)));
+    const refl = seaReflection(u, view, worldNormal);
     // Shore foam: thin band where the water gets shallow, broken up by moving noise; plus wave crests.
     const n = mx_noise_float(vec3(positionWorld.x.mul(0.9), positionWorld.z.mul(0.9), time.mul(0.35))).mul(0.5).add(0.5);
     // narrow band only where the water is genuinely shallow (not across flat sand under the plane)
@@ -141,14 +157,16 @@ export function createSea({ depthTexture, half, size = 240, segments = 192 }) {
   return { mesh, uniforms: u };
 }
 
-/** The GLB's huge flat sea becomes the far ocean under the detailed sea: same palette, no waves. */
+/** The GLB's huge flat sea becomes the far ocean under the detailed sea: the same shading as the
+ * detailed sea's calm outer edge (deep body, sky reflection, sun/moon glitter), just without waves. */
 export function createFarSea(seaMesh, u) {
-  const material = new MeshStandardNodeMaterial({ roughness: 0.12, metalness: 0.0 });
+  const material = new MeshStandardNodeMaterial({ roughness: 0.06, metalness: 0.0 });
   material.name = 'Sea_Far';
   const view = normalize(cameraPosition.sub(positionWorld));
+  const up = vec3(0, 1, 0);
   const fres = float(0.02).add(float(0.98).mul(pow(float(1).sub(max(view.y, 0.0)), 5.0)));
   material.colorNode = vec3(u.deep);
-  material.emissiveNode = mix(vec3(u.skyHorizon), vec3(u.skyZenith), 0.25).mul(fres);
+  material.emissiveNode = seaReflection(u, view, up).mul(fres);
   seaMesh.material = material;
   seaMesh.position.y -= 0.08;
   seaMesh.receiveShadow = false;

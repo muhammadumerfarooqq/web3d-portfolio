@@ -89,7 +89,7 @@ export function createAudio({ enabled }) {
     return true;
   }
 
-  function burst({ type, freq, q = 1, gain = 0.25, decay = 0.09, pitch = 0 }) {
+  function burst({ type, freq, q = 1, gain = 0.25, decay = 0.09, pitch = 0, at = 0 }) {
     if (!ensure() || ctx.state !== 'running') return;
     const src = ctx.createBufferSource();
     src.buffer = buffer;
@@ -99,7 +99,7 @@ export function createAudio({ enabled }) {
     filter.frequency.value = freq;
     filter.Q.value = q;
     const g = ctx.createGain();
-    const t = ctx.currentTime;
+    const t = ctx.currentTime + at;
     g.gain.setValueAtTime(0, t);
     g.gain.linearRampToValueAtTime(gain, t + 0.005);
     g.gain.exponentialRampToValueAtTime(0.0008, t + decay);
@@ -153,6 +153,38 @@ export function createAudio({ enabled }) {
       o.connect(g).connect(master);
       o.start(t);
       o.stop(t + 0.14);
+    },
+    /** A shaped tone for the lazily loaded systems (badge chime, train whistle, fireworks): a sine/
+     *  triangle at freq (optional glide to `to`), attack, hold and release in seconds, starting `at`
+     *  seconds from now. Silent when sound is off. */
+    tone({ freq, to = freq, type = 'sine', gain = 0.06, attack = 0.01, hold = 0, release = 0.25, at = 0, vibrato = 0 }) {
+      if (!ensure() || ctx.state !== 'running') return;
+      const o = ctx.createOscillator();
+      o.type = type;
+      const t = ctx.currentTime + at;
+      o.frequency.setValueAtTime(freq, t);
+      if (to !== freq) o.frequency.exponentialRampToValueAtTime(to, t + attack + hold + release);
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(gain, t + attack);
+      g.gain.setValueAtTime(gain, t + attack + hold);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + attack + hold + release);
+      if (vibrato) {
+        const lfo = ctx.createOscillator();
+        lfo.frequency.value = 5.5;
+        const amt = ctx.createGain();
+        amt.gain.value = vibrato;
+        lfo.connect(amt).connect(o.frequency);
+        lfo.start(t);
+        lfo.stop(t + attack + hold + release + 0.05);
+      }
+      o.connect(g).connect(master);
+      o.start(t);
+      o.stop(t + attack + hold + release + 0.05);
+    },
+    /** A filtered noise burst (chuffs, steam, firework crackle). */
+    noise(opts) {
+      burst(opts);
     },
     suspend() {
       ctx?.suspend?.();

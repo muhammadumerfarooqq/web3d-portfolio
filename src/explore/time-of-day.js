@@ -18,9 +18,9 @@ export const DAY = {
   skyZenith: [0.16, 0.27, 0.52],
   skyHorizon: [1.0, 0.58, 0.32],
   fogColor: [0.92, 0.58, 0.36],
-  fogDensity: 0.0068,
-  heightFog: 0.45,
-  exposure: 0.95,
+  fogDensity: 0.0042,
+  heightFog: 0.3,
+  exposure: 1.0,
   bloomStrength: 0.28,
   lanternIntensity: 0,
   windowGlow: 0.25,
@@ -34,7 +34,7 @@ export const DAY = {
 
 /** Night: deep indigo shadows, amber lantern pools, glowing windows, stars and moon. */
 export const NIGHT = {
-  sunDir: normalize([0.45, 0.62, -0.35]), // the moon
+  sunDir: normalize([0.35, 0.36, -0.7]), // the moon: low, ahead-right of the dock, so its glitter path runs beside it
   sunColor: [0.55, 0.66, 1.0],
   sunIntensity: 0.55,
   hemiSky: [0.12, 0.14, 0.32],
@@ -45,8 +45,8 @@ export const NIGHT = {
   fogColor: [0.05, 0.06, 0.14],
   fogDensity: 0.0135,
   heightFog: 0.9,
-  exposure: 1.15,
-  bloomStrength: 0.9,
+  exposure: 1.1,
+  bloomStrength: 0.6,
   lanternIntensity: 1,
   windowGlow: 1,
   stars: 1,

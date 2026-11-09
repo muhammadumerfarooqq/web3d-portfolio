@@ -77,8 +77,9 @@ export function createPlayer({ avatarData, bvh, depthAt, spawn }) {
       if (yaw !== undefined) facing = yaw;
       sync();
     },
-    wave() {
-      if (waving > 0 || !onGround || this.speed > 0.6) return;
+    /** Wave (entering a zone; forced for the Case Closed ceremony, when input is paused). */
+    wave(force = false) {
+      if (waving > 0 || !onGround || (!force && this.speed > 0.6)) return;
       waving = actions.Wave ? actions.Wave.getClip().duration : 0;
       play('Wave', 0.2);
     },

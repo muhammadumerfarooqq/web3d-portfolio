@@ -17,10 +17,11 @@ import {
   Vector3,
 } from 'three/webgpu';
 import { densityFogFactor, exponentialHeightFogFactor, float, fog, length, max, smoothstep, uniform, uv, vec3 } from 'three/tsl';
+import { SEA_LEVEL } from './config.js';
 
 const SHADOW_HALF = 20;
 
-export function createLights(scene, renderer, settings, lanternPositions, heightAt) {
+export function createLights(scene, renderer, settings, lanternPositions, heightAt, surfaceBelow = null) {
   renderer.shadowMap.enabled = settings.shadowMap > 0;
   renderer.shadowMap.type = PCFShadowMap;
 
@@ -71,7 +72,9 @@ export function createLights(scene, renderer, settings, lanternPositions, height
   decals.renderOrder = 2;
   const dummy = new Object3D();
   lanternPositions.forEach((p, i) => {
-    const ground = heightAt(p.x, p.z);
+    // Over water (the dock lamps) the terrain grid is the sea floor: put the pool on the boards instead.
+    let ground = heightAt(p.x, p.z);
+    if ((ground ?? 0) < SEA_LEVEL && surfaceBelow) ground = surfaceBelow(p.x, p.y - 0.3, p.z) ?? ground;
     dummy.position.set(p.x, (ground ?? 0) + 0.03, p.z);
     dummy.rotation.set(-Math.PI / 2, 0, 0);
     dummy.updateMatrix();

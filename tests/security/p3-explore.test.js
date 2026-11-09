@@ -6,8 +6,9 @@ import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { AVATAR_URL, DRACO_PATH, QUALITY_VALUES, TIERS, TIME_VALUES, TOWN_JSON_URL, TOWN_URL, TUTORIAL_VALUES } from '../../src/explore/config.js';
+import { AVATAR_URL, DRACO_PATH, QUALITY_VALUES, TIERS, TIME_VALUES, TOWN_JSON_URL, TOWN_URL, TRAIN_JSON_URL, TRAIN_URL, TUTORIAL_VALUES } from '../../src/explore/config.js';
 import { readPref, writePref } from '../../src/ui/prefs.js';
+import { BADGES_EMPTY, BADGES_KEY, BADGES_VALUES, ZONE_IDS, decodeBadges } from '../../src/explore/badges.js';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const EXPLORE = join(ROOT, 'src', 'explore');
@@ -38,7 +39,7 @@ describe('C9 Explore source hygiene', () => {
   });
 
   it('assets load from same-origin paths only', () => {
-    for (const url of [TOWN_URL, TOWN_JSON_URL, AVATAR_URL, DRACO_PATH]) expect(url).toMatch(/^\/[a-z]/);
+    for (const url of [TOWN_URL, TOWN_JSON_URL, AVATAR_URL, TRAIN_URL, TRAIN_JSON_URL, DRACO_PATH]) expect(url).toMatch(/^\/[a-z]/);
   });
 
   it('the Draco decoder is self-hosted in public/draco and the loader points there', () => {
@@ -54,7 +55,9 @@ describe('C9 Explore source hygiene', () => {
     expect(c).not.toMatch(/localStorage|sessionStorage|indexedDB|document\.cookie/);
     const calls = [...c.matchAll(/(?:readPref|writePref)\([^)]*\)/g)].map((m) => m[0]);
     expect(calls.length).toBeGreaterThanOrEqual(6);
-    for (const call of calls) expect(call, call).toMatch(/^(?:readPref|writePref)\((QUALITY|TUTORIAL|TIME)_KEY, .*\1_VALUES/);
+    for (const call of calls) expect(call, call).toMatch(/^(?:readPref|writePref)\((QUALITY|TUTORIAL|TIME|BADGES)_KEY, .*\1_VALUES/);
+    // no other Explore module touches storage or prefs at all (the case files report back to index.js)
+    for (const f of files.filter((x) => x.endsWith('.js') && x !== 'index.js')) expect(code(f), f).not.toMatch(/localStorage|sessionStorage|indexedDB|document\.cookie|readPref|writePref/);
   });
 
   it('the three Explore values are whitelisted; hostile stored values are ignored', () => {
@@ -69,10 +72,46 @@ describe('C9 Explore source hygiene', () => {
     expect(writePref('explore.quality', 'INSANE', QUALITY_VALUES, store)).toBe(false);
   });
 
-  it('the HUD is built with createElement / textContent (no markup strings)', () => {
-    const c = code('hud.js');
-    expect(c).toMatch(/document\.createElement\(/);
+  it('P3.2 explore.badges is whitelisted against the eight zone ids; hostile values are ignored', () => {
+    expect(BADGES_KEY).toBe('explore.badges');
+    expect(ZONE_IDS).toEqual(['about', 'projects', 'skills', 'achievements', 'contact', 'promo', 'journey', 'chat']);
+    expect(BADGES_VALUES).toHaveLength(256);
+    expect(new Set(BADGES_VALUES).size).toBe(256);
+    for (const v of BADGES_VALUES) expect(v === BADGES_EMPTY || v.split(',').every((id) => ZONE_IDS.includes(id)), v).toBe(true);
+    const hostile = ['<img src=x onerror=alert(1)>', 'about,about', 'skills,about', 'about,admin', 'ABOUT', ' about', 'about,', '', 'null', '__proto__'];
+    for (const bad of hostile) {
+      const store = memoryStorage({ 'explore.badges': bad });
+      expect(readPref('explore.badges', BADGES_VALUES, BADGES_EMPTY, store), bad).toBe(BADGES_EMPTY);
+      expect(writePref('explore.badges', bad, BADGES_VALUES, store), bad).toBe(false);
+      expect(decodeBadges(bad).size, bad).toBe(0);
+    }
+    const store = memoryStorage();
+    expect(writePref('explore.badges', 'about,skills', BADGES_VALUES, store)).toBe(true);
+    expect(readPref('explore.badges', BADGES_VALUES, BADGES_EMPTY, store)).toBe('about,skills');
+  });
+
+  it.each(['hud.js', 'case-files.js', 'train.js', 'fireworks.js'])('%s builds DOM with createElement / textContent only (no markup strings)', (f) => {
+    const c = code(f);
+    if (f === 'hud.js') expect(c).toMatch(/document\.createElement\(/);
+    if (f === 'case-files.js') expect(c).toMatch(/\bel\('dialog'/);
     expect(c).not.toMatch(/['"`]\s*<[a-z]/i);
+    expect(c).not.toMatch(/\.innerHTML|\.outerHTML|insertAdjacentHTML|createContextualFragment|DOMParser|document\.write/);
+  });
+
+  it('case files move the Classic section (never copy or re-parse it) and restore it on close', () => {
+    const c = code('case-files.js');
+    expect(c).not.toMatch(/cloneNode|importNode/);
+    expect(c).toMatch(/container\.before\(marker\)/);
+    expect(c).toMatch(/marker\.replaceWith\(mounted\.container\)/);
+  });
+
+  it('certificate links come only from strictly validated page attributes (https booking, same-origin .pdf, mailto)', () => {
+    const c = code('case-files.js');
+    expect(c).toContain(String.raw`/^https:\/\/[^\s"'<>]+$/`);
+    expect(c).toContain(String.raw`/^\/[\w/.-]+\.pdf$/`);
+    expect(c).toContain(String.raw`/^mailto:[^\s"'<>?]+$/`);
+    expect(c).toContain("window.open(links.booking, '_blank', 'noopener,noreferrer')");
+    expect(c).not.toMatch(/location\s*=|location\.href\s*=/);
   });
 
   it('debug hooks exist only behind ?debug=1', () => {

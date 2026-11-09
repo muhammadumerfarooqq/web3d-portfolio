@@ -82,7 +82,7 @@ export function createPost({ renderer, scene, camera, settings, sun, sky, partic
     ssr: uniform(0.6),
     focus: uniform(6),
     focal: uniform(5),
-    bokeh: uniform(0.8),
+    bokeh: uniform(0.45),
     grade: uniform(1),
     lut: uniform(1),
     ca: uniform(0),
@@ -149,13 +149,16 @@ export function createPost({ renderer, scene, camera, settings, sun, sky, partic
   }
 
   if (settings.dof) {
-    const dofPass = dof(lit, scenePass.getViewZNode(), u.focus, u.focal, u.bokeh);
+    // The node blurs both sides of the focus plane; clamping view-space Z to the focus distance keeps
+    // the near field (the sheriff, the street) perfectly sharp and leaves a gentle far-only bokeh.
+    const viewZ = scenePass.getViewZNode().min(u.focus.negate());
+    const dofPass = dof(lit, viewZ, u.focus, u.focal, u.bokeh);
     disposables.push(dofPass);
     lit = dofPass;
     enabled.push('DOF');
   }
 
-  const bloomPass = fullBloom ? bloom(scenePass.getTextureNode('emissive'), 1, 0.55, 0) : bloom(color, 1, 0.35, 0.82);
+  const bloomPass = fullBloom ? bloom(scenePass.getTextureNode('emissive'), 1, 0.45, 0.12) : bloom(color, 1, 0.35, 0.82);
   bloomPass.strength = u.bloom;
   disposables.push(bloomPass);
   enabled.push(fullBloom ? 'selective bloom' : 'cheap bloom');

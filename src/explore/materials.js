@@ -1,31 +1,33 @@
-// Name-based material upgrade pass (TSL node materials). Each town material keeps its colour,
-// roughness and emissive from the GLB and gains procedural detail: triplanar wood grain and board
-// seams, sun-bleached wear, a dust gradient near the ground, fake contact AO, wet sheen on the street
-// at night, sand sparkle, pulsing windows, flickering lanterns and glowing gold lettering.
-// A material that already has a texture map (the baked final town) is left untouched.
-import { Color, MeshStandardNodeMaterial } from 'three/webgpu';
+// Name-based material upgrade pass (TSL node materials). The final town is baked in Blender
+// (Baked_<Group> materials carrying an albedo × AO WebP atlas); those keep their map untouched,
+// except the dock, which gains a night wet sheen. The untextured ground, sea-side and emissive
+// materials keep their colour/roughness from the GLB and gain procedural detail: wet puddles on the
+// street at night, sand sparkle, breathing windows, flickering lanterns and glowing gold lettering.
+import { Color, MeshStandardNodeMaterial, Vector3 } from 'three/webgpu';
 import {
   Fn,
-  abs,
   cameraPosition,
-  clamp,
   color,
   dot,
   float,
   floor,
   fract,
   hash,
+  materialEmissive,
   max,
   mix,
   mx_fractal_noise_float,
   mx_noise_float,
+  normalView,
   normalWorld,
   normalize,
   pow,
+  positionViewDirection,
   positionWorld,
   reflect,
   sin,
   smoothstep,
+  texture,
   time,
   uniform,
   vec3,
@@ -44,37 +46,8 @@ export function createMaterialUniforms() {
   };
 }
 
-const triWeights = Fn(() => {
-  const w = pow(abs(normalWorld), vec3(4));
-  return w.div(w.x.add(w.y).add(w.z).add(1e-4));
-});
-
-/** 1 near the camera, 0 far away: fine procedural lines fade out before they alias into moiré. */
-const nearFade = Fn(([near, far]) => smoothstep(far, near, positionWorld.sub(cameraPosition).length()));
-
-/** Clapboard walls and plank floors: board seams + stretched grain, projected on three planes. */
-const woodPattern = Fn(() => {
-  const p = positionWorld;
-  const w = triWeights();
-  // walls facing ±Z: horizontal boards (seam along y), grain along x
-  const seamZ = smoothstep(0.0, 0.06, fract(p.y.mul(5.0))).mul(smoothstep(1.0, 0.94, fract(p.y.mul(5.0))));
-  const grainZ = mx_noise_float(vec3(p.x.mul(0.7), p.y.mul(16.0), p.z));
-  // walls facing ±X: horizontal boards, grain along z
-  const grainX = mx_noise_float(vec3(p.z.mul(0.7), p.y.mul(16.0), p.x));
-  // floors and roofs facing ±Y: planks along x (seam along z)
-  const seamY = smoothstep(0.0, 0.07, fract(p.z.mul(4.2))).mul(smoothstep(1.0, 0.93, fract(p.z.mul(4.2))));
-  const grainY = mx_noise_float(vec3(p.x.mul(0.7), p.z.mul(14.0), p.y));
-  const grain = grainX.mul(w.x).add(grainY.mul(w.y)).add(grainZ.mul(w.z));
-  const seam = mix(float(1), seamZ.mul(w.x.add(w.z)).add(seamY.mul(w.y)), nearFade(10.0, 28.0));
-  return vec3(grain.mul(0.5).add(0.5), seam, 0);
-});
-
-/** Large-scale weathering: sun-bleached patches (0 … 1). LOW uses one octave instead of three. */
+/** LOW uses one noise octave instead of three. */
 let LITE = false;
-const wearMask = Fn(() => {
-  const n = LITE ? mx_noise_float(positionWorld.mul(0.35)) : mx_fractal_noise_float(positionWorld.mul(0.35), 3, 2.0, 0.5);
-  return smoothstep(0.15, 0.75, n.mul(0.5).add(0.5));
-});
 
 /** Fake AO: darker where a surface meets the ground and on down-facing faces. */
 const contactAO = Fn(() => {
@@ -82,9 +55,6 @@ const contactAO = Fn(() => {
   const facing = normalWorld.y.mul(0.25).add(0.75);
   return mix(0.5, 1.0, ground).mul(facing);
 });
-
-/** Dust settling on the lowest half metre. */
-const dustMask = Fn(() => smoothstep(0.9, 0.0, positionWorld.y).mul(0.55));
 
 function baseOf(material) {
   return {
@@ -104,35 +74,25 @@ function nodeMaterial(material, base) {
   return m;
 }
 
-const DUST = color(0.62, 0.42, 0.24);
-
-function woodMaterial(material, base, u) {
-  const m = nodeMaterial(material, base);
-  const c = color(base.color);
-  const wood = woodPattern();
-  const grainTint = mix(0.72, 1.18, wood.x);
-  const seamShade = mix(0.55, 1.0, wood.y);
-  const bleached = mix(c, c.mul(1.9).add(vec3(0.05, 0.04, 0.03)), wearMask().mul(0.45));
-  const albedo = bleached.mul(grainTint).mul(seamShade).mul(contactAO());
-  m.colorNode = mix(albedo, DUST, dustMask());
-  m.roughnessNode = clamp(float(base.roughness).add(wood.x.sub(0.5).mul(0.2)), 0.35, 1.0);
-  return m;
-}
-
-function roofMaterial(material, base) {
-  const m = nodeMaterial(material, base);
+/**
+ * The baked final town keeps its albedo × AO atlas untouched. The dock alone gains a wet sheen at
+ * night: the boards nearest the water and the low spots pool spray, so the dock lanterns streak
+ * across them. The map and the GLB's roughness are kept; only roughness (and a slight darkening of
+ * the wet patches) is layered on top.
+ */
+function bakedDockMaterial(material, u) {
+  const m = new MeshStandardNodeMaterial({ name: material.name, roughness: material.roughness ?? 0.85, metalness: material.metalness ?? 0 });
+  m.map = material.map;
+  m.side = material.side;
+  m.transparent = material.transparent;
+  m.opacity = material.opacity;
   const p = positionWorld;
-  const rows = mix(float(1), smoothstep(0.0, 0.12, fract(p.y.mul(6.0))), nearFade(12.0, 32.0));
-  const tile = hash(floor(p.x.mul(3.5)).add(floor(p.y.mul(6.0)).mul(57.0)).add(floor(p.z.mul(3.5)).mul(113.0)));
-  const c = color(base.color).mul(mix(0.6, 1.25, tile)).mul(mix(0.55, 1.0, rows));
-  m.colorNode = mix(c, c.mul(1.8), wearMask().mul(0.35));
-  m.roughnessNode = float(base.roughness);
-  return m;
-}
-
-function trimMaterial(material, base) {
-  const m = nodeMaterial(material, base);
-  m.colorNode = color(base.color).mul(mix(0.82, 1.05, mx_noise_float(positionWorld.mul(3.0)).mul(0.5).add(0.5))).mul(contactAO());
+  const patches = smoothstep(0.45, 0.7, (LITE ? mx_noise_float(p.mul(0.6)) : mx_fractal_noise_float(p.mul(0.6), 2, 2.0, 0.5)).mul(0.5).add(0.5));
+  // up-facing boards only (posts and rails stay dry)
+  const up = smoothstep(0.6, 0.95, normalWorld.y);
+  const wet = u.wetness.mul(patches).mul(up).mul(0.85);
+  m.colorNode = texture(material.map).rgb.mul(color(material.color ?? new Color(1, 1, 1))).mul(mix(1.0, 0.6, wet));
+  m.roughnessNode = mix(float(material.roughness ?? 0.85), float(0.12), wet);
   return m;
 }
 
@@ -176,16 +136,16 @@ function emissiveMaterial(material, base, u, kind) {
     const bars = smoothstep(0.04, 0.09, fract(p.y.mul(2.6))).mul(smoothstep(0.04, 0.09, fract(p.x.add(p.z).mul(1.9))));
     // Warm interior falloff: brighter towards the bottom of the pane (lamplight on the sill).
     const warmth = mix(1.15, 0.75, fract(p.y.mul(2.6)));
-    m.emissiveNode = e.mul(0.13).mul(u.windowGlow).mul(pane.mul(0.2).add(0.85)).mul(mix(0.18, 1.0, bars)).mul(warmth);
+    m.emissiveNode = e.mul(0.085).mul(u.windowGlow).mul(pane.mul(0.2).add(0.85)).mul(mix(0.18, 1.0, bars)).mul(warmth);
   } else if (kind === 'Lantern') {
     // Flame flicker, desynchronised per lantern by its position.
     const seed = p.x.mul(7.31).add(p.z.mul(3.17));
     const flicker = sin(time.mul(11.0).add(seed)).mul(0.08).add(sin(time.mul(23.0).add(seed.mul(1.7))).mul(0.05)).add(0.87);
-    m.emissiveNode = e.mul(0.11).mul(mix(0.06, 1.0, u.lantern)).mul(flicker);
+    m.emissiveNode = e.mul(0.055).mul(mix(0.06, 1.0, u.lantern)).mul(flicker);
   } else {
     // Gold lettering: a soft neon-like glow at night, a warm sheen by day.
     const pulse = sin(time.mul(1.6)).mul(0.06).add(1.0);
-    m.emissiveNode = e.mul(mix(0.12, 1.6, u.night)).mul(pulse);
+    m.emissiveNode = e.mul(mix(0.1, 0.8, u.night)).mul(pulse);
     m.metalness = 0.85;
   }
   return m;
@@ -193,7 +153,7 @@ function emissiveMaterial(material, base, u, kind) {
 
 function simpleMaterial(material, base, kind) {
   const m = nodeMaterial(material, base);
-  const n = mx_noise_float(positionWorld.mul(kind === 'Hay' ? 6.0 : 2.0)).mul(0.5).add(0.5);
+  const n = mx_noise_float(positionWorld.mul(kind === 'Rope' ? 6.0 : 2.0)).mul(0.5).add(0.5);
   m.colorNode = color(base.color).mul(mix(0.8, 1.15, n)).mul(contactAO());
   if (kind === 'Iron') m.metalness = 0.7;
   return m;
@@ -204,15 +164,48 @@ function simpleMaterial(material, base, kind) {
  * texture map, is not one of ours, or is water (the sea has its own shader).
  */
 export function upgradeMaterial(material, u, { lite = false } = {}) {
-  if (!material || material.map) return material;
+  if (!material) return material;
   LITE = lite;
   const name = material.name;
+  if (name === 'Baked_Dock' && material.map) return bakedDockMaterial(material, u);
+  if (material.map) return material;
   const base = baseOf(material);
   if (MATERIALS.emissive.includes(name)) return emissiveMaterial(material, base, u, name);
-  if (MATERIALS.wood.includes(name)) return woodMaterial(material, base, u);
-  if (MATERIALS.roof.includes(name)) return roofMaterial(material, base);
-  if (MATERIALS.trim.includes(name)) return trimMaterial(material, base);
   if (MATERIALS.ground.includes(name)) return groundMaterial(material, base, u, { street: MATERIALS.street.includes(name), sand: name === 'Sand' });
   if (MATERIALS.misc.includes(name)) return simpleMaterial(material, base, name);
   return material;
+}
+
+/**
+ * Character lighting for the sheriff at night, in the shader so it never lifts the rest of the scene:
+ * a cool moon rim (fresnel) and a warm wrap key from the nearest lantern. index.js drives the
+ * uniforms each frame (night level, direction and strength of the nearest lantern).
+ */
+export function createRimUniforms() {
+  return {
+    moon: uniform(0),
+    moonColor: uniform(new Color(0.45, 0.58, 1.0)),
+    key: uniform(0),
+    keyDir: uniform(new Vector3(0, 1, 0)),
+    keyColor: uniform(new Color(1.0, 0.62, 0.3)),
+  };
+}
+
+const COPY = ['color', 'map', 'roughness', 'metalness', 'roughnessMap', 'metalnessMap', 'normalMap', 'normalScale', 'emissive', 'emissiveMap', 'emissiveIntensity', 'aoMap', 'aoMapIntensity', 'alphaMap', 'alphaTest', 'transparent', 'opacity', 'side', 'vertexColors', 'depthWrite'];
+
+export function rimMaterial(material, r) {
+  if (!material || material.isNodeMaterial) return material;
+  const m = new MeshStandardNodeMaterial({ name: material.name });
+  for (const k of COPY) {
+    const v = material[k];
+    if (v === undefined || v === null) continue;
+    if (v && typeof v.clone === 'function' && !v.isTexture) m[k] = v.clone();
+    else m[k] = v;
+  }
+  const fresnel = pow(float(1).sub(max(dot(normalView, positionViewDirection), 0.0)), 3.0);
+  const rim = vec3(r.moonColor).mul(fresnel).mul(r.moon).mul(0.32);
+  const wrap = max(dot(normalWorld, vec3(r.keyDir)).add(0.35).div(1.35), 0.0);
+  const key = vec3(r.keyColor).mul(wrap).mul(r.key).mul(0.22);
+  m.emissiveNode = materialEmissive.add(rim).add(key);
+  return m;
 }
