@@ -10,6 +10,8 @@ from mathutils import Vector, Matrix
 OUT = Path(sys.argv[1]); OUT.mkdir(parents=True, exist_ok=True)
 SAMPLES = int(sys.argv[sys.argv.index("--samples") + 1]) if "--samples" in sys.argv else 32
 random.seed(7)
+NIGHT = "--night" in sys.argv
+TAG = "night" if NIGHT else "day"
 bpy.ops.wm.read_factory_settings(use_empty=True)
 scene = bpy.context.scene
 coll = scene.collection
@@ -69,7 +71,7 @@ M = {
   "glass": mat_flat("Window_Warm", (0.10, 0.07, 0.04), 0.1, emit=(1.0, 0.62, 0.22), strength=2.2),
   "dark": mat_flat("Interior_Dark", (0.02, 0.015, 0.012), 0.9),
   "iron": mat_flat("Iron", (0.07, 0.07, 0.075), 0.5, 1.0),
-  "gold": mat_flat("Gold", (0.95, 0.68, 0.22), 0.25, 1.0),
+  "gold": mat_flat("Gold", (0.95, 0.68, 0.22), 0.25, 1.0, emit=(1.0, 0.62, 0.20), strength=(5.0 if NIGHT else 1.2)),
   "lantern": mat_flat("Lantern", (0.3, 0.2, 0.1), 0.3, emit=(1.0, 0.55, 0.15), strength=14),
   "cactus": mat_flat("Cactus", (0.16, 0.30, 0.17), 0.75),
   "rock": mat_ground("Rock", (0.34, 0.24, 0.17), (0.62, 0.45, 0.31), 1.4),
@@ -79,7 +81,7 @@ M = {
   "mesa": mat_ground("Mesa", (0.38, 0.17, 0.10), (0.74, 0.38, 0.20), 0.5),
   "water": mat_flat("Water", (0.04, 0.22, 0.30), 0.08),
   "sea": mat_flat("Sea", (0.02, 0.16, 0.24), 0.05),
-  "rut": mat_flat("Rut", (0.22, 0.14, 0.09), 0.95),
+  "rut": mat_flat("Rut", (0.40, 0.26, 0.16), 0.95),
   "scrub": mat_wood("Scrub", (0.25, 0.28, 0.10), (0.55, 0.50, 0.22), 0.95, 12),
   "flag_r": mat_flat("FlagR", (0.55, 0.08, 0.05), 0.9), "flag_c": mat_flat("FlagC", (0.85, 0.74, 0.5), 0.9),
 }
@@ -324,10 +326,11 @@ def terrain():
         base = min(1.0, d) ** 1.4 * (0.4 + 2.0 * nz.evaluate((x * 0.5, y * 0.5, 0))[3] + 1.5 * hill)
         rr_ = math.hypot(x * 0.85, y - 12)
         fall = min(1.0, max(0.0, (rr_ - 36.0) / 22.0))
-        v.co.z = base * (1 - fall) - 3.2 * fall ** 1.5
+        rip = min(1.0, d) * (0.16 * math.sin(0.9 * x + 0.35 * y) + 0.10 * math.sin(0.5 * y + 0.2 * x) + 0.06 * math.sin(2.3 * x))
+        v.co.z = (base + rip) * (1 - fall) - 3.2 * fall ** 1.5
     o = new_obj("ground", bm, M["sand"])
     for p in o.data.polygons: p.use_smooth = True
-    bm = bmesh.new(); bmesh.ops.create_grid(bm, x_segments=60, y_segments=60, size=130)
+    bm = bmesh.new(); res = bmesh.ops.create_circle(bm, cap_ends=True, cap_tris=False, segments=64, radius=900)
     for v in bm.verts: v.co.z = -0.55
     new_obj("sea", bm, M["sea"], (0, 12, 0))
     rg = random.Random(11)
@@ -355,14 +358,23 @@ def terrain():
 terrain()
 def mesas():
     rnd = random.Random(3)
-    for k in range(9):
-        ang = math.radians(-80 + k * 20 + rnd.uniform(-6, 6)); dist = rnd.uniform(38, 52)
-        bm = bmesh.new(); r = rnd.uniform(5, 10); hgt = rnd.uniform(6, 13)
-        res = bmesh.ops.create_cone(bm, cap_ends=True, segments=9, radius1=r, radius2=r * 0.72, depth=hgt)
-        for v in res["verts"]:
-            v.co.x *= 1 + rnd.uniform(-0.2, 0.2); v.co.y *= 1 + rnd.uniform(-0.2, 0.2)
-        o = new_obj("mesa", bm, M["mesa"], (math.sin(ang) * dist, 12 + math.cos(ang) * dist, hgt / 2 - 1.5))
-mesas()
+    for k in range(11):
+        ang = math.radians(-95 + k * 19 + rnd.uniform(-6, 6)); dist = rnd.uniform(40, 58)
+        cx, cy = math.sin(ang) * dist, 12 + math.cos(ang) * dist
+        bm = bmesh.new(); r = rnd.uniform(4.5, 9.5); z = -1.8; layers = rnd.randint(4, 7)
+        for L in range(layers):
+            hgt = rnd.uniform(1.6, 3.0); r *= rnd.uniform(0.78, 0.98)
+            res = bmesh.ops.create_cone(bm, cap_ends=True, segments=14, radius1=r * 1.06, radius2=r, depth=hgt)
+            for v in res["verts"]:
+                v.co.x *= 1 + rnd.uniform(-0.16, 0.16); v.co.y *= 1 + rnd.uniform(-0.16, 0.16)
+            bmesh.ops.translate(bm, vec=(0, 0, z + hgt / 2), verts=res["verts"]); z += hgt * 0.96
+        o = new_obj("mesa", bm, M["mesa"], (cx, cy, 0))
+def outcrops():
+    rnd = random.Random(5)
+    for c in ((-17, -18), (19, -16), (-24, 12), (24, 22), (-14, 34), (13, 36), (30, 2), (-30, -2)):
+        for k in range(rnd.randint(4, 7)):
+            rock((c[0] + rnd.uniform(-3, 3), c[1] + rnd.uniform(-3, 3), 0.3), rnd.uniform(0.8, 2.6))
+mesas(); outcrops()
 
 # ------------------------------------------------------------ the town
 building("SheriffOffice", 7.0, 6.0, 3.6, 1.0, "wood_b", -1, "SHERIFF", accent="wood_d")
@@ -411,6 +423,10 @@ def wire(y0, y1, x, z, sag=0.5):
     o = bpy.data.objects.new("wire", cu); coll.objects.link(o); o.data.materials.append(M["iron"])
 for a, b in ((-18, -2), (-2, 14), (14, 30)):
     for dx in (-0.65, 0.65): wire(a, b, -5.4 + dx * 0.0 + dx, 6.6, 0.7)
+for n_, (sd_, y_, ww_) in LAY.items():
+    px = sd_ * 4.9; rr2 = random.Random(len(n_))
+    barrel((px, y_ + ww_ * 0.82, 0.0)); barrel((px + sd_ * 0.45, y_ + ww_ * 0.82 + 0.5, 0.0))
+    crate((px, y_ + ww_ * 0.18, 0.0), rr2.uniform(0.55, 0.85), rr2.uniform(0, 1)); crate((px + sd_ * 0.2, y_ + ww_ * 0.18 + 0.1, 0.0), 0.5, rr2.uniform(0, 1))
 hay((-5.2, 15.5, 0.0), 0.3); hay((5.6, 5.0, 0.0), -0.4); wagon((6.2, 17.5, 0.0), math.pi / 2 + 0.2); wagon((-6.4, -13, 0.0), 0.4)
 
 barrel((-5.3, -2.5, 0.0)); barrel((-4.9, -1.8, 0.0)); crate((-5.1, -0.8, 0.0), 0.7, 0.4); crate((-5.2, 9.0, 0.0), 0.6)
@@ -477,18 +493,28 @@ so.rotation_euler = (-dts).to_track_quat("-Z", "Y").to_euler()
 # warm haze: finite volume box (an infinite world volume would black out the sky)
 hz = bpy.data.materials.new("Haze"); hz.use_nodes = True; hn = hz.node_tree
 for n in list(hn.nodes): hn.nodes.remove(n)
-vs = hn.nodes.new("ShaderNodeVolumeScatter"); vs.inputs["Density"].default_value = 0.014; vs.inputs["Color"].default_value = (1.0, 0.80, 0.58, 1); vs.inputs["Anisotropy"].default_value = 0.5
+vs = hn.nodes.new("ShaderNodeVolumeScatter"); vs.inputs["Density"].default_value = (0.006 if NIGHT else 0.008); vs.inputs["Color"].default_value = (1.0, 0.80, 0.58, 1); vs.inputs["Anisotropy"].default_value = 0.5
 ho = hn.nodes.new("ShaderNodeOutputMaterial"); hn.links.new(vs.outputs["Volume"], ho.inputs["Volume"])
-bm = bmesh.new(); box(bm, Vector((0, 15, 14)), (130, 130, 28)); ho_obj = new_obj("haze", bm, hz)
+bm = bmesh.new(); box(bm, Vector((0, 15, 20)), (900, 900, 40)); ho_obj = new_obj("haze", bm, hz)
 scene.view_settings.exposure = -0.1
+if NIGHT:
+    sky.sun_elevation = math.radians(-7); bg.inputs["Strength"].default_value = 0.10
+    sun.energy = 0.9; sun.color = (0.42, 0.58, 1.0); sun.angle = math.radians(1.0)
+    mdir = Vector((-0.5, -0.45, 0.74)).normalized(); so.rotation_euler = (-mdir).to_track_quat("-Z", "Y").to_euler()
+    for L in bpy.data.lights:
+        if L.type in ("POINT", "AREA"): L.energy *= 3.2
+    for nm, st in (("Lantern", 55), ("Window_Warm", 7)):
+        bsdf = bpy.data.materials[nm].node_tree.nodes["Principled BSDF"]; bsdf.inputs["Emission Strength"].default_value = st
+    vs.inputs["Color"].default_value = (0.55, 0.65, 0.95, 1)
+    scene.view_settings.exposure = 0.6
 
 cd = bpy.data.cameras.new("cam"); cam = bpy.data.objects.new("cam", cd); coll.objects.link(cam); scene.camera = cam
 scene.render.engine = "CYCLES"; scene.cycles.samples = SAMPLES; scene.cycles.use_denoising = True
 scene.view_settings.view_transform = "AgX"; scene.view_settings.look = "AgX - High Contrast"
 scene.render.resolution_x, scene.render.resolution_y = 1280, 720
-VIEWS = {"street": ((0.8, -24, 1.7), (0, 14, 2.8), 30), "hero": ((-2.8, -10.5, 1.7), (-9.0, 0.5, 2.8), 28), "aerial": ((-26, -30, 17), (0, 18, 1.0), 30)}
+VIEWS = {"street": ((0.8, -24, 1.7), (0, 14, 2.8), 30), "hero": ((-2.8, -10.5, 1.7), (-9.0, 0.5, 2.8), 28)}
 for tag, (loc, tgt, lens) in VIEWS.items():
     cam.location = Vector(loc); cd.lens = lens
     cam.rotation_euler = (Vector(tgt) - cam.location).to_track_quat("-Z", "Y").to_euler()
-    scene.render.filepath = str(OUT / f"town_{tag}.png"); bpy.ops.render.render(write_still=True); print("rendered", tag, flush=True)
-bpy.ops.wm.save_as_mainfile(filepath=str(OUT / "town_kit.blend"))
+    scene.render.filepath = str(OUT / f"town_{TAG}_{tag}.png"); bpy.ops.render.render(write_still=True); print("rendered", tag, flush=True)
+bpy.ops.wm.save_as_mainfile(filepath=str(OUT / f"town_kit_{TAG}.blend"))
