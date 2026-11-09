@@ -141,6 +141,8 @@ export function initMotion({ reduced }) {
   if (reduced) return;
 
   lenis = new Lenis({ autoRaf: false, duration: 1.15, smoothWheel: true });
+  // Explore mode covers the page: no smooth scrolling underneath it.
+  window.addEventListener('modechange', (e) => (e.detail.mode === 'explore' ? lenis?.stop() : lenis?.start()));
   lenis.on('scroll', ScrollTrigger.update);
   gsap.ticker.add((time) => lenis.raf(time * 1000));
   gsap.ticker.lagSmoothing(0);

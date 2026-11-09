@@ -1,0 +1,123 @@
+{
+ "units": "metres; three.js Y-up after export",
+ "travel_axis": "+X",
+ "origin": "centre of the passenger car, on the track centreline, ground level (rails sit at y=0.35)",
+ "length_m": 25.85,
+ "front_x": 19.75,
+ "rear_x": -6.1,
+ "wheels": [
+  {
+   "name": "wheel_car_r1_L",
+   "radius": 0.45
+  },
+  {
+   "name": "wheel_car_r1_R",
+   "radius": 0.45
+  },
+  {
+   "name": "wheel_car_r2_L",
+   "radius": 0.45
+  },
+  {
+   "name": "wheel_car_r2_R",
+   "radius": 0.45
+  },
+  {
+   "name": "wheel_car_f1_L",
+   "radius": 0.45
+  },
+  {
+   "name": "wheel_car_f1_R",
+   "radius": 0.45
+  },
+  {
+   "name": "wheel_car_f2_L",
+   "radius": 0.45
+  },
+  {
+   "name": "wheel_car_f2_R",
+   "radius": 0.45
+  },
+  {
+   "name": "wheel_tender_1_L",
+   "radius": 0.42
+  },
+  {
+   "name": "wheel_tender_1_R",
+   "radius": 0.42
+  },
+  {
+   "name": "wheel_tender_2_L",
+   "radius": 0.42
+  },
+  {
+   "name": "wheel_tender_2_R",
+   "radius": 0.42
+  },
+  {
+   "name": "wheel_tender_3_L",
+   "radius": 0.42
+  },
+  {
+   "name": "wheel_tender_3_R",
+   "radius": 0.42
+  },
+  {
+   "name": "wheel_tender_4_L",
+   "radius": 0.42
+  },
+  {
+   "name": "wheel_tender_4_R",
+   "radius": 0.42
+  },
+  {
+   "name": "wheel_loco_drive1_L",
+   "radius": 0.78
+  },
+  {
+   "name": "wheel_loco_drive1_R",
+   "radius": 0.78
+  },
+  {
+   "name": "wheel_loco_drive2_L",
+   "radius": 0.78
+  },
+  {
+   "name": "wheel_loco_drive2_R",
+   "radius": 0.78
+  },
+  {
+   "name": "wheel_loco_lead1_L",
+   "radius": 0.4
+  },
+  {
+   "name": "wheel_loco_lead1_R",
+   "radius": 0.4
+  },
+  {
+   "name": "wheel_loco_lead2_L",
+   "radius": 0.4
+  },
+  {
+   "name": "wheel_loco_lead2_R",
+   "radius": 0.4
+  }
+ ],
+ "spin": "rotate each wheel_* about its local Y (three: local Z after Y-up conversion; verify) by distance / radius",
+ "smoke_emitter": [
+  18.1,
+  4.2,
+  0.0
+ ],
+ "headlamp": [
+  19.0,
+  3.0,
+  0.0
+ ],
+ "whistle_at": [
+  15.4,
+  3.2,
+  0.0
+ ],
+ "note": "smoke_emitter/headlamp are Blender coords (x, y, z): convert to three as (x, z, -y)"
+}

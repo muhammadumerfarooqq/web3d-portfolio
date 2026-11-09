@@ -1136,6 +1136,15 @@
     cursor: default !important;
   }
 
+  /* Explore mode (src/explore/, lazy) covers the page; Classic underneath is hidden and inert. */
+  html[data-mode='explore'] {
+    overflow: hidden;
+  }
+
+  html[data-mode='explore'] :is(.site-header, main, .site-footer, .section-index, .scroll-progress, .skip-link) {
+    visibility: hidden;
+  }
+
   /* Reveal targets wait for src/ui/motion.js (theme-init.js adds .js unless reduced motion).
      The hero h1 is exempt so it can be the LCP element on first paint. */
   html.js:not([data-motion='ready']) [data-reveal]:not(.hero__title) {

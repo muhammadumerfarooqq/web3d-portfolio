@@ -97,8 +97,16 @@ Spawn: the town square with giant "UMER" letters (physics, lightweight). Day/nig
 ### Controls & camera
 WASD / arrows + Shift run + Space jump · **click-to-move** (raycast on ground) · **E** interact · **T** talk · **M** map/teleport · Esc closes panels · mobile: virtual joystick + tap-to-move + on-screen E/T. Third-person follow camera with smoothing, orbit drag, zoom, wall-collision pull-in.
 
-### Engine
-Capsule character vs world collision with **three-mesh-bvh** (no heavy physics engine for the walk); simple rigid-body physics only for the spawn letters. Zones via trigger volumes. Minimap + teleport menu (accessibility and speed). Panels are HTML overlays (CSS2D/DOM) styled as Classic paper panels, not WebGL text. Look: stylized, warm, flat-shaded wood and paper textures; no neon, no glass.
+### Engine (built in P3.1, `src/explore/`, a lazy chunk)
+- **Renderer:** `three/webgpu` WebGPURenderer with TSL node materials and the node `RenderPipeline`; it falls back to the WebGL2 backend automatically (`?backend=webgl` forces it for testing). ACES tone mapping, sRGB, PCF shadows from one directional light (sun at golden hour, moon at night) with a 40 m frustum that follows the player, texel-snapped.
+- **World:** the town comes through one constant (`TOWN_URL` in `src/explore/config.js`; the baked final keeps the same node and material names). Static meshes are merged by material and 30 m region (≈ 180–260 draw calls with shadows). three-mesh-bvh builds the collision BVH; a 160 × 160 height grid from the ground mesh gives water depth (shore foam, soft wall).
+- **Materials (name-based TSL upgrade, skipped when a material has a texture map):** triplanar clapboard seams and stretched grain on `Wood_*`, sun-bleached wear, dust in the lowest half metre, fake contact AO, roof shingle rows, ground variation, sand sparkle at golden hour, wet dark puddles on `Dirt`/`Rut` at night (lanterns smear across them), windows that breathe behind mullions, flickering `Lantern`s, neon-like `Gold` lettering at night. Fine lines fade with distance (no moiré). LOW uses a lite variant.
+- **Sky and sea:** sky dome shader (gradient, warm horizon band, sun disc and glow, moon with craters and halo, twinkling stars, thin clouds); Gerstner sea (four trains, analytic normals, calmer in shallows), fresnel sky reflection, sun/moon glitter, shore foam from the depth map; the GLB sea plane becomes the far ocean.
+- **Life:** wind-driven dust (TSL compute on WebGPU, stateless GPU animation on WebGL2), fireflies at night, forge embers, chimney smoke, footstep puffs, swaying bunting, swinging hanging signs, a tumbleweed, lantern flicker, a pooled set of lantern point lights plus ground light pools at every lantern.
+- **Player:** capsule (r 0.32 m, 1.8 m) with gravity, slopes up to 50°, step assist up to 0.42 m, a soft shore wall that ignores docks; walk 3.2 m/s, run 6.8 m/s, jump; Idle/Walk/Run/Jump crossfades, IdleArmsCrossed after 8 s, Wave on reaching a zone, auto-blink; spring camera with orbit, zoom, auto-recentre and collision.
+- **Zones:** from `public/models/town.json` (never hard-coded): door proximity prompt ("E / tap"), an edge arrow to the next unvisited zone, `explore:zone` event + stub card (case-file overlays and star badges: P3.2), badge counter.
+- **Interface:** case-file loader with a real progress bar, Back to Classic (always visible, first in Explore's DOM), interactive key-cap tutorial (remembered), zone chips for fast travel, sound, day/night and quality controls, touch joystick + run/jump/open, aria-live announcer, `?debug=1` overlay (fps, backend, adapter, tier, scale, draw calls, triangles, effects).
+- Day/night: night (the hero) is the default on first visit, ~2 s eased transition with a short low-contrast glitch, remembered in `explore.time`, also driven by the global theme switch. Golden hour, never flat noon.
 
 ## 7. The AI twin (avatar) — style & behaviour
 > **Decision record 9-Nov-2026:** replaces the 31-Oct-2026 chibi designer-toy concept. Unchanged by the P2.5 re-skin.
@@ -113,8 +121,23 @@ Capsule character vs world collision with **three-mesh-bvh** (no heavy physics e
 - **Behaviour:** waves when you arrive; turns to face you when talked to; Think loop while the RAG answer loads; Mouth_Open follows TTS audio amplitude; answers in first person with source citations in the chat panel.
 - **Sheriff NPC (P3/P8 option):** the chatbot character in town can be this twin with a star badge (and optionally a hat) added as a P8 accessory. Not built yet; the avatar files are untouched.
 
-## 8. Effects stack (Explore, P3)
-Restrained: soft shadows, warm fog tinted by theme, subtle film grain, vignette, light bloom on lanterns at night only, SMAA, AgX tone mapping. No chromatic aberration, no neon bloom, no glass or iridescence.
+## 8. Effects stack (Explore, built in P3.1)
+| Effect | LOW | MEDIUM | HIGH | ULTRA | WebGL2 backend |
+|---|---|---|---|---|---|
+| ACES tone mapping, exponential + height fog (tinted per time of day) | ✓ | ✓ | ✓ | ✓ | same |
+| Bloom | cheap (luminance) | selective (emissive MRT) | selective | selective | same |
+| Procedural 3D LUT grade (golden hour ↔ teal-orange night) | — | ✓ | ✓ | ✓ | same |
+| Chromatic aberration growing with speed, film grain (zero-mean), vignette | vignette | ✓ | ✓ | ✓ | same |
+| SMAA | — | ✓ | ✓ | ✓ | same |
+| GTAO | — | — | ✓ (½ res) | ✓ | same |
+| Screen-space reflections (wet street, sea) | — | — | ✓ (½ res) | ✓ | ULTRA only |
+| Depth of field on the player (far background only) | — | — | ✓ | ✓ | same |
+| Lens flare from the bloom (golden hour) | — | — | ✓ | ✓ | same |
+| God rays (sun / moon, shadow-map ray-march) | — | — | — | ✓ | off |
+| Glitch + pixelation dissolve (Classic → Explore, day/night, zones, fast travel) | ✓ | ✓ | ✓ | ✓ | same |
+| Shadow map / lantern point lights | none / 0 | 1024 / 4 | 2048 / 8 | 4096 / 12 | same |
+| Dust particles | 400 | 1 500 | 4 000 | 8 000 | stateless (no compute) |
+The glitch is a single short event (≤ 0.45 s, low contrast, never a strobe) and is replaced by a plain fade under reduced motion. Anti-patterns still apply: no neon UI, no glass.
 
 ## 9. Motion language
 Short and weighted, like paper and rubber stamps: **`power3/expo.out` entrances 0.3–0.6 s, hovers 0.15 s**, a small **thud** (`back.out` / `cubic-bezier(0.34,1.4,0.64,1)`) when something lands (intro letters, dialog drop-in, station signs). Poster drop-in = 18 px down + 1.2° → rest. Only `transform` and `opacity` animate. One loop: Lenis on `gsap.ticker`, ScrollTrigger from Lenis, three.js on the same tick (`lagSmoothing(0)`). Masked line reveals (GSAP SplitText), counters, label type-on. Everything respects `prefers-reduced-motion` (no reveals, no tilt, no marquee, no pins).
@@ -125,14 +148,8 @@ Custom cursor (rust dot + ink ring; **appears only after the first real mouse mo
 ## 11. Sound design (all licensed, credited in docs/licenses)
 Start choice "Enter with sound / silently" (respects browser autoplay rules). Music bed (acoustic/ambient, looped, under UI) · footsteps on boards/dust synced to Walk/Run events · building ambiences as THREE.PositionalAudio (train, telegraph clicks, wind) · stamp thud and paper UI sounds · avatar voice = TTS. Global mute + volume; pauses when tab hidden.
 
-## 12. Performance tiers (detect-gpu + deviceMemory + reduced-motion + Save-Data)
-| Tier | Default mode | Explore detail | Post-processing | DPR |
-|---|---|---|---|---|
-| ULTRA | Explore | full props, shadows | full | 2 |
-| HIGH | Explore | reduced props, baked shadows | bloom + grain + SMAA | 1.75 |
-| LOW (phones/iGPU) | Classic (Explore "lite" opt-in) | minimal props, no shadows | none | 1.5 |
-| STATIC | Classic only | — | — | — |
-Three.js is dynamically imported after first paint. Render loop pauses when hidden/off-screen. Budgets: initial JS ≤ 200 KB gz (Classic today ≈ 78 KB); LCP < 2.5 s (Classic); Explore 60 fps on HIGH/ULTRA, ≥ 30 fps on lite; avatar GLB ≤ 3 MB, world GLB ≤ 6 MB. Quality toggle + Pause motion always available.
+## 12. Performance tiers (Explore)
+Auto selection (`src/explore/quality.js`): software renderer or Save-Data → LOW; phones → LOW (MEDIUM with ≥ 6 GB and ≥ 8 cores); integrated GPUs (Intel, AMD APUs, from the adapter string) → MEDIUM; WebGPU with ≥ 8 GB and ≥ 8 cores → HIGH; otherwise MEDIUM. ULTRA is manual. Pixel ratio caps: LOW 1, MEDIUM 1.25, HIGH 1.5, ULTRA 2. Adaptive resolution scales the buffer between 0.55 and 1 to hold 55 fps (32 on touch) and, on "auto", drops one tier if it is still too slow at the floor. Reduced motion, no WebGL2 or Save-Data → Classic only, with the reason shown. Budgets: Explore chunk ≤ 350 KB gz (333 KB), Classic entry about unchanged (+1.1 KB gz); avatar GLB ≤ 3 MB, world GLB ≤ 6 MB (placeholder 7.3 MB, baked v6 3.9 MB). Render loop pauses when the tab is hidden; leaving Explore disposes everything.
 
 ## 13. Accessibility
 Classic mode is the complete accessible path. Explore: full keyboard control, teleport menu, captions for video/voice, panels are real HTML with focus management, reduced-motion → Classic. Contrast tests in CI (`tests/design-tokens.test.js`). Decorative stamps, pins and the intro are `aria-hidden`; eyebrow wording never replaces a real heading.

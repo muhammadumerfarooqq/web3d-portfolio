@@ -1,7 +1,7 @@
 // P2.4: intro / start screen / mode rules. Pure functions only (no DOM).
 import { describe, it, expect } from 'vitest';
 import { bootPlan, INTRO_KEY, INTRO_VALUES, readIntro, writeIntro } from '../src/ui/boot-rules.js';
-import { canOfferExplore, EXPLORE_READY, MODE_KEY, MODE_VALUES, readMode, resolveMode, writeMode } from '../src/ui/mode.js';
+import { canOfferExplore, EXPLORE_READY, exploreUnavailableReason, launchParams, MODE_KEY, MODE_VALUES, readMode, resolveMode, urlMode, writeMode } from '../src/ui/mode.js';
 import { readSound, SOUND_VALUES, writeSound } from '../src/ui/sound.js';
 
 function memoryStorage(initial = {}, { throws = false } = {}) {
@@ -105,11 +105,28 @@ describe('mode rules (src/ui/mode.js)', () => {
     expect(canOfferExplore()).toBe(false);
   });
 
-  it('Explore is not ready before P3, so the effective mode is always Classic', () => {
-    expect(EXPLORE_READY).toBe(false);
-    expect(resolveMode('explore', full)).toBe('classic');
+  // P3.1: the island exists, so the default `ready` flag is now true (before P3 this asserted false).
+  it('Explore is ready in P3: a stored "explore" resolves to Explore where it is offered', () => {
+    expect(EXPLORE_READY).toBe(true);
+    expect(resolveMode('explore', full)).toBe('explore');
     expect(resolveMode('classic', full)).toBe('classic');
     expect(resolveMode(null, full)).toBe('classic');
+    expect(resolveMode('explore', full, false)).toBe('classic'); // the flag still gates it
+  });
+
+  it('a clear reason is shown when Explore is not offered', () => {
+    expect(exploreUnavailableReason(full)).toBeNull();
+    expect(exploreUnavailableReason({ ...full, webgl2: false })).toMatch(/WebGL2/);
+    expect(exploreUnavailableReason({ ...full, reducedMotion: true })).toMatch(/reduced motion/);
+    expect(exploreUnavailableReason({ ...full, saveData: true })).toMatch(/Data Saver/);
+  });
+
+  it('launch parameters are whitelisted (?mode, ?debug=1, ?backend=webgl)', () => {
+    expect(launchParams('?mode=explore&debug=1&backend=webgl')).toEqual({ mode: 'explore', debug: true, forceWebGL: true });
+    expect(launchParams('?mode=<script>&debug=true&backend=webgpu')).toEqual({ mode: null, debug: false, forceWebGL: false });
+    expect(launchParams('')).toEqual({ mode: null, debug: false, forceWebGL: false });
+    expect(urlMode('?mode=classic')).toBe('classic');
+    expect(urlMode('?mode=EXPLORE')).toBeNull();
   });
 
   it('once ready (P3), Explore resolves only where it is offered', () => {

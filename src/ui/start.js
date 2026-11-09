@@ -5,7 +5,7 @@ import gsap from 'gsap';
 import { bootPlan, readIntro, writeIntro } from './boot-rules.js';
 import { setupDialog } from './dialog.js';
 import { getLenis } from './motion.js';
-import { canOfferExplore, chooseMode, getCapabilities, readMode } from './mode.js';
+import { canOfferExplore, chooseMode, exploreUnavailableReason, getCapabilities, readMode, urlMode } from './mode.js';
 import { readSound, setSound } from './sound.js';
 
 const STING_SECONDS = 6;
@@ -68,10 +68,10 @@ function boot({ reduced }) {
   const summary = dialog.querySelector('[data-start-summary]');
   const options = [...dialog.querySelectorAll('[data-mode-option]')];
   const exploreNote = dialog.querySelector('[data-explore-note]');
-  let preferred = readMode() ?? 'classic';
+  let preferred = urlMode() ?? readMode() ?? 'classic';
 
   if (!exploreOffered) {
-    exploreNote.textContent = caps.webgl2 ? 'Classic is used with reduced motion or Data Saver' : 'Needs WebGL2 · Classic only';
+    exploreNote.textContent = exploreUnavailableReason(caps);
     if (preferred === 'explore') preferred = 'classic';
   }
 
@@ -105,7 +105,7 @@ function boot({ reduced }) {
           return;
         }
         preferred = 'explore';
-        status.textContent = 'Saved: the island opens here once it is ready (P3). Classic for now.';
+        status.textContent = 'Explore the island selected: the 3D town loads when you enter.';
       } else {
         preferred = 'classic';
         status.textContent = 'Classic portfolio selected.';
@@ -127,7 +127,7 @@ function boot({ reduced }) {
     for (const el of returning) el.hidden = !isReturning;
     choices.hidden = isReturning;
     if (isReturning) {
-      summary.textContent = `${readMode() === 'explore' ? 'Classic (Explore saved)' : 'Classic'} · sound ${readSound()}`;
+      summary.textContent = `${readMode() === 'explore' ? 'Explore the island' : 'Classic'} · sound ${readSound()}`;
     }
     // Focus goes back to the top of the page (the skip link), so the next Tab reaches the nav.
     ui.open(document.querySelector('.skip-link'));

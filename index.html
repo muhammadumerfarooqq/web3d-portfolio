@@ -53,11 +53,11 @@
 
         <div class="header-actions">
           <span class="tooltip-wrap" data-tooltip-wrap>
-            <button type="button" class="btn btn--sm" aria-disabled="true" aria-describedby="explore-tip" data-mode-toggle>
+            <button type="button" class="btn btn--sm" aria-describedby="explore-tip" data-mode-toggle>
               <span>Ride to the island</span>
               <svg class="btn__icon btn__icon--nudge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
             </button>
-            <span class="tooltip" role="tooltip" id="explore-tip">Arrives in P3</span>
+            <span class="tooltip" role="tooltip" id="explore-tip">Walk the 3D town</span>
           </span>
 
           <button type="button" class="icon-btn" aria-label="Sound" aria-pressed="false" data-sound-toggle>
@@ -117,10 +117,10 @@
             <!--content:social-menu-->
           </ul>
           <div class="mobile-menu__controls">
-            <span class="chip chip--disabled">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M12 3 20 18H4Z" /><path d="M2 13h7" /></svg>
-              Ride to the island · P3
-            </span>
+            <button type="button" class="btn btn--sm" data-mode-toggle>
+              <span>Ride to the island</span>
+              <svg class="btn__icon btn__icon--nudge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+            </button>
             <button type="button" class="icon-btn" aria-label="Sound" aria-pressed="false" data-sound-toggle>
               <svg class="sound-icon--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                 <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
@@ -360,9 +360,9 @@
           <fieldset class="start__group">
             <legend class="start__legend">Mode</legend>
             <div class="start__options">
-              <button type="button" class="start-option" aria-pressed="false" aria-disabled="true" aria-describedby="explore-note" data-mode-option="explore">
+              <button type="button" class="start-option" aria-pressed="false" aria-describedby="explore-note" data-mode-option="explore">
                 <span class="start-option__name">Explore the island</span>
-                <span class="start-option__note" id="explore-note" data-explore-note>Arrives in P3 · your choice is saved</span>
+                <span class="start-option__note" id="explore-note" data-explore-note>Walk the 3D town · WebGL2</span>
               </button>
               <button type="button" class="start-option" aria-pressed="true" data-mode-option="classic">
                 <span class="start-option__name">Classic portfolio</span>

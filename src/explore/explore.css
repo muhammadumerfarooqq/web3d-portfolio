@@ -1,0 +1,597 @@
+/* Explore mode (lazy chunk): the case-file look over the 3D town. Uses the global tokens. */
+.xp {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  overflow: hidden;
+  color: #F1E6CE;
+  background: #14100C;
+  font-family: var(--font-body);
+  touch-action: none;
+  user-select: none;
+}
+
+.xp-canvas,
+.xp-canvas canvas {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  display: block;
+  outline: none;
+}
+
+.xp [hidden] {
+  display: none !important;
+}
+
+.xp-canvas:focus {
+  outline: none;
+}
+
+.xp :focus-visible {
+  outline: 3px solid #F3C566;
+  outline-offset: 3px;
+}
+
+/* Buttons: case-file paper on the night town */
+.xp-btn,
+.xp-select,
+.xp-chip,
+.xp-prompt,
+.xp-touch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-block-size: 44px;
+  padding-inline: 14px;
+  border: 2px solid #D9C9A6;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #F1E6CE;
+  background: rgba(20, 16, 12, 0.82);
+  box-shadow: 3px 3px 0 #000;
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.xp-btn:hover,
+.xp-chip:hover,
+.xp-prompt:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 #000;
+}
+
+.xp-btn[aria-pressed='true'] {
+  color: #14100C;
+  background: #D9A441;
+}
+
+.xp-btn--ink {
+  color: #14100C;
+  background: #F1E6CE;
+  box-shadow: 4px 4px 0 #D9A441;
+}
+
+.xp-icon {
+  inline-size: 44px;
+  padding: 0;
+  font-size: 1.1rem;
+}
+
+.xp-select {
+  appearance: auto;
+  padding-inline: 10px;
+}
+
+.xp-select option {
+  color: #231C15;
+}
+
+.xp-back {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+  z-index: 5;
+  color: #14100C;
+  background: #F1E6CE;
+  box-shadow: 4px 4px 0 #D9A441;
+}
+
+.xp-eyebrow {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #E08A6E;
+}
+
+/* Loader */
+.xp-loader {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background:
+    radial-gradient(ellipse at 20% 8%, rgba(217, 164, 65, 0.09), transparent 55%),
+    #14100C;
+  transition: opacity 0.6s ease;
+}
+
+.xp-loader.is-done {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.xp-loader__card {
+  display: grid;
+  gap: 14px;
+  inline-size: min(520px, 100%);
+  padding: 28px;
+  border: 2px solid #D9C9A6;
+  background: #1E1812;
+  box-shadow: 8px 9px 0 #000;
+}
+
+.xp-loader__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.9rem, 6vw, 2.75rem);
+  font-weight: 900;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.xp-loader__bar {
+  block-size: 14px;
+  border: 2px solid #D9C9A6;
+  overflow: hidden;
+}
+
+.xp-loader__fill {
+  display: block;
+  block-size: 100%;
+  background: repeating-linear-gradient(135deg, #D9A441 0 8px, #C08A2E 8px 16px);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 0.25s ease;
+}
+
+.xp-loader__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+}
+
+.xp-loader__msg {
+  margin: 0;
+  color: #BDAE90;
+}
+
+.xp-loader.is-error .xp-loader__fill {
+  background: #D9785A;
+}
+
+/* HUD */
+.xp-hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.xp-hud > * {
+  pointer-events: auto;
+}
+
+.xp-top {
+  position: absolute;
+  inset: max(12px, env(safe-area-inset-top)) 12px auto 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.xp-top > * {
+  pointer-events: auto;
+}
+
+.xp-top__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-inline-start: 190px; /* room for Back to Classic */
+}
+
+.xp-top__right {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.xp-logo,
+.xp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.xp-badge {
+  min-block-size: 44px;
+  padding-inline: 12px;
+  border: 2px solid #D9C9A6;
+  background: rgba(20, 16, 12, 0.82);
+  font-size: 1.05rem;
+}
+
+.xp-star {
+  inline-size: 26px;
+  block-size: 26px;
+  fill: #D9A441;
+  stroke: #14100C;
+  stroke-width: 1.2;
+}
+
+.xp-bottom {
+  position: absolute;
+  inset: auto 12px max(12px, env(safe-area-inset-bottom)) 12px;
+  display: grid;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.xp-bottom > * {
+  pointer-events: auto;
+}
+
+.xp-zones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.xp-chip {
+  min-block-size: 36px;
+  padding-inline: 10px;
+  font-size: 0.72rem;
+}
+
+.xp-chip.is-near {
+  color: #14100C;
+  background: #D9A441;
+}
+
+.xp-chip.is-visited::before {
+  content: '★' / '';
+  color: #D9A441;
+}
+
+.xp-chip.is-near.is-visited::before {
+  color: #14100C;
+}
+
+.xp-bottom__meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px 16px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.xp-legend,
+.xp-notice {
+  margin: 0;
+}
+
+.xp-notice {
+  color: #D9C9A6;
+}
+
+/* Prompt and edge arrow */
+.xp-prompt {
+  position: absolute;
+  left: 50%;
+  bottom: 140px;
+  translate: -50% 0;
+  gap: 12px;
+  padding: 10px 18px;
+  font-size: 0.875rem;
+  color: #14100C;
+  background: #F1E6CE;
+  box-shadow: 4px 4px 0 #D9A441;
+  animation: xp-drop 0.35s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.xp-prompt kbd {
+  padding: 2px 8px;
+  border: 2px solid currentColor;
+  font-family: var(--font-mono);
+}
+
+.xp-arrow {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  inline-size: 0;
+  block-size: 0;
+  pointer-events: none;
+}
+
+.xp-arrow__tip,
+.xp-arrow__label {
+  position: absolute;
+  left: 0;
+  top: calc(-1 * min(36vh, 38vw));
+}
+
+.xp-arrow__tip {
+  inline-size: 0;
+  block-size: 0;
+  margin-left: -11px;
+  border-inline: 11px solid transparent;
+  border-block-end: 18px solid #D9A441;
+  filter: drop-shadow(2px 2px 0 #000);
+}
+
+.xp-arrow__label {
+  translate: -50% 22px;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #F1E6CE;
+  text-shadow: 1px 1px 0 #000;
+}
+
+/* Zone stub panel (overlays arrive in P3.2) */
+.xp-stub {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: grid;
+  gap: 12px;
+  inline-size: min(460px, calc(100vw - 32px));
+  padding: 24px;
+  border: 2px solid #231C15;
+  color: #231C15;
+  background: #F3E9D2;
+  box-shadow: 8px 9px 0 rgba(0, 0, 0, 0.85);
+  rotate: -0.6deg;
+}
+
+.xp-stub .xp-eyebrow {
+  color: #7E2F1A;
+}
+
+.xp-stub__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.xp-stub__text {
+  margin: 0;
+}
+
+.xp-stub__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.xp-stub .xp-btn {
+  color: #231C15;
+  background: #F3E9D2;
+  border-color: #231C15;
+  box-shadow: 3px 3px 0 #231C15;
+}
+
+.xp-stub .xp-btn--ink {
+  color: #F3E9D2;
+  background: #231C15;
+  box-shadow: 4px 4px 0 #B8862A;
+}
+
+/* Tutorial key caps */
+.xp-tutorial {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  translate: -50% 0;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 18px 22px;
+  border: 2px solid #D9C9A6;
+  background: rgba(20, 16, 12, 0.85);
+  box-shadow: 6px 6px 0 #000;
+  text-align: center;
+}
+
+.xp-tutorial__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.xp-keys {
+  display: grid;
+  gap: 6px;
+  justify-items: center;
+}
+
+.xp-keys__row {
+  display: flex;
+  gap: 6px;
+}
+
+.xp-key {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 46px;
+  block-size: 46px;
+  padding-inline: 10px;
+  border: 2px solid #D9C9A6;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #D9C9A6;
+  background: #1E1812;
+  box-shadow: 0 4px 0 #000;
+  transition: transform 0.08s ease, box-shadow 0.08s ease, background-color 0.2s ease, color 0.2s ease;
+}
+
+.xp-key--wide {
+  min-inline-size: 110px;
+}
+
+.xp-key.is-done {
+  color: #14100C;
+  background: #D9A441;
+  box-shadow: 0 4px 0 #000, 0 0 22px -4px rgba(243, 197, 102, 0.75);
+}
+
+.xp-key.is-down {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 #000, 0 0 26px -2px rgba(243, 197, 102, 0.9);
+}
+
+/* Touch */
+.xp-touchpad {
+  position: absolute;
+  inset: auto 0 96px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-inline: 20px;
+  pointer-events: none;
+}
+
+.xp-stick {
+  position: relative;
+  inline-size: 120px;
+  block-size: 120px;
+  border: 2px solid rgba(217, 201, 166, 0.7);
+  border-radius: 50%;
+  background: rgba(20, 16, 12, 0.45);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.xp-stick__knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  inline-size: 52px;
+  block-size: 52px;
+  margin: -26px 0 0 -26px;
+  border: 2px solid #14100C;
+  border-radius: 50%;
+  background: #D9A441;
+}
+
+.xp-touch__buttons {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.xp-touch {
+  min-inline-size: 72px;
+  min-block-size: 56px;
+  touch-action: none;
+}
+
+.xp-touch--use {
+  grid-column: 1 / -1;
+}
+
+.xp-debug {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 6;
+  margin: 0;
+  padding: 8px 10px;
+  max-inline-size: min(440px, 70vw);
+  white-space: pre-wrap;
+  font: 11px/1.4 var(--font-mono);
+  color: #E5F5E0;
+  background: rgba(0, 0, 0, 0.72);
+  pointer-events: none;
+}
+
+@keyframes xp-drop {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (max-width: 720px) {
+  /* Back to Classic owns the first row; the HUD controls start on the row below it. */
+  .xp-top {
+    inset-block-start: calc(max(12px, env(safe-area-inset-top)) + 58px);
+  }
+
+  .xp-top__left {
+    padding-inline-start: 0;
+  }
+
+  .xp-top__right {
+    justify-content: flex-start;
+  }
+
+  .xp-logo {
+    display: none;
+  }
+
+  .xp-zones {
+    display: none;
+  }
+
+  .xp-prompt {
+    bottom: 230px;
+  }
+
+  .xp-tutorial {
+    top: 16%;
+  }
+}
+
+@media (forced-colors: active) {
+  .xp-btn,
+  .xp-chip,
+  .xp-prompt,
+  .xp-stub {
+    border: 2px solid CanvasText;
+  }
+}

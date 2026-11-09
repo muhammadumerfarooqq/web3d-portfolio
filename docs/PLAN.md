@@ -211,7 +211,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 | # | Brief line | How we meet it | Phase | Evidence | Status |
 |---|---|---|---|---|---|
 | 1.1 | Responsive and visually appealing personal portfolio website | Design system (tokens, type scale, grid), polished UI, Lighthouse targets | P2, P11 | Screenshots at 3 breakpoints; Lighthouse report | ✅ (P2.4: Lighthouse desktop 99–100 / mobile 95–96, A11y/BP/SEO 100) |
-| 1.2 | Interactive 3D environment or 3D elements | Three.js scene: avatar, particle field, skills constellation, scroll-driven camera, raycasting | P3 | Screenshots + screen recording | ⬜ |
+| 1.2 | Interactive 3D environment or 3D elements | Three.js scene: avatar, particle field, skills constellation, scroll-driven camera, raycasting | P3 | Screenshots + screen recording | 🟨 (P3.1: walkable 3D town, controller, zones; overlays P3.2) |
 | 1.3 | Home page with the name, introduction, and profile | Hero: name, title, intro, **profile card** (photo, role, city, LinkedIn/GitHub, web-CV download), CTAs | P2 | Hero screenshot | 🟨 (CV pending) |
 | 1.4 | About Me section | Bio + key stats with animated counters | P2 | Screenshot | ✅ |
 | 1.5 | Skills and technologies section | Categorized HTML skills list + 3D constellation with hover tooltips | P2, P3 | Screenshot | 🟨 (3D in P3) |
@@ -280,8 +280,8 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 ### Extra credit (all 10)
 | # | Feature | How we meet it | Phase | Status |
 |---|---|---|---|---|
-| E1 | Interactive 3D objects that respond to mouse movement | Particle parallax, skill nodes react on hover (raycast), avatar head/eyes follow cursor, drag to rotate | P3, P8 | ⬜ |
-| E2 | Dark and light themes | Token-based themes, system default + remembered choice, View Transition on switch, **3D scene lights/fog/background change with the theme** | P2, P3 | 🟨 |
+| E1 | Interactive 3D objects that respond to mouse movement | Particle parallax, skill nodes react on hover (raycast), avatar head/eyes follow cursor, drag to rotate | P3, P8 | 🟨 (P3.1: drag/touch orbit, zone prompts, Wave on approach; cursor-follow head in P8) |
+| E2 | Dark and light themes | Token-based themes, system default + remembered choice, View Transition on switch, **3D scene lights/fog/background change with the theme** | P2, P3 | ✅ (P3.1: sky, fog, sun/moon, lanterns, windows and grade follow day/night and the theme switch) |
 | E3 | Voice interaction with the chatbot | Push-to-talk → Groq Whisper → chat; answers read aloud with `speechSynthesis`; mute toggle; fallback message where unsupported | P6 | ⬜ |
 | E4 | Multilingual chatbot support | English, Urdu (RTL) and Roman Urdu: answers in the user's language, chat UI strings EN/UR, voice input in Urdu | P5, P6 | ⬜ |
 | E5 | Animated 3D avatar expressions or gestures | Blink, Smile, Wave, Think, Nod. Event-driven: wave on load/click, think while the bot answers, nod on answer, smile on contact success | P8 | ⬜ |
@@ -358,6 +358,13 @@ Visual layer only (structure, content pipeline, filters/URL state, modal, lightb
 - Resize, pause when hidden/off-screen, disposal, no-WebGL fallback, low-end mobile mode.
 
 **Exit:** ≥ 55 fps desktop, smooth on mid Android; zero console errors; fallback works.
+
+#### P3.1 — Explore engine · ✅ step done (9-Nov-2026), P3 continues in P3.2
+- **Renderer:** `three/webgpu` WebGPURenderer (WebGPU, automatic WebGL2 fallback; `?backend=webgl` forces it), TSL node materials, `RenderPipeline` post-processing, ACES tone mapping, PCF shadows following the player, adaptive resolution, tiers LOW / MEDIUM / HIGH / ULTRA (auto + manual, `explore.quality`), pause when hidden, full dispose on exit.
+- **World:** town via one constant (`TOWN_URL`), name-based TSL material upgrades (skipped when a material has a texture map), static meshes merged by material and region, three-mesh-bvh collision, Gerstner sea with shore foam from a baked depth map, sky dome (gradient, sun, moon, stars, clouds), lantern point-light pool plus ground light pools, height fog, compute-shader dust (WebGPU) / GPU-animated dust (WebGL2), fireflies, forge embers, chimney smoke, footstep puffs, flags, signs, tumbleweed.
+- **Play:** capsule controller (gravity, slopes, step assist, soft shore wall that ignores docks), spring camera with collision, Idle / Walk / Run / Jump / IdleArmsCrossed / Wave crossfades, auto-blink, keyboard + touch joystick, tutorial key caps, zone prompts from `town.json` with an edge arrow and an event + stub (overlays and star badges are P3.2), day (golden hour) / night (default) with a 2 s transition and glitch, procedural WebAudio.
+- **Budgets measured:** Explore chunk 333 KB gz (≤ 350), Classic entry +1.1 KB gz, Classic Lighthouse unchanged (desktop 100s, mobile 98–99 / 100 / 100 / 100). Frame rates from headless Chrome are not representative (see LIMITATIONS L97).
+- **Next (P3.2):** zone overlays (case files), star badges / Case closed, baked town v6 swap (`blender/export/town.glb`, Draco + WebP: compatible, see L104), horse.
 
 ### P4 — Supabase foundation + contact & email · 9% · 5.1–5.8
 - Supabase project; migrations: all tables, RLS policies, SQL functions (`hit_rate_limit`, `log_event`), `admins` table.

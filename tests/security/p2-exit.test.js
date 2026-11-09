@@ -111,7 +111,7 @@ describe('C6 boot layer before first paint (theme-init.js)', () => {
   });
 });
 
-describe('C6 localStorage keys are theme, sound, intro and mode only', () => {
+describe('C6 localStorage keys are theme, sound, intro, mode and the three explore.* keys only', () => {
   const sources = [...jsFiles(join(ROOT, 'src')), join(ROOT, 'public', 'theme-init.js')];
 
   it('only prefs.js (and the pre-paint theme-init.js) touch localStorage directly', () => {
@@ -131,7 +131,8 @@ describe('C6 localStorage keys are theme, sound, intro and mode only', () => {
         expect(call, f).toMatch(/\(\s*[A-Z_]+_KEY$/);
       }
     }
-    expect([...keys].sort()).toEqual(['intro', 'mode', 'sound', 'theme']);
+    // P3.1 adds three Explore keys (quality tier, tutorial done, time of day), each whitelisted.
+    expect([...keys].sort()).toEqual(['explore.quality', 'explore.time', 'explore.tutorial', 'intro', 'mode', 'sound', 'theme']);
   });
 });
 
