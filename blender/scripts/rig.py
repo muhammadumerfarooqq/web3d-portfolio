@@ -479,6 +479,28 @@ for f in range(1, 34, 4):
     pose(f, legs, loc={"hips": (0, 0, 0.012 * ph)}, aims=ride_aims, keys={"Smile": 0.35})
 finish(act, 33)
 
+
+# ---------------------------------------------------------------- Row (loop 40): seated in the rowboat, pulling two oars
+act = new_action("Row")
+row_seat = {"thigh.L": [(Y, -14), (X, -80)], "thigh.R": [(Y, 14), (X, -80)],
+            "shin.L": [(X, 84)], "shin.R": [(X, 84)], "foot.L": [(X, -8)], "foot.R": [(X, -8)]}
+catch_aims = {"upper_arm.L": (0.30, -0.85, -0.42), "forearm.L": (0.20, -0.97, -0.10), "hand.L": (0.15, -0.98, -0.10),
+              "upper_arm.R": (-0.30, -0.85, -0.42), "forearm.R": (-0.20, -0.97, -0.10), "hand.R": (-0.15, -0.98, -0.10)}
+finish_aims = {"upper_arm.L": (0.42, 0.25, -0.87), "forearm.L": (0.25, -0.95, 0.15), "hand.L": (0.20, -0.97, 0.05),
+               "upper_arm.R": (-0.42, 0.25, -0.87), "forearm.R": (-0.25, -0.95, 0.15), "hand.R": (-0.20, -0.97, 0.05)}
+def lerp_aims(a, b, t):
+    out = {}
+    for k in a:
+        v = [a[k][i] * (1 - t) + b[k][i] * t for i in range(3)]
+        n = math.sqrt(sum(c * c for c in v)); out[k] = tuple(c / n for c in v)
+    return out
+for f in range(1, 42, 4):
+    ph = (f - 1) / 40.0
+    t = 0.5 - 0.5 * math.cos(ph * 2 * math.pi)          # 0 = catch (reach), 1 = finish (pull)
+    body = merged(row_seat, {"spine": [(X, -9 + 15 * t)], "chest": [(X, -4 + 6 * t)], "head": [(X, 6 - 8 * t)]})
+    pose(f, body, aims=lerp_aims(catch_aims, finish_aims, t), keys={"Smile": 0.2})
+finish(act, 41)
+
 # opening the .blend shows the Idle clip on the timeline
 arm.animation_data.action = bpy.data.actions["Idle"]
 KEYS.animation_data.action = bpy.data.actions["Idle_face"]

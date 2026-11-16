@@ -1,0 +1,10 @@
+{
+ "units": "metres; three.js Y-up",
+ "nodes": {"Oar_L": "oar, pivot at its oarlock, blade along +X (outboard)", "Oar_R": "mirror, blade along -X",
+           "Oar_L_lock": "iron oarlock, same pivot", "Oar_R_lock": "iron oarlock, same pivot"},
+ "attach_to": "Rowboat_baked (node in town.glb)",
+ "oarlock_local_three": {"Oar_L": [0.72, 0.03, -0.10], "Oar_R": [-0.72, 0.03, -0.10]},
+ "rower": {"avatar_clip": "Row (41 frames @30fps, loop)", "seat_local_three": [0.0, -0.02, -0.30],
+           "note": "seat top of the middle thwart; place the avatar so its hips sit on it (measure the hips bone at runtime, do not hard-code)"},
+ "stroke": "sync to the Row clip phase t = 0.5 - 0.5*cos(2*pi*phase): t=0 catch (blade forward, in the water), t=1 finish; oar yaw sweep about +-28 deg, blade lifts ~10 deg on the recovery"
+}
