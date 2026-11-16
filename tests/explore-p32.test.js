@@ -192,13 +192,12 @@ describe('case-file overlay: accessibility contract', () => {
     expect(c).toMatch(/canvasHost\.focus\(\{ preventScroll: true \}\)/);
     const index = src('index.js');
     expect(index).toMatch(/input\.setPaused\(open \|\| ceremony\)/);
-    expect(index).toMatch(/const blocked = overlayOpen \|\| ceremony;/);
+    expect(index).toMatch(/const blocked = overlayOpen \|\| ceremony(?: \|\| cinematic)?;/); // P3.3 adds the arrival cinematic
     expect(src('input.js')).toMatch(/if \(paused \|\| !action \|\| typing\(e\)\) return;/);
   });
 
   it('is a full-screen sheet on phones', () => {
-    const phone = css.slice(css.lastIndexOf('@media (max-width: 720px)'));
-    expect(phone).toMatch(/\.xp-case \{[^}]*inline-size: 100vw;[^}]*block-size: 100dvh;/);
+    expect(css).toMatch(/@media \(max-width: 720px\) \{\s*\.xp-case \{[^}]*inline-size: 100vw;[^}]*block-size: 100dvh;/);
   });
 
   it('a star is earned after 3 s open or on interaction (never by the close button alone)', () => {

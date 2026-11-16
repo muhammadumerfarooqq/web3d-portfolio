@@ -3912,35 +3912,142 @@
     display: grid;
   }
 
+  /* P3.3 opening: a desert at dawn (light theme) or under the moon (dark theme). Only transform and
+     opacity animate (src/ui/start.js); the dust is a Canvas 2D layer. Colours are scene colours,
+     tuned per theme, not UI tokens. */
   .intro__stage {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    --sky-top: #f6c48c;
+    --sky-mid: #f29b6c;
+    --sky-low: #f7d6a6;
+    --sun: #fff1c9;
+    --sun-glow: rgba(255, 196, 120, 0.75);
+    --land-far: #b5643d;
+    --land-near: #7a3a22;
+    --word: #231c15;
+    --tag: #7e2f1a;
+    --metal: #c9902f;
+    --metal-edge: #5a3a12;
+  }
+
+  [data-theme='dark'] .intro__stage {
+    --sky-top: #070b19;
+    --sky-mid: #142142;
+    --sky-low: #2b2f52;
+    --sun: #eef1ff;
+    --sun-glow: rgba(170, 190, 255, 0.45);
+    --land-far: #1a1d33;
+    --land-near: #0b0d19;
+    --word: #f1e6ce;
+    --tag: #e08a6e;
+    --metal: #d9a441;
+    --metal-edge: #3b2708;
+  }
+
+  .intro__sky {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-mid) 55%, var(--sky-low) 100%);
+  }
+
+  /* Stars over the moonlit desert (static pattern; dark theme only). */
+  [data-theme='dark'] .intro__sky::after {
+    content: '';
+    position: absolute;
+    inset: 0 0 40% 0;
+    background-image:
+      radial-gradient(1.5px 1.5px at 12% 18%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 27% 8%, #fff 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 41% 26%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 58% 12%, #fff 50%, transparent 51%),
+      radial-gradient(1.5px 1.5px at 73% 22%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 86% 9%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 93% 30%, #fff 50%, transparent 51%),
+      radial-gradient(1px 1px at 6% 36%, #fff 50%, transparent 51%);
+    opacity: 0.8;
+  }
+
+  .intro__sun {
+    position: absolute;
+    inset-inline-start: 80%;
+    inset-block-start: 60%;
+    inline-size: min(20vmin, 170px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--sun);
+    box-shadow: 0 0 60px 24px var(--sun-glow), 0 0 160px 70px var(--sun-glow);
+    will-change: transform;
+  }
+
+  .intro__dust {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    block-size: 100%;
+    pointer-events: none;
+  }
+
+  .intro__land {
+    position: absolute;
+    inset: auto 0 0 0;
+    block-size: 34vh;
+  }
+
+  .intro__land--far {
+    background: var(--land-far);
+    clip-path: polygon(0 69%, 7.5% 69%, 9.4% 47%, 20.6% 47%, 22.5% 69%, 38.8% 69%, 40.6% 54%, 47.5% 54%, 49.4% 69%, 69.4% 69%, 71.3% 42%, 83.1% 42%, 85.3% 69%, 100% 69%, 100% 100%, 0 100%);
+  }
+
+  .intro__land--near {
+    background: var(--land-near);
+    clip-path: polygon(0 83%, 14% 76%, 26% 86%, 39% 82%, 54% 77%, 66% 85%, 79% 80%, 91% 78%, 100% 81%, 100% 100%, 0 100%);
+  }
+
+  .intro__center {
     position: absolute;
     inset: 0;
     display: grid;
     place-content: center;
     justify-items: center;
-    gap: var(--space-4);
+    gap: var(--space-3);
     padding-inline: var(--space-4);
+    padding-block-end: 8vh;
     container-type: inline-size;
+    will-change: transform;
   }
 
-  /* A rust ink band wipes across the poster (transform + opacity only). */
-  .intro__sweep {
-    position: absolute;
-    inset-block: 34% 34%;
-    inset-inline: -10%;
-    background: var(--rust);
-    opacity: 0;
+  .intro__badge {
+    inline-size: clamp(72px, 13vmin, 128px);
+    block-size: auto;
+    filter: drop-shadow(4px 5px 0 rgba(0, 0, 0, 0.55));
     will-change: transform, opacity;
-    pointer-events: none;
+  }
+
+  .intro__badge-metal {
+    fill: var(--metal);
+    stroke: var(--metal-edge);
+    stroke-width: 2.5;
+    stroke-linejoin: round;
+  }
+
+  .intro__badge-ring {
+    fill: none;
+    stroke: var(--metal-edge);
+    stroke-width: 2.5;
+  }
+
+  .intro__badge-inner {
+    fill: var(--metal-edge);
   }
 
   .intro__word {
     position: relative;
     display: flex;
-    perspective: 600px;
     padding-block: 0.04em;
     font-family: var(--font-display);
-    font-size: min(16rem, 34cqi);
+    font-size: min(15rem, 32cqi);
     font-weight: 900;
     line-height: 0.9;
     letter-spacing: 0.02em;
@@ -3948,19 +4055,40 @@
 
   .intro__letter {
     display: inline-block;
-    color: var(--text);
+    color: var(--word);
+    text-shadow: 5px 6px 0 rgba(0, 0, 0, 0.35);
   }
 
   .intro__tagline {
     position: relative;
     max-inline-size: 36ch;
+    min-block-size: 1.4em;
     font-family: var(--font-mono);
     font-size: clamp(0.9375rem, 2.2cqi + 0.5rem, 1.25rem);
     font-weight: 700;
     letter-spacing: 0.2em;
     text-transform: uppercase;
     text-align: center;
-    color: var(--rust-text);
+    color: var(--tag);
+  }
+
+  /* First frame (theme-init.js sets data-boot before paint): the word is already there, faint, so
+     the page has contentful text from frame 1 (LCP); the star and the tagline wait for start.js. */
+  /* The slam's start state, in CSS from the first frame. Each letter stays well below the hero
+     title's painted area at every moment (scale ≤ 1.15), so the opening never becomes a later,
+     larger LCP candidate than the hero rendered underneath (Lighthouse LCP unchanged). */
+  html[data-boot='intro'] .intro:not(.is-static) .intro__letter {
+    opacity: 0.12;
+    transform: translateY(-34%) scale(1.15);
+  }
+
+  html[data-boot='intro'] .intro:not(.is-static) .intro__badge,
+  html[data-boot='intro'] .intro:not(.is-static) .intro__tagline {
+    opacity: 0;
+  }
+
+  html[data-boot='intro'] .intro:not(.is-static) .intro__sun {
+    transform: translateY(26vh);
   }
 
   .intro__video {

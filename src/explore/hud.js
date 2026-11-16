@@ -36,7 +36,7 @@ const KEYCAPS = [
   ['Space', 'Space', 'jump'],
 ];
 
-export function createHud({ zones, tiers, quality, sound, night, touch, debug, onExit, onTravel, onSound, onTime, onQuality, onSkipTutorial, onInteract, onStars, showTutorial }) {
+export function createHud({ zones, tiers, quality, sound, music = true, night, touch, debug, onExit, onTravel, onSound, onMusic, onTime, onQuality, onSkipTutorial, onInteract, onStars, onReplay, showTutorial }) {
   const root = el('div', { class: 'xp', 'data-explore': true, role: 'application', 'aria-label': 'Explore the island: 3D town' });
 
   const back = el('button', { type: 'button', class: 'xp-btn xp-back', 'data-explore-back': true }, [el('span', { 'aria-hidden': 'true', text: '←' }), el('span', { text: 'Back to Classic' })]);
@@ -65,6 +65,8 @@ export function createHud({ zones, tiers, quality, sound, night, touch, debug, o
   starBtn.addEventListener('click', () => onStars?.());
   const soundBtn = el('button', { type: 'button', class: 'xp-btn xp-icon', 'aria-pressed': String(sound), 'aria-label': 'Sound' }, [el('span', { 'aria-hidden': 'true', text: '♪' })]);
   soundBtn.addEventListener('click', () => onSound(soundBtn.getAttribute('aria-pressed') !== 'true'));
+  const musicBtn = el('button', { type: 'button', class: 'xp-btn xp-icon', 'aria-pressed': String(music), 'aria-label': 'Music' }, [el('span', { 'aria-hidden': 'true', text: '♫' })]);
+  musicBtn.addEventListener('click', () => onMusic?.(musicBtn.getAttribute('aria-pressed') !== 'true'));
   const timeBtn = el('button', { type: 'button', class: 'xp-btn', 'aria-pressed': String(night), 'aria-label': 'Night' }, [el('span', { text: night ? 'Night' : 'Golden hour' })]);
   timeBtn.addEventListener('click', () => onTime(timeBtn.getAttribute('aria-pressed') !== 'true'));
   const qSelect = el('select', { class: 'xp-select', 'aria-label': 'Graphics quality' }, [el('option', { value: 'auto', text: 'Auto' }), ...tiers.map((t) => el('option', { value: t, text: t[0] + t.slice(1).toLowerCase() }))]);
@@ -79,10 +81,10 @@ export function createHud({ zones, tiers, quality, sound, night, touch, debug, o
 
   const top = el('div', { class: 'xp-top' }, [
     el('div', { class: 'xp-top__left' }, [el('span', { class: 'xp-logo' }, [STAR(), el('span', { text: 'UMER' })])]),
-    el('div', { class: 'xp-top__right' }, [starBtn, soundBtn, timeBtn, qSelect]),
+    el('div', { class: 'xp-top__right' }, [starBtn, soundBtn, musicBtn, timeBtn, qSelect]),
   ]);
   const legend = el('p', { class: 'xp-legend' }, [
-    el('span', { text: touch ? 'Stick to walk · drag to look · Open to enter a building' : 'WASD / arrows walk · Shift run · Space jump · E open · drag to look' }),
+    el('span', { text: touch ? 'Stick to walk · drag to look · Open to enter a building · Whistle for your horse' : 'WASD / arrows walk · Shift run · Space jump · E open · H whistle · drag to look' }),
   ]);
   const notice = el('p', { class: 'xp-notice', text: 'Everything here is also in the Classic portfolio.' });
   // One scrolling row (never wraps into the legend or the prompt); the fade marks the hidden side.
@@ -95,7 +97,13 @@ export function createHud({ zones, tiers, quality, sound, night, touch, debug, o
   zoneNav.addEventListener('scroll', updateFade, { passive: true });
   const fadeObserver = typeof ResizeObserver === 'function' ? new ResizeObserver(updateFade) : null;
   fadeObserver?.observe(zoneNav);
-  const bottom = el('div', { class: 'xp-bottom' }, [zoneNav, el('div', { class: 'xp-bottom__meta' }, [legend, notice])]);
+  const replay = el('button', { type: 'button', class: 'xp-link' }, [el('span', { text: 'Replay arrival' })]);
+  replay.addEventListener('click', () => onReplay?.());
+  const bottom = el('div', { class: 'xp-bottom' }, [zoneNav, el('div', { class: 'xp-bottom__meta' }, [legend, el('span', { class: 'xp-bottom__end' }, [replay, notice])])]);
+  // A short line for things the sheriff should know ("Your horse can't reach you here").
+  const toast = el('p', { class: 'xp-toast', role: 'status' });
+  toast.hidden = true;
+  let toastTimer = 0;
 
   // ── Prompt, arrow, announcer ──
   const promptTitle = el('span', { class: 'xp-prompt__title' });
@@ -128,13 +136,14 @@ export function createHud({ zones, tiers, quality, sound, night, touch, debug, o
   const jumpBtn = el('button', { type: 'button', class: 'xp-touch xp-touch--jump', 'aria-label': 'Jump' }, [el('span', { text: 'Jump' })]);
   const runBtn = el('button', { type: 'button', class: 'xp-touch xp-touch--run', 'aria-label': 'Run', 'aria-pressed': 'false' }, [el('span', { text: 'Run' })]);
   const useBtn = el('button', { type: 'button', class: 'xp-touch xp-touch--use', 'aria-label': 'Open' }, [el('span', { text: 'Open' })]);
-  const touchLayer = el('div', { class: 'xp-touchpad' }, [stickBase, el('div', { class: 'xp-touch__buttons' }, [runBtn, jumpBtn, useBtn])]);
+  const whistleBtn = el('button', { type: 'button', class: 'xp-touch xp-touch--whistle', 'aria-label': 'Whistle for your horse' }, [el('span', { text: 'Whistle' })]);
+  const touchLayer = el('div', { class: 'xp-touchpad' }, [stickBase, el('div', { class: 'xp-touch__buttons' }, [whistleBtn, runBtn, jumpBtn, useBtn])]);
   touchLayer.hidden = !touch;
 
   const debugBox = el('pre', { class: 'xp-debug', 'aria-hidden': 'true' });
   debugBox.hidden = !debug;
 
-  const hud = el('div', { class: 'xp-hud' }, [top, bottom, promptBtn, arrow, tutorial, touchLayer]);
+  const hud = el('div', { class: 'xp-hud' }, [top, bottom, promptBtn, toast, arrow, tutorial, touchLayer]);
   hud.hidden = true;
   // Order matters: Back to Classic is the first focusable element and is visible during loading too.
   root.append(back, canvasHost, hud, loader, announcer, debugBox);
@@ -147,7 +156,7 @@ export function createHud({ zones, tiers, quality, sound, night, touch, debug, o
     hud,
     starButton: starBtn,
     surface: canvasHost,
-    touchEls: { joystickBase: stickBase, joystickKnob: knob, buttons: { jump: jumpBtn, run: runBtn, interact: useBtn } },
+    touchEls: { joystickBase: stickBase, joystickKnob: knob, buttons: { jump: jumpBtn, run: runBtn, interact: useBtn, whistle: whistleBtn } },
     setProgress(v) {
       bar.style.transform = `scaleX(${v / 100})`;
       pct.textContent = `${v}%`;
@@ -218,6 +227,18 @@ export function createHud({ zones, tiers, quality, sound, night, touch, debug, o
     },
     setSound(on) {
       soundBtn.setAttribute('aria-pressed', String(on));
+    },
+    setMusic(on) {
+      musicBtn.setAttribute('aria-pressed', String(on));
+    },
+    /** A short notice above the prompt for ~3.5 s, also announced. */
+    notice(text) {
+      toast.textContent = text;
+      toast.hidden = false;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.hidden = true;
+      }, 3500);
     },
     setNight(on) {
       timeBtn.setAttribute('aria-pressed', String(on));

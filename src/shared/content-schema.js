@@ -5,6 +5,8 @@ import { z } from 'zod';
 const text = z.string().trim().min(1);
 const anchor = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'anchor must be lower-case kebab-case');
 const httpsUrl = z.string().regex(/^https:\/\/[^\s"'<>]+$/, 'must be an https:// URL');
+/** The one public contact address (P3.3). The PII guard allows exactly this value and no other email. */
+export const PUBLIC_EMAIL = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/;
 const localImage = z.string().regex(/^\/images\/[A-Za-z0-9._/-]+\.(?:jpe?g|png|webp|avif|svg)$/, 'must be a /images/… path');
 const localMedia = z.string().regex(/^\/(?:images|video|cv)\/[A-Za-z0-9._/-]+$/, 'must be a /images, /video or /cv path');
 const yearMonth = z.string().regex(/^\d{4}-(?:0[1-9]|1[0-2])$/, 'must be YYYY-MM');
@@ -22,7 +24,7 @@ export const profileSchema = z
     location: text,
     photo: localImage,
     photo_alt: text,
-    links: z.object({ linkedin: httpsUrl, github: httpsUrl }).strict(),
+    links: z.object({ linkedin: httpsUrl, github: httpsUrl, email: z.string().regex(PUBLIC_EMAIL, 'must be one plain email address').optional() }).strict(),
     open_to: list,
     work_mode: list,
     languages: list,

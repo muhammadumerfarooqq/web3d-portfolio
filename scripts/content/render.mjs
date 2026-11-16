@@ -45,15 +45,24 @@ export function renderHead({ profile }) {
     <meta property="og:description" content="${description}" />`;
 }
 
-/** <li> social links from profile.links: the single source for footer, menu and contact. */
-export function renderSocial({ profile }, className = 'social-link') {
-  return html`${Object.entries(SOCIAL)
+/**
+ * <li> social links from profile.links: the single source for footer, menu and contact.
+ * { email: true } adds the public address (profile.links.email) as a plain mailto: link, shown as the
+ * address itself (P3.3: Contact and the footer; the menu stays LinkedIn + GitHub).
+ */
+export function renderSocial({ profile }, { className = 'social-link', email = false } = {}) {
+  const links = html`${Object.entries(SOCIAL)
     .filter(([key]) => profile.links[key])
     .map(
       ([key, { label, icon }]) => html`<li>
               <a class="${className}" href="${profile.links[key]}"${externalAttrs(profile.links[key])}>${icon}<span>${label}</span><span class="sr-only"> (opens in a new tab)</span></a>
             </li>`,
     )}`;
+  const address = profile.links.email;
+  if (!email || !address) return links;
+  return html`${links}<li>
+              <a class="${className} social-link--email" href="mailto:${address}" data-email>${ICONS.mail}<span>${address}</span></a>
+            </li>`;
 }
 
 /* ────────────────────────── Hero ────────────────────────── */
@@ -308,8 +317,8 @@ export function renderSections(content, { photoSize, cvHref, root }) {
     video: renderVideoSection({ root }),
     intro: renderIntroStage(content, { root }),
     'social-menu': renderSocial(content),
-    'social-contact': renderSocial(content),
-    'social-footer': renderSocial(content),
+    'social-contact': renderSocial(content, { email: true }),
+    'social-footer': renderSocial(content, { email: true }),
   };
 }
 

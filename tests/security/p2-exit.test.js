@@ -133,7 +133,8 @@ describe('C6 localStorage keys are theme, sound, intro, mode and the four explor
     }
     // P3.1 adds three Explore keys (quality tier, tutorial done, time of day); P3.2 adds the star
     // badges (explore.badges, validated against the eight zone ids). Each is whitelisted.
-    expect([...keys].sort()).toEqual(['explore.badges', 'explore.quality', 'explore.time', 'explore.tutorial', 'intro', 'mode', 'sound', 'theme']);
+    // P3.3: explore.arrival (the boat arrival played once) and audio.music (the HUD music toggle).
+    expect([...keys].sort()).toEqual(['audio.music', 'explore.arrival', 'explore.badges', 'explore.quality', 'explore.time', 'explore.tutorial', 'intro', 'mode', 'sound', 'theme']);
   });
 });
 

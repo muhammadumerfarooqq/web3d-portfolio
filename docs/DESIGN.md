@@ -10,7 +10,7 @@ Reference format: explorable character portfolios (e.g. samsy.ninja, Bruno Simon
 
 ## 2. Experience architecture (Hybrid)
 ```
-First visit:  Intro "A new sheriff arrives in town" (placeholder sting now, AE intro.mp4 later, Skip from 0 s) → Start screen
+First visit:  Opening "A new sheriff arrives in town" (P3.3 desert scene in HTML/SVG + Canvas 2D; intro.mp4 if it ever exists; Skip from 0 s) → Start screen
 Start screen: [Enter with sound] [Enter silently]   ·   [Explore the island] [Classic portfolio]
 Returning:    intro skipped (remembered), one-tap "Continue" (or "Change")
 Any time:     one header button switches Explore ⇄ Classic (src/ui/mode.js); same content, same anchors
@@ -77,7 +77,7 @@ Eight font files (~135 KB). Rokkitt 900 and Source Serif 4 400 are preloaded fro
 - **Journey = railway:** two ink rails with sleepers, rust "travelled" stretch, square station signs, outlined year, paper cards.
 - **Promo video = picture house:** ink-framed player with a rust play stamp.
 - **Contact / chat = telegraph / question the sheriff:** dashed placeholder forms.
-- **Start screen / intro:** a notice pinned on parchment; intro "UMER" drops in letter by letter after a rust ink-band wipe: "A new sheriff arrives in town".
+- **Start screen / opening (P3.3):** a notice pinned on parchment. The first-visit opening (~3.6 s) is a desert scene: dawn sky with a rising sun in the light theme, a moonlit desert with stars in the dark theme, mesas and dunes (clip-path shapes), drifting dust (Canvas 2D, from 0.4 s), the six-point sheriff star stamped down (scale 3.2 → 1, rotate −32° → −8°, ≤ 4 px shake), UMER drops in letter by letter (Rokkitt 900, scale ≤ 1.15 so the hero stays the LCP), then the tagline typed out in Courier Prime. Skip is focused from 0 s; Esc, any key (not Tab) or a click skips. Reduced motion: the final frame as a still card under the start screen.
 - **Tilt/pin** are off for `prefers-reduced-motion` and under 480 px. Focus ring: 3px solid, offset 3px, visible on every control in both themes.
 
 ## 6. Explore mode spec: the frontier town (P3)
@@ -115,6 +115,11 @@ WASD / arrows + Shift run + Space jump · **click-to-move** (raycast on ground) 
 - **Star:** earned when a case file stays open 3 s or on any interaction inside it (scroll, click, typing; not the close button). A 48 px gold star spins from the heading to the HUD counter (WAAPI, transform + opacity, 1.15 s), a three-note chime plays (if sound is on) and the announcer says "Star earned: <building>. n of 8." Persisted in `explore.badges`. The counter opens the **case board** (eight rows with ★/☆ and Ride there, two-press Reset badges) or, at 8/8, the certificate.
 - **Case Closed (8/8, once):** HUD steps aside; fireworks (`fireworks.js`, lazy: one instanced-sprite draw, rockets then bursts with drag and gravity, lantern-gold / rust / cream / moon-blue / forest colours, routed to the emissive bloom) ~42 m ahead of the camera; the sheriff waves; a CASE CLOSED rubber stamp lands (scale 2.6 → 1 with a thud, rotate −10°) and lifts after 1.5 s; then the **Deputy's Commission**: "Every case on Byte Island is closed, deputy. Umer's ready to ride with your team.", the eight stars, a CASE CLOSED mark, Schedule an interview (Telegraph case file with the draft, or a validated booking URL if the page ever carries one), Download CV / Email Umer only when the page has a phone-free CV link / a mailto (today: neither), Reset badges.
 - **Train:** `train.glb` loads within 24 m of the station; entering the zone brings it from x −75 along the rails (6 s ease-out), wheels turned by distance / radius about the axle, four chuffs per drive-wheel turn with a stack puff each, cylinder steam on stop and start, a three-partial whistle; when it stops the Journey case file opens; closing it sends the train east (ease-in) and removes it. Pure state machine in `train-machine.js`.
+
+### 6b. The horse, the boat arrival and the score (P3.3)
+- **Horse:** a bay with a western saddle (`horse.glb`, Draco, clips Idle / Walk / Trot / Gallop / HeadShake; faces +Z). H (Whistle on touch) → Whistle clip + two-tone whistle; the horse spawns out of view on the street graph (spine at the door rows, a detour round the Bounty Board, back lanes, spurs to the dock base and the lighthouse; BVH-checked) and gallops → trots → walks to a free spot beside the sheriff, then HeadShake + neigh. Unreachable (dock, water, indoors, rocks): a short notice above the prompt. "Mount" / "Dismount" use the same prompt as the buildings. Riding: W/S step the gait (Walk 1.6, Trot 3.5, Gallop 8 m/s; S at a stand backs up at walk speed), A/D turn with R = 1 + 0.8·v, no jump; capsule r 0.8 m, step 0.45 m, never into water; camera +1.1 m up and ×1.5 boom, FOV +6° at a gallop; hooves on sand / boards, snorts. After 18 s idle it wanders a few metres.
+- **Boat arrival:** first visit only (and Replay arrival): letterbox bars, the title "Byte Island" (Rokkitt 900, cream with a hard shadow), a wide shot from the sea → alongside the boat → behind the sheriff into the gameplay camera; he sits in the stern (Ride pose), stands (Idle) and walks up the dock (Walk → Idle). The boat keeps bobbing at the end of the dock.
+- **Score:** original, in A minor. Day (84 bpm): Travis-style Karplus-Strong guitar over Am–G–F–E–Am–Dm–E–Am, a whistled melody, a harmonica answer, kick on 1 and 3, tambourine on 2 and 4, eighth-note shaker. Night (66 bpm): sparse guitar, two harmonica phrases, no drums, crickets from the ambience. Bell or anvil every other loop. Crossfade 2.5 s on the day/night switch; ducking to 35 % (case file), 40 % (train whistle), 20 % (ceremony). Music level 0.55 on its own bus; HUD ♫ toggle.
 
 ## 7. The AI twin (avatar) — style & behaviour
 > **Decision record 9-Nov-2026:** replaces the 31-Oct-2026 chibi designer-toy concept. Unchanged by the P2.5 re-skin.
@@ -156,6 +161,7 @@ Short and weighted, like paper and rubber stamps: **`power3/expo.out` entrances 
 Custom cursor (rust dot + ink ring; **appears only after the first real mouse move**, never on touch, never hides focus), hard-shadow button lift/press, nav underline slide, chips fill with ink on hover, sound toggle always visible. No magnetic pull, no spotlight, no tilt, no spinning borders.
 
 ## 11. Sound design (all licensed, credited in docs/licenses)
+*As built (P3.3):* everything is procedural WebAudio, so there is nothing to license: wind, sea, crickets (ambience bus), footsteps by surface with spur jingles on boards, UI blips, badge chime, train whistle and chuffs, firework pops, horse whistle / hooves / snorts / neigh (effects bus), and the score (music bus, §6b). Master ← music / effects / ambience. Starts only after a user gesture, follows the start-screen sound choice, the HUD music toggle sits beside the sound toggle, everything pauses with the tab.
 Start choice "Enter with sound / silently" (respects browser autoplay rules). Music bed (acoustic/ambient, looped, under UI) · footsteps on boards/dust synced to Walk/Run events · building ambiences as THREE.PositionalAudio (train, telegraph clicks, wind) · stamp thud and paper UI sounds · avatar voice = TTS. Global mute + volume; pauses when tab hidden.
 
 ## 12. Performance tiers (Explore)

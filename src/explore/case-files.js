@@ -14,11 +14,11 @@ export const CERTIFICATE_TEXT = "Every case on Byte Island is closed, deputy. Um
 export const BARKEEP_TEXT = 'The barkeep will answer in P5.';
 export const INTERVIEW_DRAFT = 'Hi Umer, I closed every case on Byte Island and would like to schedule an interview with you about a role on our team. When would suit you?';
 
-/** Optional links the page may carry later (none today): a booking URL, a phone-free CV, an email. */
+/** Optional links from the page: a booking URL and a phone-free CV (none yet), the public email (P3.3). */
 function pageLinks() {
   const booking = document.querySelector('[data-booking-url]')?.getAttribute('data-booking-url') ?? '';
   const cv = document.querySelector('a[data-cv-download]')?.getAttribute('href') ?? '';
-  const mail = document.querySelector('main a[href^="mailto:"]')?.getAttribute('href') ?? '';
+  const mail = document.querySelector('a[data-email][href^="mailto:"]')?.getAttribute('href') ?? '';
   return {
     booking: /^https:\/\/[^\s"'<>]+$/.test(booking) ? booking : '',
     cv: /^\/[\w/.-]+\.pdf$/.test(cv) ? cv : '',

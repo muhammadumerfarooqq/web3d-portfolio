@@ -10,12 +10,17 @@ export const writeIntro = (value, storage) => writePref(INTRO_KEY, value, INTRO_
 
 /**
  * What to show on boot.
- * - The intro plays once, and never under reduced motion.
+ * - The opening plays once (first visit), and never animated under reduced motion.
+ * - Under reduced motion the first visit gets the static title card behind the start screen (P3.3).
  * - A visitor with a stored mode gets the one-tap "Continue" start screen.
  */
 export function bootPlan({ introSeen = false, storedMode = null, reducedMotion = false } = {}) {
   return {
     showIntro: !introSeen && !reducedMotion,
+    staticCard: !introSeen && reducedMotion,
     startVariant: storedMode === 'classic' || storedMode === 'explore' ? 'returning' : 'first',
   };
 }
+
+/** Keys that skip the opening: any key except focus navigation and bare modifiers. */
+export const isSkipKey = (key) => !['Tab', 'Shift', 'Control', 'Alt', 'Meta', 'CapsLock'].includes(key);

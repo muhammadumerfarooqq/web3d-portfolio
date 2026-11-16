@@ -90,10 +90,12 @@ describe('build output', () => {
       const i = site.indexHtml.indexOf(open);
       return site.indexHtml.slice(i, site.indexHtml.indexOf('</ul>', i));
     };
-    for (const open of ['<ul class="mobile-menu__social">', '<ul class="social-list">']) {
-      const hrefs = [...block(open).matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
-      expect(hrefs, open).toEqual([content.profile.links.linkedin, content.profile.links.github]);
-    }
+    const menu = [...block('<ul class="mobile-menu__social">').matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+    expect(menu).toEqual([content.profile.links.linkedin, content.profile.links.github]);
+    // P3.3: Contact (and the footer) add the public email from profile.links.email as a mailto link
+    const contact = [...block('<ul class="social-list">').matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+    expect(contact).toEqual([content.profile.links.linkedin, content.profile.links.github, `mailto:${content.profile.links.email}`]);
+    expect(source).not.toMatch(/mailto:|@gmail/i); // no hard-coded email in index.html either
     expect(site.indexHtml.match(new RegExp(content.profile.links.linkedin.replace(/[.]/g, '\\.'), 'g')).length).toBeGreaterThanOrEqual(4);
   });
 

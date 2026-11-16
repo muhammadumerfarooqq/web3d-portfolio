@@ -17,7 +17,8 @@ export const CV_PATH = '/cv/Muhammad_Umer_Farooq_CV_web.pdf';
 /** Load, validate, guard and render everything once. */
 export function buildContent(root) {
   const { content, sources } = loadContent(root);
-  assertNoPii(sources);
+  // The only email allowed is the public one profile.md declares (schema-checked); phones never.
+  assertNoPii(sources, { allowEmails: content.profile.links.email ? [content.profile.links.email] : [] });
   collectAnchors(content);
 
   const photoFile = join(root, 'public', content.profile.photo);

@@ -375,6 +375,15 @@ Visual layer only (structure, content pipeline, filters/URL state, modal, lightb
 - **Budgets measured:** Explore start 338.5 KB gz (≤ 350; shared chunks counted), lazy chunks 3.6 / 2.5 / 1.6 KB gz, Classic entry +1.9 KB gz, Classic Lighthouse desktop 100s, mobile 99 / 100 / 100 / 100; 416 tests.
 - **Next (P3.3):** real-GPU and phone review of the look (L97, L98, L127), the horse (Ride clip), polish.
 
+#### P3.3 — Horse, opening, boat arrival, western score, email on site · ✅ step done (16-Nov-2026), P3 complete (no new visual features after this)
+- **Email:** public address in `content/profile.md` `links.email` (schema), mailto in Contact + footer + certificate; PII guard allows exactly the declared address (phones always blocked).
+- **Opening:** `scripts/content/gallery.mjs` markup (sky, sun/moon, clip-path land, sheriff star, word, tagline) + `src/ui/start.js` timeline (transform/opacity, Canvas 2D dust); skip by button / any key / click; first visit only; reduced motion = static card; LCP stays the hero.
+- **Arrival (`arrival.js`, lazy):** first visit (`explore.arrival`), ~8 s, letterbox + title, skippable, Replay in the HUD; code-built rowboat (the town bakes its rowboat into Dock_baked, L131).
+- **Horse (`horse.js` lazy + pure `horse-path.js`, `horse-machine.js`, `horse-ride.js`):** whistle → travel → greet → idle → mount → ride → dismount; unreachable message; BVH-checked street graph; capsule collision; ride camera.
+- **Score (`music.js` lazy + pure `music-core.js`):** day/night moods, ducking, mixer buses in `audio.js`, HUD toggle (`audio.music`).
+- **Budgets measured:** Explore start 342.7 KB gz (≤ 350), lazy 5.3 / 3.0 / 1.8 KB gz, Classic +0.8 KB gz over P3.2, Lighthouse desktop 100s, mobile 98–99; 467 tests.
+- **Next:** P4 (contact + email backend), P5 (RAG). Real-GPU / phone / listening review stays open (L97, L98, L127, L130, L134).
+
 ### P4 — Supabase foundation + contact & email · 9% · 5.1–5.8
 - Supabase project; migrations: all tables, RLS policies, SQL functions (`hit_rate_limit`, `log_event`), `admins` table.
 - Shared zod schemas; `/api/contact` per §2.5; Turnstile; Nodemailer; all UI states.

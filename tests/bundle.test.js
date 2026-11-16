@@ -1,5 +1,5 @@
 // Bundle budgets (real Vite build, in memory). Sizes are gzip level 9.
-//  - Classic's entry (main + every chunk it imports statically) stays within +5 KB of P2.5b.
+//  - Classic's entry (main + every chunk it imports statically) stays within +5 KB of P3.2.
 //  - Explore is lazy: what loads when Explore starts (the explore chunk + its static imports that
 //    Classic does not already have, e.g. three.js) is within 350 KB.
 //  - P3.2's case files, train and fireworks are further lazy chunks, never in either entry.
@@ -7,12 +7,12 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { gzipSync } from 'node:zlib';
 import { buildSite } from './helpers/build-site.js';
 
-/** Classic entry before Explore existed (P2.5b, gzip -9 of assets/main-*.js). */
-const CLASSIC_BASELINE_GZ = 77201;
+/** Classic entry at the end of P3.2 (gzip -9 of main + preload-helper), the P3.3 reference. */
+const CLASSIC_BASELINE_GZ = 79170;
 const CLASSIC_GROWTH_LIMIT = 5 * 1024;
 const EXPLORE_LIMIT_GZ = 350 * 1024;
 const LAZY_LIMIT_GZ = 24 * 1024;
-const LAZY = ['case-files', 'train', 'fireworks'];
+const LAZY = ['case-files', 'train', 'fireworks', 'horse', 'arrival', 'music'];
 
 const gz = (code) => gzipSync(Buffer.from(code), { level: 9 }).length;
 
@@ -45,7 +45,7 @@ describe('bundle budgets', () => {
     for (const f of classic) expect(byName(f).code, f).not.toMatch(/WebGPURenderer|MeshBVH/);
   });
 
-  it('Classic entry (main + its static imports) grows by at most 5 KB gz over the P2.5b baseline', () => {
+  it('Classic entry (main + its static imports) grows by at most 5 KB gz over the P3.2 baseline', () => {
     const total = size(closure(main()));
     expect(total - CLASSIC_BASELINE_GZ, `Classic entry ${total} B gz`).toBeLessThanOrEqual(CLASSIC_GROWTH_LIMIT);
   });

@@ -1,6 +1,7 @@
 // P2.4: intro / start screen / mode rules. Pure functions only (no DOM).
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
-import { bootPlan, INTRO_KEY, INTRO_VALUES, readIntro, writeIntro } from '../src/ui/boot-rules.js';
+import { bootPlan, INTRO_KEY, INTRO_VALUES, isSkipKey, readIntro, writeIntro } from '../src/ui/boot-rules.js';
 import { canOfferExplore, EXPLORE_READY, exploreUnavailableReason, launchParams, MODE_KEY, MODE_VALUES, readMode, resolveMode, urlMode, writeMode } from '../src/ui/mode.js';
 import { readSound, SOUND_VALUES, writeSound } from '../src/ui/sound.js';
 
@@ -68,29 +69,57 @@ describe('whitelists', () => {
 
 describe('bootPlan (first visit, returning visit, reduced motion)', () => {
   it('first visit: intro, then the full start screen', () => {
-    expect(bootPlan({ introSeen: false, storedMode: null, reducedMotion: false })).toEqual({ showIntro: true, startVariant: 'first' });
+    expect(bootPlan({ introSeen: false, storedMode: null, reducedMotion: false })).toEqual({ showIntro: true, staticCard: false, startVariant: 'first' });
   });
 
   it('intro seen but no mode chosen yet: no intro, full start screen', () => {
-    expect(bootPlan({ introSeen: true, storedMode: null })).toEqual({ showIntro: false, startVariant: 'first' });
+    expect(bootPlan({ introSeen: true, storedMode: null })).toEqual({ showIntro: false, staticCard: false, startVariant: 'first' });
   });
 
   it('returning visitor: no intro, one-tap Continue', () => {
-    expect(bootPlan({ introSeen: true, storedMode: 'classic' })).toEqual({ showIntro: false, startVariant: 'returning' });
+    expect(bootPlan({ introSeen: true, storedMode: 'classic' })).toEqual({ showIntro: false, staticCard: false, startVariant: 'returning' });
     expect(bootPlan({ introSeen: true, storedMode: 'explore' }).startVariant).toBe('returning');
   });
 
   it('reduced motion never plays the intro', () => {
     expect(bootPlan({ introSeen: false, storedMode: null, reducedMotion: true }).showIntro).toBe(false);
-    expect(bootPlan({ introSeen: false, storedMode: 'classic', reducedMotion: true })).toEqual({ showIntro: false, startVariant: 'returning' });
+    expect(bootPlan({ introSeen: false, storedMode: 'classic', reducedMotion: true })).toEqual({ showIntro: false, staticCard: true, startVariant: 'returning' });
+  });
+
+  it('P3.3 reduced motion, first visit only: a static title card instead of the opening', () => {
+    expect(bootPlan({ introSeen: false, reducedMotion: true }).staticCard).toBe(true);
+    expect(bootPlan({ introSeen: true, reducedMotion: true }).staticCard).toBe(false);
+    expect(bootPlan({ introSeen: false, reducedMotion: false }).staticCard).toBe(false);
+  });
+
+  it('P3.3 the opening is skipped by any key except Tab and bare modifiers', () => {
+    for (const k of ['Escape', 'Enter', ' ', 'a', 'ArrowDown']) expect(isSkipKey(k), k).toBe(true);
+    for (const k of ['Tab', 'Shift', 'Control', 'Alt', 'Meta']) expect(isSkipKey(k), k).toBe(false);
+  });
+
+  it('P3.3 once only: after the opening (or the static card) the intro key is "seen" and the next visit skips it', () => {
+    const store = memoryStorage();
+    expect(bootPlan({ introSeen: readIntro(store) === 'seen' }).showIntro).toBe(true);
+    writeIntro('seen', store);
+    expect(bootPlan({ introSeen: readIntro(store) === 'seen' }).showIntro).toBe(false);
+    expect(bootPlan({ introSeen: readIntro(store) === 'seen', reducedMotion: true }).staticCard).toBe(false);
+  });
+
+  it('P3.3 the opening is pure HTML/SVG + Canvas 2D (no three.js) and animates transform / opacity only', () => {
+    const src = readFileSync(new URL('../src/ui/start.js', import.meta.url), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+    expect(src).not.toMatch(/from '[^']*three|WebGLRenderer|WebGPURenderer|import\(/);
+    expect(src).toMatch(/getContext\?\.\('2d'\)/);
+    const opening = src.slice(src.indexOf('function playOpening'), src.indexOf('function playVideo'));
+    const props = [...opening.matchAll(/(\w+):\s*(?:[-\d'.]|'\d)/g)].map((m) => m[1]);
+    for (const p of props) expect(['x', 'y', 'scale', 'rotation', 'yPercent', 'opacity', 'duration', 'stagger'], p).toContain(p);
   });
 
   it('hostile stored values behave like a first visit (they are filtered before and inside bootPlan)', () => {
     const introSeen = readIntro(memoryStorage({ intro: '<img src=x onerror=alert(1)>' })) === 'seen';
     const storedMode = readMode(memoryStorage({ mode: 'javascript:alert(1)' }));
-    expect(bootPlan({ introSeen, storedMode })).toEqual({ showIntro: true, startVariant: 'first' });
+    expect(bootPlan({ introSeen, storedMode })).toEqual({ showIntro: true, staticCard: false, startVariant: 'first' });
     expect(bootPlan({ storedMode: 'evil' }).startVariant).toBe('first');
-    expect(bootPlan()).toEqual({ showIntro: true, startVariant: 'first' });
+    expect(bootPlan()).toEqual({ showIntro: true, staticCard: false, startVariant: 'first' });
   });
 });
 

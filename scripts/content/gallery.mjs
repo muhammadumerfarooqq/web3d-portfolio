@@ -261,25 +261,56 @@ export function renderVideoSection({ root }) {
           </div>`;
 }
 
-/* ────────────────────────── Intro sting ────────────────────────── */
+/* ────────────────────────── Opening (first-visit intro) ────────────────────────── */
 
 export const INTRO_VIDEO = '/video/intro.mp4';
 
 /**
- * Inner stage of the first-visit intro (src/ui/start.js). If public/video/intro.mp4 exists at
- * build time it plays instead of the placeholder sting (muted, playsinline, like promo.mp4).
- * The visible word is profile.short_name; the tagline is fixed case-file copy.
+ * The first-visit opening (P3.3, src/ui/start.js): a ~3.5 s desert scene in plain HTML/SVG plus a
+ * Canvas 2D dust layer (no three.js, no models): sky gradient with a rising sun (light theme) or a
+ * moon over a moonlit desert (dark theme), the sheriff star stamped down, the word, then the tagline
+ * typed out. Everything here is static markup built at compile time; start.js only animates
+ * transform / opacity and draws the dust. If public/video/intro.mp4 exists at build time it plays
+ * instead (muted, playsinline). The visible word is profile.short_name; the tagline is fixed copy.
  */
 export const INTRO_TAGLINE = 'A new sheriff arrives in town';
+
+/** Six-pointed sheriff star with ball tips, centred in a 120 × 120 box (deterministic path). */
+function sheriffStar() {
+  const pts = [];
+  for (let i = 0; i < 12; i += 1) {
+    const r = i % 2 ? 23 : 50;
+    const a = (Math.PI / 6) * i - Math.PI / 2;
+    pts.push(`${(60 + r * Math.cos(a)).toFixed(1)},${(60 + r * Math.sin(a)).toFixed(1)}`);
+  }
+  const balls = [];
+  for (let i = 0; i < 6; i += 1) {
+    const a = (Math.PI / 3) * i - Math.PI / 2;
+    balls.push(raw(`<circle cx="${(60 + 52 * Math.cos(a)).toFixed(1)}" cy="${(60 + 52 * Math.sin(a)).toFixed(1)}" r="6.5"/>`));
+  }
+  return raw(`<svg class="intro__badge" viewBox="0 0 120 120" focusable="false"><g class="intro__badge-metal"><polygon points="${pts.join(' ')}"/>${balls.map(String).join('')}</g><circle class="intro__badge-ring" cx="60" cy="60" r="17"/><polygon class="intro__badge-inner" points="60,47 63.5,56 73,56 65.5,61.5 68.5,71 60,65.5 51.5,71 54.5,61.5 47,56 56.5,56"/></svg>`);
+}
+
+/**
+ * Mesas and dunes along the bottom edge: two clip-path shapes (plain coloured boxes are not
+ * "contentful", so the first contentful paint stays the word, the LCP element).
+ */
+const LAND = raw('<span class="intro__land intro__land--far"></span><span class="intro__land intro__land--near"></span>');
 
 export function renderIntroStage({ profile }, { root }) {
   if (existsSync(join(root, 'public', INTRO_VIDEO))) {
     return html`<video class="intro__video" data-intro-video src="${INTRO_VIDEO}" muted playsinline preload="auto" aria-hidden="true"></video>`;
   }
   const word = profile.short_name.toUpperCase();
-  return html`<div class="intro__stage" aria-hidden="true">
-            <span class="intro__sweep"></span>
-            <p class="intro__word">${[...word].map((ch) => html`<span class="intro__letter">${ch}</span>`)}</p>
-            <p class="intro__tagline">${INTRO_TAGLINE}</p>
+  return html`<div class="intro__stage" aria-hidden="true" data-opening>
+            <span class="intro__sky"></span>
+            <span class="intro__sun"></span>
+            <canvas class="intro__dust" data-intro-dust></canvas>
+            ${LAND}
+            <div class="intro__center">
+              ${sheriffStar()}
+              <p class="intro__word">${[...word].map((ch) => html`<span class="intro__letter">${ch}</span>`)}</p>
+              <p class="intro__tagline">${INTRO_TAGLINE}</p>
+            </div>
           </div>`;
 }

@@ -1,31 +1,85 @@
-// First-visit intro (placeholder sting, or public/video/intro.mp4 when it exists) and the start
-// screen (sound + mode). Without JS neither exists: the Classic page is simply shown.
-// Stored values are whitelisted: intro ∈ {"seen"}; sound and mode via their own modules.
+// First-visit opening (P3.3: a ~3.5 s desert scene in HTML/SVG + Canvas 2D dust, or
+// public/video/intro.mp4 when it exists) and the start screen (sound + mode). Without JS neither
+// exists: the Classic page is simply shown. Stored values are whitelisted: intro ∈ {"seen"}; sound
+// and mode via their own modules. Reduced motion: a static title card under the start screen.
 import gsap from 'gsap';
-import { bootPlan, readIntro, writeIntro } from './boot-rules.js';
+import { SplitText } from 'gsap/SplitText';
+import { bootPlan, isSkipKey, readIntro, writeIntro } from './boot-rules.js';
 import { setupDialog } from './dialog.js';
 import { getLenis } from './motion.js';
 import { canOfferExplore, chooseMode, exploreUnavailableReason, getCapabilities, readMode, urlMode } from './mode.js';
 import { readSound, setSound } from './sound.js';
 
-const STING_SECONDS = 6;
+export const OPENING_SECONDS = 3.6;
 
 function setBackgroundInert(on) {
   for (const el of document.querySelectorAll('[data-inert-when-menu], .skip-link')) el.inert = on;
 }
 
-/** Placeholder sting: an ink band wipes the poster, UMER drops in letter by letter, then the tagline (~6 s). */
-function playSting(intro, onDone) {
+/** Drifting dust on a Canvas 2D layer (warm at dawn, pale under the moon). Returns a stop function. */
+function startDust(canvas) {
+  const ctx = canvas?.getContext?.('2d');
+  if (!ctx) return () => {};
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  const w = (canvas.width = Math.round(canvas.clientWidth * dpr));
+  const h = (canvas.height = Math.round(canvas.clientHeight * dpr));
+  const colour = document.documentElement.dataset.theme === 'dark' ? '220, 228, 255' : '255, 236, 205';
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  const motes = Array.from({ length: 70 }, () => ({ x: rnd() * w, y: h * (0.35 + rnd() * 0.65), r: (0.6 + rnd() * 1.8) * dpr, v: (12 + rnd() * 30) * dpr, a: 0.15 + rnd() * 0.45, p: rnd() * 6.28 }));
+  let raf = 0;
+  let last = performance.now();
+  const born = last;
+  const draw = (now) => {
+    // Nothing on the canvas for the first 0.4 s: the word, not the dust, is the first contentful paint.
+    if (now - born < 400) {
+      last = now;
+      raf = requestAnimationFrame(draw);
+      return;
+    }
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    ctx.clearRect(0, 0, w, h);
+    for (const m of motes) {
+      m.x += m.v * dt;
+      m.p += dt * 1.3;
+      if (m.x > w + 4) m.x = -4;
+      ctx.fillStyle = `rgba(${colour}, ${m.a})`;
+      ctx.beginPath();
+      ctx.arc(m.x, m.y + Math.sin(m.p) * 6 * dpr, m.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    raf = requestAnimationFrame(draw);
+  };
+  raf = requestAnimationFrame(draw);
+  return () => cancelAnimationFrame(raf);
+}
+
+/**
+ * The opening: the sun (or moon) rises, the sheriff star is stamped down with a small screen shake
+ * (≤ 4 px), UMER slams in letter by letter, the tagline types out, then the scene fades (~3.6 s).
+ * Transform and opacity only.
+ */
+function playOpening(intro, onDone) {
+  const stage = intro.querySelector('[data-opening]');
+  const centre = intro.querySelector('.intro__center');
+  const stopDust = startDust(intro.querySelector('[data-intro-dust]'));
+  const split = SplitText.create(intro.querySelector('.intro__tagline'), { type: 'words,chars' }); // words keep line breaks between words
   const tl = gsap.timeline({ onComplete: onDone });
-  const sweep = intro.querySelector('.intro__sweep');
-  tl.fromTo(sweep, { xPercent: -105, opacity: 1 }, { xPercent: 105, duration: 1.5, ease: 'power3.inOut' }, 0.15)
-    .set(sweep, { opacity: 0 })
-    // Letters land with a small thud, from a faint, offset state rather than from opacity 0, so
-    // the first frame already has contentful text (Chrome's LCP ignores opacity-0 text).
-    .from(intro.querySelectorAll('.intro__letter'), { yPercent: -60, opacity: 0.12, duration: 0.55, stagger: 0.16, ease: 'back.out(2.2)' }, 0.5)
-    .from(intro.querySelector('.intro__tagline'), { y: 10, opacity: 0.12, duration: 0.6, ease: 'power3.out' }, 1.8)
-    .to(intro.querySelector('.intro__stage'), { opacity: 0, duration: 0.5, ease: 'power2.in' }, STING_SECONDS - 0.5);
-  return () => tl.kill();
+  const shake = (at) => tl.to(centre, { keyframes: [{ x: 4, y: -2 }, { x: -3, y: 2 }, { x: 2, y: -1 }, { x: 0, y: 0 }], duration: 0.24, ease: 'none' }, at);
+  tl.fromTo(intro.querySelector('.intro__sun'), { y: '26vh' }, { y: '0vh', duration: OPENING_SECONDS, ease: 'power1.out' }, 0)
+    .fromTo(intro.querySelector('.intro__badge'), { scale: 3.2, rotation: -32, opacity: 0 }, { scale: 1, rotation: -8, opacity: 1, duration: 0.3, ease: 'power4.in' }, 0.3);
+  shake(0.6);
+  tl.fromTo(intro.querySelectorAll('.intro__letter'), { scale: 1.15, yPercent: -34, opacity: 0.12 }, { scale: 1, yPercent: 0, opacity: 1, duration: 0.3, stagger: 0.08, ease: 'power4.in' }, 0.95);
+  shake(1.55);
+  tl.set(intro.querySelector('.intro__tagline'), { opacity: 1 }, 1.7)
+    .from(split.chars, { opacity: 0, duration: 0.01, stagger: 0.042, ease: 'none' }, 1.7)
+    .to(stage, { opacity: 0, duration: 0.35, ease: 'power2.in' }, OPENING_SECONDS - 0.35);
+  return () => {
+    tl.kill();
+    stopDust();
+    split.revert();
+  };
 }
 
 function playVideo(video, onDone) {
@@ -143,27 +197,53 @@ function boot({ reduced }) {
     skip.focus();
 
     let stop = () => {};
+    let finished = false;
     const done = () => {
+      if (finished) return;
+      finished = true;
       stop();
       document.removeEventListener('keydown', onKey);
+      intro.removeEventListener('pointerdown', onPointer);
       writeIntro('seen');
       root.dataset.boot = 'start';
       intro.hidden = true;
       openStart();
     };
+    // Skip: the button, Esc or any other key (not Tab / modifiers), or a click anywhere.
     const onKey = (event) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        done();
-      }
+      if (!isSkipKey(event.key)) return;
+      event.preventDefault();
+      done();
     };
+    const onPointer = () => done();
     document.addEventListener('keydown', onKey);
+    intro.addEventListener('pointerdown', onPointer);
     skip.addEventListener('click', done, { once: true });
 
     const video = intro.querySelector('[data-intro-video]');
-    stop = video ? playVideo(video, done) : playSting(intro, done);
+    stop = video ? playVideo(video, done) : playOpening(intro, done);
+  }
+
+  // Reduced motion, first visit: the opening's final frame as a still title card behind the start screen.
+  function showStaticCard() {
+    if (intro.querySelector('[data-intro-video]')) return;
+    intro.classList.add('is-static');
+    intro.querySelector('[data-intro-skip]')?.setAttribute('hidden', '');
+    intro.hidden = false;
+    writeIntro('seen');
+    dialog.addEventListener(
+      'close',
+      () => {
+        intro.hidden = true;
+        intro.classList.remove('is-static');
+      },
+      { once: true },
+    );
   }
 
   if (plan.showIntro) runIntro();
-  else openStart();
+  else {
+    if (plan.staticCard) showStaticCard();
+    openStart();
+  }
 }

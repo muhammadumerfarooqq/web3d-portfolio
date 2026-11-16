@@ -106,6 +106,28 @@ describe('C7 PII guard', () => {
     }
   });
 
+  it('P3.3: the declared public email is allowed; any other email and every phone number still fail', () => {
+    const PUBLIC = 'mumerfarooq.ned@gmail.com';
+    const allow = { allowEmails: [PUBLIC] };
+    expect(scanText(`Write to ${PUBLIC} or <mailto:${PUBLIC.toUpperCase()}>`, allow)).toEqual([]);
+    expect(scanText(`Write to ${PUBLIC}`)).toHaveLength(1); // not allowed unless declared
+    expect(scanText(`Write to someone@example.com`, allow).map((f) => f.kind)).toEqual(['email address']);
+    expect(scanText(`${PUBLIC} · +92 300 0000000`, allow).map((f) => f.kind)).toEqual(['phone number']);
+    expect(scanText(`${PUBLIC} · 0300-0000000`, allow).map((f) => f.kind)).toEqual(['phone number']);
+    expect(() => assertNoPii([{ file: 'f.md', raw: `${PUBLIC}\n0300 000 0000` }], allow)).toThrow(/f\.md:2:\d+: looks like a phone number/);
+    expect(() => assertNoPii([{ file: 'f.md', raw: `${PUBLIC}\n` }], allow)).not.toThrow();
+  });
+
+  it('P3.3: the email is declared once, in content/profile.md links.email, and the schema accepts one plain address only', () => {
+    const profile = readFileSync(new URL('../../content/profile.md', import.meta.url), 'utf8');
+    expect(profile).toMatch(/^ {2}email: mumerfarooq\.ned@gmail\.com$/m);
+    const base = profileSchema.shape;
+    expect(base.links.shape.email.safeParse('mumerfarooq.ned@gmail.com').success).toBe(true);
+    for (const bad of ['mailto:x@y.com', 'a@b.com, c@d.com', 'a@b.com?subject=x', '<a@b.com>', '+92 300 0000000']) {
+      expect(base.links.shape.email.safeParse(bad).success, bad).toBe(false);
+    }
+  });
+
   it('ordinary numbers, dates and handles are not flagged', () => {
     expect(scanText(fixture('pii-clean.md'))).toEqual([]);
   });
@@ -120,9 +142,26 @@ describe('C7 built site', () => {
   // SVG path data is numeric noise, not content.
   const visibleHtml = () => site.indexHtml.replace(/<svg[\s\S]*?<\/svg>/g, '');
 
-  it('dist/index.html contains no phone number, CNIC or email address', () => {
-    expect(scanText(visibleHtml())).toEqual([]);
-    expect(site.indexHtml).not.toMatch(/[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}/);
+  it('dist/index.html contains no phone number or CNIC, and no email except the declared public one', () => {
+    const PUBLIC = 'mumerfarooq.ned@gmail.com';
+    expect(scanText(visibleHtml(), { allowEmails: [PUBLIC] })).toEqual([]);
+    const emails = new Set(site.indexHtml.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}/g) ?? []);
+    expect([...emails]).toEqual([PUBLIC]);
+  });
+
+  it('P3.3: the public email is a plain mailto link in Contact and the footer only (not the menu), no obfuscation', () => {
+    const links = [...site.indexHtml.matchAll(/<a\b[^>]*href="mailto:([^"]+)"[^>]*>/g)];
+    expect(links.map((m) => m[1])).toEqual(['mumerfarooq.ned@gmail.com', 'mumerfarooq.ned@gmail.com']);
+    for (const [tag] of links) {
+      expect(tag).toMatch(/\bdata-email\b/);
+      expect(tag).not.toMatch(/target=|onclick/i);
+    }
+    const contact = site.indexHtml.slice(site.indexHtml.indexOf('<section id="contact"'), site.indexHtml.indexOf('</section>', site.indexHtml.indexOf('<section id="contact"')));
+    expect(contact).toContain('href="mailto:mumerfarooq.ned@gmail.com"');
+    const footer = site.indexHtml.slice(site.indexHtml.indexOf('<footer class="site-footer"'));
+    expect(footer).toContain('href="mailto:mumerfarooq.ned@gmail.com"');
+    const menu = site.indexHtml.match(/<nav[^>]*class="[^"]*menu[\s\S]*?<\/nav>/)?.[0] ?? '';
+    expect(menu).not.toContain('mailto:');
   });
 
   it('every external link carries target="_blank" rel="noopener noreferrer"', () => {

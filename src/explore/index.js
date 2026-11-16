@@ -10,7 +10,7 @@ import { createAmbient } from './ambient.js';
 import { createAudio } from './audio.js';
 import { BADGES_EMPTY, BADGES_KEY, BADGES_VALUES, createBadges } from './badges.js';
 import { createCameraRig } from './camera-rig.js';
-import { PLAYER, QUALITY_KEY, QUALITY_VALUES, TIERS, TIME_KEY, TIME_VALUES, TOWN_JSON_URL, TUTORIAL_KEY, TUTORIAL_VALUES } from './config.js';
+import { ARRIVAL_KEY, ARRIVAL_VALUES, MUSIC_KEY, MUSIC_VALUES, PLAYER, QUALITY_KEY, QUALITY_VALUES, TIERS, TIME_KEY, TIME_VALUES, TOWN_JSON_URL, TUTORIAL_KEY, TUTORIAL_VALUES } from './config.js';
 import { castDown, inputVector } from './controller-math.js';
 import { createHud } from './hud.js';
 import { createInput } from './input.js';
@@ -56,6 +56,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
   const touch = window.matchMedia('(pointer: coarse)').matches;
   let quality = readQuality();
   let night = (readTime() ?? 'night') === 'night'; // night is the hero and the default
+  let musicOn = readPref(MUSIC_KEY, MUSIC_VALUES, 'on') === 'on';
   const showTutorial = readTutorial() !== 'done';
 
   let disposed = false;
@@ -79,6 +80,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
     tiers: TIERS,
     quality,
     sound: soundOn,
+    music: musicOn,
     night,
     touch,
     debug,
@@ -86,6 +88,8 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
     onExit: () => onExit(),
     onTravel: (z) => api?.travel(z),
     onSound: (on) => setSound(on ? 'on' : 'off'),
+    onMusic: (on) => api?.setMusic(on),
+    onReplay: () => api?.replayArrival(),
     onTime: (n) => api?.setNight(n, true),
     onQuality: (q) => api?.setQuality(q),
     onSkipTutorial: () => api?.finishTutorial(),
@@ -204,6 +208,8 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
     }
     let post = createPost({ renderer, scene, camera, settings, sun: lights.sun, sky, particles, reducedMotion });
     const audio = createAudio({ enabled: soundOn });
+    let music = null; // the lazy score (music.js); declared before applyPalette, which sets its mood
+    let musicLoad = null;
 
     const surfaceUnder = () => {
       const hit = castDown(town.bvh, rayOrigin.set(player.position.x, player.position.y + 0.5, player.position.z), 1.5);
@@ -237,6 +243,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       wu.foam.value = 0.55 - 0.42 * p.t;
       matU.night.value = p.t;
       rimU.moon.value = p.t;
+      music?.setMood(p.t > 0.5);
       matU.wetness.value = p.wetness;
       matU.windowGlow.value = p.windowGlow;
       matU.lantern.value = p.lanternIntensity;
@@ -267,16 +274,22 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       onZoom: (d) => rig.zoom(d),
       onKey: (action, down) => {
         audio.unlock();
+        startMusic();
         if (tutorialOpen) {
           hud.keycap(action, down);
           if (down && hud.tutorialDone()) setTimeout(() => api?.finishTutorial(), 600);
         }
       },
     });
-    listen(window, 'pointerdown', () => audio.unlock(), { passive: true });
+    listen(window, 'pointerdown', () => {
+      audio.unlock();
+      startMusic();
+    }, { passive: true });
+    listen(window, 'keydown', () => startMusic(), { passive: true });
     listen(window, 'soundchange', (e) => {
       audio.setEnabled(e.detail.sound === 'on');
       hud.setSound(e.detail.sound === 'on');
+      if (e.detail.sound === 'on') startMusic();
     });
     listen(window, 'themechange', (e) => api?.setNight(e.detail.theme === 'dark', true));
 
@@ -316,6 +329,94 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       palette = applyPalette(tState.t);
     };
 
+    // ── music (lazy chunk): starts after a user gesture, only with sound on and the music toggle on ──
+    audio.setMusic(musicOn);
+    function startMusic() {
+      if (musicLoad || !musicOn || disposed) return;
+      const out = audio.context();
+      if (!out) return;
+      musicLoad = import('./music.js')
+        .then((m) => {
+          if (disposed) return;
+          music = m.createMusic({ ctx: out.ctx, out: out.music, noise: out.noise, night: palette.t > 0.5 });
+        })
+        .catch((error) => console.warn('[explore] music', error));
+    }
+    const duckFor = (id, level, seconds) => {
+      audio.duck(id, level);
+      setTimeout(() => audio.duck(id, null), seconds * 1000);
+    };
+
+    // ── the horse (lazy chunk, first whistle) ──
+    let horse = null;
+    let horseLoad = null;
+    let promptKey = null;
+    const loadHorse = () =>
+      (horseLoad ??= import('./horse.js')
+        .then((m) => m.createHorse({ loaders, scene, town, townJson: zonesRes, player, camera, audio, signal: abort.signal }))
+        .then((h) => {
+          if (disposed) {
+            h.dispose();
+            return null;
+          }
+          horse = h;
+          return h;
+        })
+        .catch((error) => console.warn('[explore] horse', error)));
+    function whistle() {
+      if (horse?.riding) return;
+      player.playOnce('Whistle');
+      audio.whistle();
+      loadHorse().then((h) => {
+        if (!h) return;
+        const r = h.whistle();
+        if (!r.ok && r.reason === 'unreachable') hud.notice("Your horse can't reach you here");
+        else if (r.ok) hud.announce('Your horse is on its way.');
+      });
+    }
+
+    // ── the boat arrival (lazy chunk; first visit, replayable) ──
+    let arrival = null;
+    let cinematic = false;
+    async function runArrival(first) {
+      if (cinematic || overlayOpen || ceremony || reducedMotion) return;
+      if (horse?.riding) horse.dismount(true);
+      cinematic = true;
+      input.setPaused(true);
+      hud.setCinematic(true);
+      try {
+        const m = await import('./arrival.js');
+        if (disposed) return;
+        // The gameplay camera at the spawn, where the last shot ends.
+        player.teleport([spawn.pos[0], spawn.pos[1], spawn.pos[2]], Math.PI);
+        rig.yaw = 0;
+        rig.update(0.016, player.position, Math.PI, false, town.bvh, 0);
+        const final = { position: camera.position.clone(), quaternion: camera.quaternion.clone() };
+        arrival?.dispose();
+        arrival = m.createArrival({
+          scene,
+          camera,
+          player,
+          root: hud.root,
+          spawn,
+          audio,
+          final,
+          onDone: () => {
+            cinematic = false;
+            input.setPaused(overlayOpen || ceremony);
+            hud.setCinematic(false);
+            hud.canvasHost.focus({ preventScroll: true });
+            if (first) writePref(ARRIVAL_KEY, 'seen', ARRIVAL_VALUES);
+          },
+        });
+      } catch (error) {
+        console.warn('[explore] arrival', error);
+        cinematic = false;
+        input.setPaused(false);
+        hud.setCinematic(false);
+      }
+    }
+
     // ── case files, stars and the Case Closed ceremony (lazy chunks) ──
     let caseFiles = null;
     let caseFilesLoad = null;
@@ -341,6 +442,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
           onTravel: (z) => api.travel(z),
           onOpenChange: (open, info) => {
             overlayOpen = open;
+            audio.duck('case', open ? 0.35 : null);
             input.setPaused(open || ceremony);
             if (info?.zone === 'journey') {
               if (open) train?.overlayOpened();
@@ -373,6 +475,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
     async function runCeremony() {
       ceremonyPending = false;
       ceremony = true;
+      audio.duck('ceremony', 0.2);
       input.setPaused(true);
       hud.setCinematic(true);
       hud.announce('Case closed. Every case on Byte Island is closed.');
@@ -390,6 +493,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       }
       if (disposed) return;
       ceremony = false;
+      audio.duck('ceremony', null);
       hud.setCinematic(false);
       caseFiles.openCertificate();
     }
@@ -412,6 +516,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
 
     api = {
       travel(z) {
+        if (horse?.riding) horse.dismount(true);
         audio.blip(true);
         glitch(0.55, 0.45);
         player.teleport([z.door[0] + (z.door[0] - z.center[0]) * 0.35, z.door[1], z.door[2] + (z.door[2] - z.center[2]) * 0.35]);
@@ -440,10 +545,28 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
         hud.hideTutorial();
       },
       interact() {
-        if (!currentZone || overlayOpen || ceremony) return;
+        if (overlayOpen || ceremony || cinematic) return;
+        if (!currentZone) {
+          // E with no building near: mount, or (slow enough) dismount.
+          if (horse?.riding) horse.dismount();
+          else if (horse?.near(player.position)) horse.mount();
+          return;
+        }
+        if (horse?.riding) horse.dismount(true); // a case file always opens on foot
         audio.blip();
         window.dispatchEvent(new CustomEvent('explore:zone', { detail: { zone: currentZone.zone, title: currentZone.title, anchor: currentZone.anchor } }));
         openCase(currentZone);
+      },
+      setMusic(on) {
+        musicOn = on;
+        writePref(MUSIC_KEY, on ? 'on' : 'off', MUSIC_VALUES);
+        audio.setMusic(on);
+        hud.setMusic(on);
+        if (on) startMusic();
+        hud.announce(on ? 'Music on.' : 'Music off.');
+      },
+      replayArrival() {
+        runArrival(false);
       },
       /** Star counter: the certificate at 8/8, otherwise the case board. */
       openStars() {
@@ -451,6 +574,9 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
         loadCaseFiles().then((cf) => (badges.complete ? cf?.openCertificate() : cf?.openBoard()));
       },
       destroy() {
+        music?.dispose();
+        horse?.dispose();
+        arrival?.dispose();
         caseFiles?.dispose();
         train?.dispose();
         fireworks?.dispose();
@@ -491,6 +617,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
     post.uniforms.fade.value = 1;
     if (!reducedMotion) post.uniforms.glitch.value = 0.8;
     let fadeIn = 0;
+    if (readPref(ARRIVAL_KEY, ARRIVAL_VALUES, null) !== 'seen') runArrival(true);
 
     if (debug) {
       // Screenshot / QA hooks, only with ?debug=1.
@@ -500,6 +627,12 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
         night: (n) => api.setNight(n, true),
         quality: (q) => api.setQuality(q),
         open: (id) => openCase(zones.find((z) => z.zone === id)),
+        whistle: () => whistle(),
+        mount: () => horse?.mount(),
+        dismount: () => horse?.dismount(true),
+        arrival: () => runArrival(false),
+        skipArrival: () => arrival?.skip(),
+        horse: () => (horse ? { state: horse.machine.state, x: +horse.position.x.toFixed(2), z: +horse.position.z.toFixed(2), speed: +horse.speed.toFixed(2), riding: horse.riding, nodes: horse.graph.nodes.length, edges: horse.graph.edges.length } : null),
         stars: () => api.openStars(),
         award: (id) => {
           const r = badges.award(id);
@@ -507,7 +640,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
           if (r.completedNow) loadCaseFiles().then(() => (overlayOpen ? (ceremonyPending = true) : runCeremony()));
           return r;
         },
-        state: () => ({ fireworks: fireworks ? Number(fireworks.duration.toFixed(1)) : null, stars: badges.value, overlay: overlayOpen, kind: caseFiles?.current?.kind ?? null, ceremony, train: train?.machine.state ?? (trainLoad ? 'loading' : 'none'), trainX: train?.machine.x ?? null }),
+        state: () => ({ cinematic, music: music?.mood ?? null, fireworks: fireworks ? Number(fireworks.duration.toFixed(1)) : null, stars: badges.value, overlay: overlayOpen, kind: caseFiles?.current?.kind ?? null, ceremony, train: train?.machine.state ?? (trainLoad ? 'loading' : 'none'), trainX: train?.machine.x ?? null }),
       };
       cleanups.push(() => delete window.__exploreDebug);
     }
@@ -534,25 +667,51 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       // input + player
       const s = input.state;
       const iv = inputVector(s);
-      const blocked = overlayOpen || ceremony;
-      const moveInput = blocked ? { x: 0, z: 0, magnitude: 0, run: false, jump: false } : { ...iv, run: s.run, jump: input.take('jump') };
-      const ev = player.update(dt, moveInput, rig.yaw, surfaceUnder);
-      if (ev.footstep) {
-        audio.footstep(ev.footstep);
-        if (ev.footstep === 'sand') particles.puff(player.position.x, player.position.y, player.position.z);
+      const blocked = overlayOpen || ceremony || cinematic;
+      const riding = Boolean(horse?.riding);
+      if (input.take('whistle') && !blocked) whistle();
+      if (cinematic) {
+        arrival?.update(dt);
+      } else if (riding) {
+        // In the saddle: W/S step the gait, A/D (or the stick) steer; the sheriff rides along.
+        const steer = Math.max(-1, Math.min(1, (s.right ? 1 : 0) - (s.left ? 1 : 0) + s.x));
+        horse.update(dt, blocked ? {} : { forward: s.forward || s.y > 0.35, back: s.back || s.y < -0.35, steer });
+        input.take('jump'); // no jumping on horseback
+        player.position.copy(horse.position);
+        player.animate(dt);
+      } else {
+        const moveInput = blocked ? { x: 0, z: 0, magnitude: 0, run: false, jump: false } : { ...iv, run: s.run, jump: input.take('jump') };
+        const ev = player.update(dt, moveInput, rig.yaw, surfaceUnder);
+        if (ev.footstep) {
+          audio.footstep(ev.footstep);
+          if (ev.footstep === 'sand') particles.puff(player.position.x, player.position.y, player.position.z);
+        }
+        if (ev.landed) particles.puff(player.position.x, player.position.y, player.position.z);
       }
-      if (ev.landed) particles.puff(player.position.x, player.position.y, player.position.z);
+      if (horse && !riding && !cinematic) horse.update(dt);
+      if (!cinematic) arrival?.update(dt); // the moored boat keeps bobbing
       if (input.take('interact') && !blocked) api.interact();
 
-      const moving = player.speed > 0.4;
-      rig.update(dt, player.position, player.object.rotation.y, moving, town.bvh, elapsed);
+      if (!cinematic) {
+        rig.setRide(riding, horse?.gallop ?? 0);
+        const moving = riding ? Math.abs(horse.speed) > 0.4 : player.speed > 0.4;
+        rig.update(dt, player.position, riding ? horse.yaw : player.object.rotation.y, moving, town.bvh, elapsed);
+      }
 
       // zones
       const near = nearestZone([player.position.x, player.position.y, player.position.z], zones, PLAYER.zoneRadius);
+      // Prompt: the building first; otherwise Mount / Dismount near the horse.
+      const ridingNow = Boolean(horse?.riding);
+      const horsePrompt = !near && !cinematic && horse ? (ridingNow ? (Math.abs(horse.speed) < 1 ? 'Dismount' : null) : horse.near(player.position) ? 'Mount' : null) : null;
+      const key = near ? near.zone : horsePrompt;
+      if (key !== promptKey) {
+        promptKey = key;
+        hud.setPrompt(near ?? (horsePrompt ? { title: horsePrompt } : null));
+        if (horsePrompt === 'Mount') hud.announce('Your horse. Press E to mount.');
+      }
       if (near !== currentZone) {
         currentZone = near;
-        hud.setPrompt(near);
-        if (near && near === station) train?.arrive();
+        if (near && near === station && train?.arrive()) duckFor('train', 0.4, 2.4);
         if (near) {
           hud.announce(`${near.title}. Press E to open.`);
           player.wave();
@@ -584,8 +743,14 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       // the train: load when close to the station, then run it
       if (station && stationLandmark?.train && !trainLoad && Math.hypot(player.position.x - station.door[0], player.position.z - station.door[2]) < 24) loadTrain();
       if (train) {
-        for (const e of train.update(dt, palette.t)) if (e === 'openOverlay' && !overlayOpen && !ceremony) openCase(station);
-        if (train.blocks(player.position)) player.teleport([player.position.x, player.position.y, stationLandmark.train.rail_z - 2.4]);
+        for (const e of train.update(dt, palette.t)) {
+          if (e === 'openOverlay' && !overlayOpen && !ceremony) openCase(station);
+          if (e === 'departing') duckFor('train', 0.4, 2.4);
+        }
+        if (train.blocks(player.position)) {
+          if (horse?.riding) horse.teleport(player.position.x, stationLandmark.train.rail_z - 3);
+          else player.teleport([player.position.x, player.position.y, stationLandmark.train.rail_z - 2.4]);
+        }
       }
       if (fireworks) {
         fireworks.update(dt);
@@ -664,10 +829,12 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       if (document.hidden) {
         renderer.setAnimationLoop(null);
         audio.suspend();
+        music?.pause();
       } else {
         last = performance.now();
         renderer.setAnimationLoop(frame);
         audio.resume();
+        music?.resume();
       }
     });
     renderer.setAnimationLoop(frame);

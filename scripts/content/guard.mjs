@@ -1,5 +1,7 @@
 // PII guard: content must never contain phone numbers, CNIC numbers or email addresses
 // (content/README.md). The same files feed the public site and, in P5, the chatbot index.
+// P3.3: the one public contact address declared in content/profile.md (links.email) is allowed;
+// every other email, and every phone number, still fails the build.
 import { ContentError } from './load.mjs';
 
 const RULES = [
@@ -23,8 +25,12 @@ function position(text, index) {
   return { line, column };
 }
 
-/** Findings in one text: [{ kind, line, column }]. Matched values are never returned (no PII in logs). */
-export function scanText(text) {
+/**
+ * Findings in one text: [{ kind, line, column }]. Matched values are never returned (no PII in logs).
+ * options.allowEmails: exact addresses (case-insensitive) that may appear; phone numbers are never allowed.
+ */
+export function scanText(text, { allowEmails = [] } = {}) {
+  const allowed = new Set(allowEmails.map((e) => String(e).toLowerCase()));
   const findings = [];
   const seen = new Set();
   const add = (kind, index) => {
@@ -33,7 +39,10 @@ export function scanText(text) {
     findings.push({ kind, ...position(text, index) });
   };
   for (const { kind, pattern } of RULES) {
-    for (const m of text.matchAll(pattern)) add(kind, m.index);
+    for (const m of text.matchAll(pattern)) {
+      if (kind === 'email address' && allowed.has(m[0].toLowerCase())) continue;
+      add(kind, m.index);
+    }
   }
   for (const m of text.matchAll(GENERIC_PHONE)) {
     if (digitCount(m[0]) >= 10) add('phone number', m.index);
@@ -42,10 +51,10 @@ export function scanText(text) {
 }
 
 /** Throw if any source contains PII. `sources` = [{ file, raw }]. */
-export function assertNoPii(sources) {
+export function assertNoPii(sources, { allowEmails = [] } = {}) {
   const problems = [];
   for (const { file, raw } of sources) {
-    for (const f of scanText(raw)) problems.push(`${file}:${f.line}:${f.column}: looks like a ${f.kind}`);
+    for (const f of scanText(raw, { allowEmails })) problems.push(`${file}:${f.line}:${f.column}: looks like a ${f.kind}`);
   }
   if (problems.length) {
     throw new ContentError(

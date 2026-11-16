@@ -9,6 +9,9 @@ export const AVATAR_URL = '/models/avatar.glb';
 /** The station train (loaded lazily, only near the station). */
 export const TRAIN_URL = '/models/train.glb';
 export const TRAIN_JSON_URL = '/models/train.json';
+/** The sheriff's horse (P3.3, loaded lazily on the first whistle). */
+export const HORSE_URL = '/models/horse.glb';
+export const HORSE_JSON_URL = '/models/horse.json';
 /** Self-hosted Draco decoder (copied from three/examples/jsm/libs/draco). Town, avatar and train use it. */
 export const DRACO_PATH = '/draco/';
 
@@ -51,6 +54,12 @@ export const AVATAR = {
 
 /** Train node prefix for the wheels (spun by distance / radius from train.json). */
 export const TRAIN = { wheelPrefix: 'wheel_', root: 'Train' };
+/**
+ * Horse: the GLB faces +Z after the Y-up export (Blender −Y), verified from the bind-pose head/tail
+ * bones in tests, so no yaw correction is needed (forwardYaw 0). Capsule: radius 0.8 m centred 0.2 m
+ * ahead of the origin (between the hooves).
+ */
+export const HORSE = { clips: ['Idle', 'Walk', 'Trot', 'Gallop', 'HeadShake'], forwardYaw: 0, radius: 0.8, centreZ: 0.2, stepHeight: 0.45, reach: 14 };
 
 /** Footstep surface per material name (everything else is sand). */
 export const SURFACES = {
@@ -116,3 +125,8 @@ export const TIME_KEY = 'explore.time';
 export const QUALITY_VALUES = ['auto', ...TIERS];
 export const TUTORIAL_VALUES = ['done'];
 export const TIME_VALUES = ['day', 'night'];
+/** P3.3: the boat arrival plays once; the music toggle (on top of the global sound choice). */
+export const ARRIVAL_KEY = 'explore.arrival';
+export const ARRIVAL_VALUES = ['seen'];
+export const MUSIC_KEY = 'audio.music';
+export const MUSIC_VALUES = ['on', 'off'];

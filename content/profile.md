@@ -10,6 +10,7 @@ photo_alt: Muhammad Umer Farooq in a dark suit, smiling, standing by a tree on c
 links:
   linkedin: https://linkedin.com/in/mumerfarooq04
   github: https://github.com/muhammadumerfarooqq
+  email: mumerfarooq.ned@gmail.com
 open_to: [Full-time roles, Freelance projects]
 work_mode: [Remote, On-site]
 languages: [English, Urdu, French (basic)]

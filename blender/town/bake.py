@@ -35,7 +35,8 @@ for b in BUILDINGS:
     if root: groups[b] = [c for c in root.children if bakeable(c)]
 def by_prefix(name, prefixes):
     return [o for o in bpy.data.objects if o.parent is None and bakeable(o) and o.name.split(".")[0] in prefixes]
-groups["Dock"] = by_prefix("Dock", {"dock_deck", "dock_piles", "rowboat", "rowboat_seats"})
+groups["Dock"] = by_prefix("Dock", {"dock_deck", "dock_piles"})
+groups["Rowboat"] = by_prefix("Rowboat", {"rowboat", "rowboat_seats"})   # separate node so the engine can animate the arrival
 groups["Lighthouse"] = by_prefix("Lighthouse", {f"lighthouse_band{i}" for i in range(6)} | {"lighthouse_door", "keeper_hut", "keeper_roof"})
 groups["Props"] = by_prefix("Props", {"barrel", "crate", "hitch", "trough", "wagon", "wagon_wheels", "hay", "pole", "cactus",
                                       "bounty_frame", "bounty_panel", "bounty_posters", "platform", "sleepers"})

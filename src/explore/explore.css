@@ -960,3 +960,125 @@
     border: 2px solid CanvasText;
   }
 }
+
+/* ── P3.3: horse, arrival, music ── */
+.xp-touch--whistle {
+  grid-column: 1 / -1;
+}
+
+.xp-bottom__end {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 16px;
+}
+
+.xp-link {
+  padding: 0;
+  border: 0;
+  font: inherit;
+  color: #D9A441;
+  background: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.xp-toast {
+  position: absolute;
+  left: 50%;
+  bottom: 196px;
+  translate: -50% 0;
+  margin: 0;
+  padding: 8px 14px;
+  max-inline-size: calc(100vw - 32px);
+  border: 2px solid #D9C9A6;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #F1E6CE;
+  background: rgba(20, 16, 12, 0.88);
+  box-shadow: 3px 3px 0 #000;
+  animation: xp-drop 0.35s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+/* Arrival cinematic: letterbox bars and the title (transform + opacity only). */
+.xp-cine {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+}
+
+.xp-cine__bar {
+  position: absolute;
+  inset-inline: 0;
+  block-size: 11vh;
+  background: #000;
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.xp-cine__bar--top {
+  inset-block-start: 0;
+  transform: translateY(-100%);
+}
+
+.xp-cine__bar--bottom {
+  inset-block-end: 0;
+  transform: translateY(100%);
+}
+
+.xp-cine.is-on .xp-cine__bar {
+  transform: none;
+}
+
+.xp-cine__title {
+  position: absolute;
+  inset-block-end: 16vh;
+  inset-inline: 0;
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 8vw, 6rem);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: #F1E6CE;
+  text-shadow: 4px 4px 0 #000;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 1.2s ease, transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.xp-cine__title.is-on {
+  opacity: 1;
+  transform: none;
+}
+
+.xp-cine__skip {
+  position: absolute;
+  inset-block-end: calc(11vh + 14px);
+  inset-inline-end: 16px;
+  pointer-events: auto;
+}
+
+@media (max-width: 720px) {
+  .xp-toast {
+    bottom: 290px;
+  }
+}
+
+/* Phones: the joystick owns the bottom-left corner, so the meta line moves up under the HUD
+   controls and keeps only "Replay arrival" (the tutorial and the touch buttons explain the rest). */
+@media (max-width: 720px) {
+  .xp-bottom {
+    inset-block: calc(max(12px, env(safe-area-inset-top)) + 178px) auto;
+  }
+
+  .xp-legend,
+  .xp-notice {
+    display: none;
+  }
+}

@@ -16,6 +16,11 @@ export function createCameraRig(aspect) {
   const ray = new Ray();
   const smoothTarget = new Vector3();
   let first = true;
+  // Riding (P3.3): the boom pulls back and up, and the lens widens a little at a gallop.
+  let ride = 0;
+  let rideTarget = 0;
+  let gallop = 0;
+  let gallopTarget = 0;
 
   return {
     camera,
@@ -41,12 +46,24 @@ export function createCameraRig(aspect) {
       actualDistance = d;
       lastManual = Infinity;
     },
+    /** Riding camera: on = mounted, g = 0…1 gallop amount (FOV kick). */
+    setRide(on, g = 0) {
+      rideTarget = on ? 1 : 0;
+      gallopTarget = on ? g : 0;
+    },
     zoom(delta) {
       distance = Math.min(CAMERA.maxDistance, Math.max(CAMERA.minDistance, distance * (1 + delta * 0.001)));
     },
     /** Place the camera; `facing` is the player's yaw, used to drift behind them while moving. */
     update(dt, focus, facing, moving, bvh, now) {
-      target.set(focus.x, focus.y + CAMERA.height, focus.z);
+      ride += (rideTarget - ride) * damp(2, dt);
+      gallop += (gallopTarget - gallop) * damp(2.5, dt);
+      const fov = CAMERA.fov + 6 * gallop;
+      if (Math.abs(camera.fov - fov) > 0.01) {
+        camera.fov = fov;
+        camera.updateProjectionMatrix();
+      }
+      target.set(focus.x, focus.y + CAMERA.height + ride * 1.1, focus.z);
       if (first) {
         smoothTarget.copy(target);
         first = false;
@@ -60,7 +77,7 @@ export function createCameraRig(aspect) {
 
       desired.set(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch));
       // Collision: shorten the boom in front of anything between the player and the camera.
-      let d = distance;
+      let d = distance * (1 + 0.5 * ride);
       if (bvh) {
         ray.origin.copy(smoothTarget);
         ray.direction.copy(desired);

@@ -14,11 +14,12 @@ const KEYMAP = {
   ShiftRight: 'run',
   Space: 'jump',
   KeyE: 'interact',
+  KeyH: 'whistle',
   Enter: 'interact',
 };
 
 export function createInput({ surface, joystickBase, joystickKnob, buttons, onOrbit, onZoom, onKey }) {
-  const state = { forward: false, back: false, left: false, right: false, run: false, jump: false, interact: false, x: 0, y: 0 };
+  const state = { forward: false, back: false, left: false, right: false, run: false, jump: false, interact: false, whistle: false, x: 0, y: 0 };
   const listeners = [];
   const on = (el, type, fn, opts) => {
     el.addEventListener(type, fn, opts);
@@ -40,7 +41,7 @@ export function createInput({ surface, joystickBase, joystickKnob, buttons, onOr
     const action = KEYMAP[e.code];
     if (!action) return;
     // One-shot actions stay latched until the frame loop takes them (a tap shorter than a frame counts).
-    if (action !== 'interact' && action !== 'jump') state[action] = false;
+    if (action !== 'interact' && action !== 'jump' && action !== 'whistle') state[action] = false;
     onKey?.(action, false);
   });
   on(window, 'blur', () => {
@@ -124,6 +125,7 @@ export function createInput({ surface, joystickBase, joystickKnob, buttons, onOr
   };
   if (buttons.jump) hold(buttons.jump, 'jump');
   if (buttons.interact) hold(buttons.interact, 'interact');
+  if (buttons.whistle) on(buttons.whistle, 'click', () => (state.whistle = true));
   if (buttons.run) {
     on(buttons.run, 'click', () => {
       state.runLatched = !state.runLatched;

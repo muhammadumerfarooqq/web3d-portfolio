@@ -6,7 +6,7 @@ import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { AVATAR_URL, DRACO_PATH, QUALITY_VALUES, TIERS, TIME_VALUES, TOWN_JSON_URL, TOWN_URL, TRAIN_JSON_URL, TRAIN_URL, TUTORIAL_VALUES } from '../../src/explore/config.js';
+import { ARRIVAL_KEY, ARRIVAL_VALUES, AVATAR_URL, DRACO_PATH, HORSE_JSON_URL, HORSE_URL, MUSIC_KEY, MUSIC_VALUES, QUALITY_VALUES, TIERS, TIME_VALUES, TOWN_JSON_URL, TOWN_URL, TRAIN_JSON_URL, TRAIN_URL, TUTORIAL_VALUES } from '../../src/explore/config.js';
 import { readPref, writePref } from '../../src/ui/prefs.js';
 import { BADGES_EMPTY, BADGES_KEY, BADGES_VALUES, ZONE_IDS, decodeBadges } from '../../src/explore/badges.js';
 
@@ -55,7 +55,7 @@ describe('C9 Explore source hygiene', () => {
     expect(c).not.toMatch(/localStorage|sessionStorage|indexedDB|document\.cookie/);
     const calls = [...c.matchAll(/(?:readPref|writePref)\([^)]*\)/g)].map((m) => m[0]);
     expect(calls.length).toBeGreaterThanOrEqual(6);
-    for (const call of calls) expect(call, call).toMatch(/^(?:readPref|writePref)\((QUALITY|TUTORIAL|TIME|BADGES)_KEY, .*\1_VALUES/);
+    for (const call of calls) expect(call, call).toMatch(/^(?:readPref|writePref)\((QUALITY|TUTORIAL|TIME|BADGES|ARRIVAL|MUSIC)_KEY, .*\1_VALUES/);
     // no other Explore module touches storage or prefs at all (the case files report back to index.js)
     for (const f of files.filter((x) => x.endsWith('.js') && x !== 'index.js')) expect(code(f), f).not.toMatch(/localStorage|sessionStorage|indexedDB|document\.cookie|readPref|writePref/);
   });
@@ -90,7 +90,30 @@ describe('C9 Explore source hygiene', () => {
     expect(readPref('explore.badges', BADGES_VALUES, BADGES_EMPTY, store)).toBe('about,skills');
   });
 
-  it.each(['hud.js', 'case-files.js', 'train.js', 'fireworks.js'])('%s builds DOM with createElement / textContent only (no markup strings)', (f) => {
+  it('P3.3 explore.arrival and audio.music are whitelisted; hostile values are ignored', () => {
+    expect(ARRIVAL_KEY).toBe('explore.arrival');
+    expect(ARRIVAL_VALUES).toEqual(['seen']);
+    expect(MUSIC_KEY).toBe('audio.music');
+    expect(MUSIC_VALUES).toEqual(['on', 'off']);
+    const store = memoryStorage({ 'explore.arrival': 'yes', 'audio.music': '<script>' });
+    expect(readPref('explore.arrival', ARRIVAL_VALUES, null, store)).toBeNull();
+    expect(readPref('audio.music', MUSIC_VALUES, 'on', store)).toBe('on');
+    expect(writePref('explore.arrival', 'seen', ARRIVAL_VALUES, store)).toBe(true);
+    expect(writePref('audio.music', 'loud', MUSIC_VALUES, store)).toBe(false);
+    expect(writePref('audio.music', 'off', MUSIC_VALUES, store)).toBe(true);
+    // index.js reads both through readPref with the whitelist (checked by the storage regex above)
+    expect(code('index.js')).toMatch(/readPref\(ARRIVAL_KEY, ARRIVAL_VALUES, null\)/);
+    expect(code('index.js')).toMatch(/readPref\(MUSIC_KEY, MUSIC_VALUES, 'on'\)/);
+  });
+
+  it('P3.3 horse, music and arrival load only from same-origin paths; no audio files, no fetch of remote sound', () => {
+    for (const url of [HORSE_URL, HORSE_JSON_URL]) expect(url).toMatch(/^\/models\//);
+    for (const f of ['music.js', 'music-core.js', 'audio.js']) {
+      expect(code(f), f).not.toMatch(/\bfetch\(|new Audio\(|decodeAudioData|\.(?:mp3|ogg|wav|m4a)\b/);
+    }
+  });
+
+  it.each(['hud.js', 'case-files.js', 'train.js', 'fireworks.js', 'horse.js', 'arrival.js', 'music.js'])('%s builds DOM with createElement / textContent only (no markup strings)', (f) => {
     const c = code(f);
     if (f === 'hud.js') expect(c).toMatch(/document\.createElement\(/);
     if (f === 'case-files.js') expect(c).toMatch(/\bel\('dialog'/);

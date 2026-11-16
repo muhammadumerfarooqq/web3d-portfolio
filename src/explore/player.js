@@ -28,7 +28,7 @@ export function createPlayer({ avatarData, bvh, depthAt, spawn }) {
   const mixer = new AnimationMixer(avatar);
   const actions = {};
   for (const clip of clips) actions[clip.name] = mixer.clipAction(clip);
-  for (const name of ['Jump', 'Wave']) {
+  for (const name of ['Jump', 'Wave', 'Whistle']) {
     if (actions[name]) {
       actions[name].setLoop(LoopOnce, 1);
       actions[name].clampWhenFinished = true;
@@ -55,6 +55,20 @@ export function createPlayer({ avatarData, bvh, depthAt, spawn }) {
   const H = PLAYER.height;
   const maxSlopeY = Math.cos((PLAYER.maxSlopeDeg * Math.PI) / 180);
 
+  function blink(dt) {
+    blinkIn -= dt;
+    if (blinkIn <= 0 && blinkT < 0) blinkT = 0;
+    if (blinkT < 0) return;
+    blinkT += dt;
+    const k = blinkT / 0.16;
+    setBlink(k < 0.5 ? k * 2 : Math.max(0, 2 - k * 2));
+    if (k >= 1) {
+      blinkT = -1;
+      blinkIn = 2.2 + Math.random() * 3.5;
+      setBlink(0);
+    }
+  }
+
   function sync() {
     avatar.position.set(position.x, position.y + footLift, position.z);
     avatar.rotation.y = facing;
@@ -80,8 +94,28 @@ export function createPlayer({ avatarData, bvh, depthAt, spawn }) {
     /** Wave (entering a zone; forced for the Case Closed ceremony, when input is paused). */
     wave(force = false) {
       if (waving > 0 || !onGround || (!force && this.speed > 0.6)) return;
-      waving = actions.Wave ? actions.Wave.getClip().duration : 0;
-      play('Wave', 0.2);
+      this.playOnce('Wave');
+    },
+    /** Play a clip once over the locomotion state (Wave, Whistle); returns its duration. */
+    playOnce(name) {
+      if (!actions[name]) return 0;
+      waving = actions[name].getClip().duration;
+      play(name, 0.2);
+      return waving;
+    },
+    /** Loop a clip outside the locomotion state machine (Ride on the horse, Walk in the boat cinematic). */
+    playClip(name, fade = 0.3) {
+      waving = 0;
+      current = current === actions[name] ? null : current;
+      play(name, fade);
+    },
+    /** Animation only (mixer + blink), for when something else moves the sheriff (horse, boat). */
+    animate(dt) {
+      blink(dt);
+      mixer.update(dt);
+    },
+    get facing() {
+      return facing;
     },
     /**
      * One physics + animation step. input: { x, z, magnitude } (camera space), run, jump.
@@ -176,20 +210,7 @@ export function createPlayer({ avatarData, bvh, depthAt, spawn }) {
         }
       }
 
-      // Auto-blink.
-      blinkIn -= dt;
-      if (blinkIn <= 0 && blinkT < 0) blinkT = 0;
-      if (blinkT >= 0) {
-        blinkT += dt;
-        const k = blinkT / 0.16;
-        setBlink(k < 0.5 ? k * 2 : Math.max(0, 2 - k * 2));
-        if (k >= 1) {
-          blinkT = -1;
-          blinkIn = 2.2 + Math.random() * 3.5;
-          setBlink(0);
-        }
-      }
-
+      blink(dt);
       mixer.update(dt);
       sync();
       return events;
