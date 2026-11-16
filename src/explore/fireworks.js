@@ -4,7 +4,8 @@
 // trails). A rocket streak rises before each burst. Under reduced motion there is no movement at all:
 // a few still, soft glows hang over the town and fade.
 import { AdditiveBlending, InstancedBufferAttribute, Sprite, SpriteNodeMaterial, Vector3 } from 'three/webgpu';
-import { exp, float, instancedBufferAttribute, length, mix, mrt, select, sin, smoothstep, uniform, uv, vec3 } from 'three/tsl';
+import { exp, float, instancedBufferAttribute, length, mix, select, sin, smoothstep, uniform, uv, vec3 } from 'three/tsl';
+import { setQuietMrt } from './sprite-mrt.js';
 
 const COLOURS = [
   [1.0, 0.62, 0.18], // lantern gold
@@ -32,7 +33,7 @@ export function planBursts(count = 8, seed = 1) {
   }));
 }
 
-export function createFireworks({ scene, origin, reducedMotion = false, audio, emissiveMrt = false }) {
+export function createFireworks({ scene, origin, reducedMotion = false, audio, mrt = false }) {
   const now = uniform(0);
   const fade = uniform(1);
   const bursts = planBursts();
@@ -57,7 +58,7 @@ export function createFireworks({ scene, origin, reducedMotion = false, audio, e
     const c = col.xyz.mul(1.6).mul(fade);
     material.colorNode = c;
     material.opacityNode = soft(2.2).mul(fade).mul(0.55);
-    emissiveNode = c.mul(soft(2.2)).mul(0.5);
+    emissiveNode = c.mul(0.9);
   } else {
     count = bursts.length * PER_BURST;
     // per spark: centre.xyz + start | colour.rgb + speed | direction.xyz + rocket flag
@@ -101,7 +102,7 @@ export function createFireworks({ scene, origin, reducedMotion = false, audio, e
     const c = hot.mul(3.2).mul(alpha);
     material.colorNode = c;
     material.opacityNode = soft(1.6).mul(alpha);
-    emissiveNode = c.mul(soft(1.6));
+    emissiveNode = c;
   }
 
   const sprite = new Sprite(material);
@@ -110,11 +111,11 @@ export function createFireworks({ scene, origin, reducedMotion = false, audio, e
   sprite.name = 'explore_fireworks';
   scene.add(sprite);
 
-  const setEmissiveMrt = (on) => {
-    material.mrtNode = on ? mrt({ emissive: emissiveNode }) : null;
-    material.needsUpdate = true;
-  };
-  setEmissiveMrt(emissiveMrt);
+  // Round sparks only (P3.4): cut out outside the soft dot, glow masked into the emissive target, and
+  // the normal / metal-rough targets left alone (sprite-mrt.js).
+  material.alphaTest = 0.004;
+  const setMrt = (on) => setQuietMrt(material, on, material.opacityNode, emissiveNode);
+  setMrt(mrt);
 
   // Sound: a whoosh as each rocket rises, then a thump and a crackle at the burst.
   const timers = bursts.map((b) =>
@@ -139,7 +140,7 @@ export function createFireworks({ scene, origin, reducedMotion = false, audio, e
       // Still glows (reduced motion) fade out at the end instead of moving.
       fade.value = reducedMotion ? Math.min(1, t / 0.6) * Math.min(1, Math.max(0, (duration + 1.5 - t) / 1.5)) : 1;
     },
-    setEmissiveMrt,
+    setMrt,
     dispose() {
       for (const id of timers) clearTimeout(id);
       scene.remove(sprite);

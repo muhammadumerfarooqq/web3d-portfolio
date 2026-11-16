@@ -1,6 +1,8 @@
-// Input: keyboard (WASD / arrows, Shift = run, Space = jump, E = interact), mouse drag to orbit,
-// wheel to zoom, and on touch a virtual joystick + jump / run / interact buttons with drag-to-orbit
-// on the right half of the screen. Keys typed into form fields are ignored.
+// Input: keyboard (WASD and the arrow keys, identical; Shift = run, Space = jump, E = interact,
+// H = whistle), mouse drag to orbit, wheel to zoom, and on touch a virtual joystick + jump / run /
+// interact buttons with drag-to-orbit on the right half of the screen. Keys typed into form fields are
+// ignored. P3.4: a plain click on the 3D view turns on pointer-lock look (the mouse turns the camera
+// without dragging); Esc releases it (the browser's own rule), and Tab is never captured.
 const KEYMAP = {
   KeyW: 'forward',
   ArrowUp: 'forward',
@@ -18,7 +20,7 @@ const KEYMAP = {
   Enter: 'interact',
 };
 
-export function createInput({ surface, joystickBase, joystickKnob, buttons, onOrbit, onZoom, onKey }) {
+export function createInput({ surface, joystickBase, joystickKnob, buttons, onOrbit, onZoom, onKey, onDrag, onPointerLock }) {
   const state = { forward: false, back: false, left: false, right: false, run: false, jump: false, interact: false, whistle: false, x: 0, y: 0 };
   const listeners = [];
   const on = (el, type, fn, opts) => {
@@ -50,21 +52,43 @@ export function createInput({ surface, joystickBase, joystickKnob, buttons, onOr
 
   // Mouse / touch drag to orbit.
   let drag = null;
+  const locked = () => document.pointerLockElement === surface;
   on(surface, 'pointerdown', (e) => {
     surface.focus({ preventScroll: true }); // keys now go to the game, not a previously focused button
+    if (locked()) return; // pointer-lock look: the mouse already turns the camera
     if (e.pointerType === 'touch' && e.clientX < window.innerWidth * 0.45) return; // left half = joystick zone
-    drag = { id: e.pointerId, x: e.clientX, y: e.clientY };
+    drag = { id: e.pointerId, x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, t0: performance.now(), type: e.pointerType, moved: false };
     surface.setPointerCapture?.(e.pointerId);
   });
   on(surface, 'pointermove', (e) => {
     if (!drag || drag.id !== e.pointerId) return;
+    if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) > 4) {
+      drag.moved = true;
+      onDrag?.(true);
+    }
     onOrbit(e.clientX - drag.x, e.clientY - drag.y);
     drag.x = e.clientX;
     drag.y = e.clientY;
   });
   const endDrag = (e) => {
-    if (drag && drag.id === e.pointerId) drag = null;
+    if (!drag || drag.id !== e.pointerId) return;
+    const click = e.type === 'pointerup' && drag.type === 'mouse' && !drag.moved && performance.now() - drag.t0 < 350;
+    if (drag.moved) onDrag?.(false);
+    drag = null;
+    // A plain click (no drag) turns on pointer-lock look. Never while paused (an overlay is open).
+    if (click && !paused && surface.requestPointerLock) {
+      try {
+        const r = surface.requestPointerLock();
+        r?.catch?.(() => {});
+      } catch {
+        // pointer lock unavailable (embedded, headless): drag-to-look still works
+      }
+    }
   };
+  on(document, 'pointerlockchange', () => onPointerLock?.(locked()));
+  on(document, 'mousemove', (e) => {
+    if (locked() && !paused) onOrbit(e.movementX || 0, e.movementY || 0);
+  });
   on(surface, 'pointerup', endDrag);
   on(surface, 'pointercancel', endDrag);
   on(surface, 'wheel', (e) => {
@@ -141,6 +165,7 @@ export function createInput({ surface, joystickBase, joystickKnob, buttons, onOr
     /** Pause (overlay open): keys reach the page untouched and held keys are released. */
     setPaused(on) {
       paused = on;
+      if (on && locked()) document.exitPointerLock?.();
       for (const k of Object.keys(state)) if (typeof state[k] === 'boolean' && k !== 'runLatched') state[k] = false;
       state.x = 0;
       state.y = 0;
@@ -151,7 +176,15 @@ export function createInput({ surface, joystickBase, joystickKnob, buttons, onOr
       state[action] = false;
       return v;
     },
+    /** Leave pointer-lock look (cinematic, overlays, exit). */
+    releasePointer() {
+      if (locked()) document.exitPointerLock?.();
+    },
+    get pointerLocked() {
+      return locked();
+    },
     dispose() {
+      if (locked()) document.exitPointerLock?.();
       for (const off of listeners) off();
     },
   };

@@ -60,3 +60,4 @@ for (const [name, init] of DEFERRED) {
 
 // Reveal start states are set: let theme-init.js's hidden-until-ready rule go.
 root.dataset.motion = 'ready';
+window.dispatchEvent(new CustomEvent('motionready')); // nav.js lines up a #section deep link after this

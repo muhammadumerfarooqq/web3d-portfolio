@@ -179,7 +179,8 @@ describe('riding maths', () => {
     const index = src('index.js');
     expect(index).toMatch(/\} else if \(riding\) \{[\s\S]{0,600}?input\.take\('jump'\);/);
     const horse = src('horse.js');
-    expect(horse).toMatch(/if \(!onLand\(nx, nz\)\) return false;/);
+    // P3.4: the whole footprint must stay on dry land (horse-land.js), not just the origin.
+    expect(horse).toMatch(/if \(!bodyDry\(nx, nz, yaw\)\) return false;/);
     expect(horse).toMatch(/resolveCapsule\(bvh, segA, segB, HORSE\.radius\)/);
   });
 });
@@ -240,9 +241,10 @@ describe('boat arrival and opening: once-only rules', () => {
     expect(c).toMatch(/replayArrival\(\) \{\s*runArrival\(false\);/);
   });
 
-  it('the arrival is skippable (Skip focused, any key but Tab/modifiers, a click) and lasts about 8 s', () => {
+  it('the arrival is skippable (Skip focused, any key but Tab/modifiers, a click) and lasts about 9.5 s', () => {
     const c = src('arrival.js');
-    expect(c).toMatch(/export const ARRIVAL_SECONDS = 8;/);
+    // P3.4: 8 → 9.5 s, so the sheriff can stand, cross the boat and step up onto the dock.
+    expect(c).toMatch(/export const ARRIVAL_SECONDS = 9\.5;/);
     expect(c).toMatch(/skipBtn\.focus\(/);
     expect(c).toMatch(/window\.addEventListener\('keydown', onKey, true\)/);
     expect(c).toMatch(/overlay\.addEventListener\('pointerdown', finish\)/);

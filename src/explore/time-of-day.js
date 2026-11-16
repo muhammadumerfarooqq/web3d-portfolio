@@ -32,20 +32,25 @@ export const DAY = {
   grade: 0, // 0 = warm golden grade, 1 = teal-orange night grade
 };
 
-/** Night: deep indigo shadows, amber lantern pools, glowing windows, stars and moon. */
+/**
+ * Night: deep indigo shadows, amber lantern pools, glowing windows, stars and moon. P3.4: the moon,
+ * the sky fill and the exposure are lifted, and the horizon and fog are a touch lighter than the
+ * buildings, so the town, the mesas and the lighthouse read as silhouettes from the dock and the shore
+ * (it was too dark away from the street); the lanterns stay the warmest, brightest thing.
+ */
 export const NIGHT = {
   sunDir: normalize([0.35, 0.36, -0.7]), // the moon: low, ahead-right of the dock, so its glitter path runs beside it
   sunColor: [0.55, 0.66, 1.0],
-  sunIntensity: 0.55,
-  hemiSky: [0.12, 0.14, 0.32],
-  hemiGround: [0.06, 0.04, 0.05],
-  hemiIntensity: 0.55,
-  skyZenith: [0.008, 0.011, 0.04],
-  skyHorizon: [0.07, 0.07, 0.17],
-  fogColor: [0.05, 0.06, 0.14],
-  fogDensity: 0.0135,
-  heightFog: 0.9,
-  exposure: 1.1,
+  sunIntensity: 0.85,
+  hemiSky: [0.17, 0.2, 0.4],
+  hemiGround: [0.08, 0.06, 0.07],
+  hemiIntensity: 0.8,
+  skyZenith: [0.01, 0.014, 0.05],
+  skyHorizon: [0.1, 0.1, 0.22],
+  fogColor: [0.075, 0.085, 0.18],
+  fogDensity: 0.0105,
+  heightFog: 0.75,
+  exposure: 1.22,
   bloomStrength: 0.6,
   lanternIntensity: 1,
   windowGlow: 1,

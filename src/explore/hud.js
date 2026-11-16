@@ -83,9 +83,13 @@ export function createHud({ zones, tiers, quality, sound, music = true, night, t
     el('div', { class: 'xp-top__left' }, [el('span', { class: 'xp-logo' }, [STAR(), el('span', { text: 'UMER' })])]),
     el('div', { class: 'xp-top__right' }, [starBtn, soundBtn, musicBtn, timeBtn, qSelect]),
   ]);
-  const legend = el('p', { class: 'xp-legend' }, [
-    el('span', { text: touch ? 'Stick to walk · drag to look · Open to enter a building · Whistle for your horse' : 'WASD / arrows walk · Shift run · Space jump · E open · H whistle · drag to look' }),
-  ]);
+  // The control legend follows the mode (P3.4): on foot or in the saddle.
+  const LEGEND = {
+    walk: touch ? 'Stick to walk · drag to look · Open to enter a building · Whistle for your horse' : 'WASD / arrows walk · Shift run · Space jump · E open · H whistle · drag or click to look (Esc releases)',
+    ride: touch ? 'Stick up: faster · down: slower / back · left / right: turn · Open to dismount' : 'W / ↑ faster · S / ↓ slower, back · A D / ← → turn · E dismount · drag or click to look',
+  };
+  const legendText = el('span', { text: LEGEND.walk });
+  const legend = el('p', { class: 'xp-legend', 'data-legend': 'walk' }, [legendText]);
   const notice = el('p', { class: 'xp-notice', text: 'Everything here is also in the Classic portfolio.' });
   // One scrolling row (never wraps into the legend or the prompt); the fade marks the hidden side.
   const zoneNav = el('nav', { class: 'xp-zones is-start', 'aria-label': 'Fast travel to a building' }, chips);
@@ -230,6 +234,13 @@ export function createHud({ zones, tiers, quality, sound, music = true, night, t
     },
     setMusic(on) {
       musicBtn.setAttribute('aria-pressed', String(on));
+    },
+    /** 'walk' | 'ride': the legend lists the controls for the current mode. */
+    setLegend(mode) {
+      const m = mode === 'ride' ? 'ride' : 'walk';
+      if (legend.dataset.legend === m) return;
+      legend.dataset.legend = m;
+      legendText.textContent = LEGEND[m];
     },
     /** A short notice above the prompt for ~3.5 s, also announced. */
     notice(text) {

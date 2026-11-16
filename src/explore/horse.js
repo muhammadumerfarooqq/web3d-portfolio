@@ -4,14 +4,17 @@
 // walk, stops beside him, shakes its head and idles. E mounts (the avatar plays Ride, attached to the
 // spine bone at horse.json's rider offset); riding uses horse-ride.js with capsule collision against
 // the BVH and stays on land. E again (slow) dismounts to a free spot beside it. State: horse-machine.js.
+// P3.4: A turns left and D right (horse-ride.js turnHeading); the horse's whole footprint must be on dry
+// land wherever it stops, idles, wanders or appears (horse-land.js), it snaps to the nearest walkable
+// street node when the spot beside the sheriff is wet, and its body is a solid capsule the sheriff
+// cannot walk into (obstacle()); the mount prompt measures from the body's surface.
 import { AnimationMixer, LoopOnce, Object3D, Quaternion, Ray, Vector3 } from 'three/webgpu';
-import { HORSE, HORSE_JSON_URL, HORSE_URL } from './config.js';
-import { angleDelta, castDown, resolveCapsule, stepUpHeight } from './controller-math.js';
+import { HORSE, HORSE_BODY, HORSE_JSON_URL, HORSE_URL } from './config.js';
+import { angleDelta, castDown, closestOnSegment2D, resolveCapsule, stepUpHeight } from './controller-math.js';
+import { areaDry, footprintDry, isDry, stopSpot, wanderTarget } from './horse-land.js';
 import { byDistance, buildStreetGraph, findPath, pathLength } from './horse-path.js';
 import { createHorseMachine } from './horse-machine.js';
-import { createRide, gaitFor, halt, parseGaitSpeeds, rideStep } from './horse-ride.js';
-
-const WATER = 0.15; // deeper than this (m) is sea: the horse never goes there
+import { createRide, gaitFor, halt, parseGaitSpeeds, rideStep, turnHeading } from './horse-ride.js';
 
 export async function createHorse({ loaders, scene, town, townJson, player, camera, audio, signal }) {
   const [gltf, meta] = await Promise.all([loaders.gltf.loadAsync(HORSE_URL), fetch(HORSE_JSON_URL, { signal, credentials: 'same-origin' }).then((r) => r.json())]);
@@ -60,7 +63,8 @@ export async function createHorse({ loaders, scene, town, townJson, player, came
   // ── the street graph, with every edge and node checked against the town ──
   const ray = new Ray();
   const groundAt = (x, z, from = 4) => castDown(bvh, new Vector3(x, from, z), from + 4)?.point.y ?? heightAt(x, z) ?? 0;
-  const onLand = (x, z) => depthAt(x, z) <= WATER;
+  const onLand = (x, z) => isDry(heightAt, x, z);
+  const bodyDry = (x, z, y) => footprintDry(heightAt, x, z, y);
   /** Clear line between two ground points at knee and chest height (rocks, porches, walls block). */
   const clear = (ax, az, bx, bz, heights = [0.6, 1.4]) => {
     const len = Math.hypot(bx - ax, bz - az);
@@ -74,7 +78,7 @@ export async function createHorse({ loaders, scene, town, townJson, player, came
     return true;
   };
   const raw = buildStreetGraph(townJson);
-  const nodes = raw.nodes.filter((n) => onLand(n.x, n.z));
+  const nodes = raw.nodes.filter((n) => areaDry(heightAt, n.x, n.z));
   const ids = new Set(nodes.map((n) => n.id));
   const pos = new Map(nodes.map((n) => [n.id, n]));
   const graph = { nodes, edges: raw.edges.filter(([a, b]) => ids.has(a) && ids.has(b) && clear(pos.get(a).x, pos.get(a).z, pos.get(b).x, pos.get(b).z)) };
@@ -88,6 +92,7 @@ export async function createHorse({ loaders, scene, town, townJson, player, came
   let stuckT = 0;
   const lastProgress = new Vector3();
   let wanderTo = null;
+  let stopYaw = 0;
   let snortIn = 6;
   let hoofT = 0;
   const ride = createRide(speeds);
@@ -104,7 +109,7 @@ export async function createHorse({ loaders, scene, town, townJson, player, came
     model.rotation.y = yaw + HORSE.forwardYaw;
   };
 
-  /** Spot beside the sheriff (right, left, behind) on land with a clear line from him. */
+  /** Spot beside the horse where the sheriff lands when dismounting: dry, clear line from it. */
   function besideSpot(p, facing, dist = 1.9) {
     for (const a of [Math.PI / 2, -Math.PI / 2, Math.PI, 0]) {
       const x = p.x + Math.sin(facing + a) * dist;
@@ -114,9 +119,11 @@ export async function createHorse({ loaders, scene, town, townJson, player, came
     return null;
   }
 
+  const clearLow = (ax, az, bx, bz) => clear(ax, az, bx, bz, [0.6, 1.2]);
+
   /** The graph node the horse can come from to reach the sheriff, or null (dock, water, indoors, rocks). */
   function reachFrom(p) {
-    if (!onLand(p.x, p.z)) return null;
+    if (depthAt(p.x, p.z) > 0.15) return null; // in the water (the horse still stops on dry land: stopSpot)
     if (p.y - (heightAt(p.x, p.z) ?? 0) > 1.4) return null;
     for (const n of byDistance(graph, p.x, p.z).slice(0, 6)) {
       if (Math.hypot(n.x - p.x, n.z - p.z) > HORSE.reach) break;
@@ -169,7 +176,7 @@ export async function createHorse({ loaders, scene, town, townJson, player, came
     const rise = stepUpHeight(bvh, position, dx, dz, HORSE.radius, HORSE.stepHeight);
     const nx = position.x + dx;
     const nz = position.z + dz;
-    if (!onLand(nx, nz)) return false;
+    if (!bodyDry(nx, nz, yaw)) return false;
     const cx = nx + Math.sin(yaw) * HORSE.centreZ;
     const cz = nz + Math.cos(yaw) * HORSE.centreZ;
     const y = position.y + rise;
@@ -178,7 +185,7 @@ export async function createHorse({ loaders, scene, town, townJson, player, came
     const { segment } = resolveCapsule(bvh, segA, segB, HORSE.radius);
     const fx = nx + (segment.start.x - cx);
     const fz = nz + (segment.start.z - cz);
-    if (!onLand(fx, fz)) return false;
+    if (!bodyDry(fx, fz, yaw)) return false;
     const g = groundAt(fx, fz, y + 1.5);
     if (g - position.y > HORSE.stepHeight + 0.1) return false;
     const moved = Math.hypot(fx - position.x, fz - position.z);
@@ -245,7 +252,7 @@ export async function createHorse({ loaders, scene, town, townJson, player, came
     whistle() {
       const p = player.position;
       const target = reachFrom(p);
-      const spot = target && besideSpot(p, player.facing);
+      const spot = target && stopSpot({ heightAt, clear: clearLow, nodes: graph.nodes, p, facing: player.facing, reach: HORSE.reach });
       const r = machine.whistle({ reachable: Boolean(target && spot) });
       if (!r.ok) return r;
       const visibleNow = model.visible && position.distanceTo(p) < 40;
@@ -255,6 +262,7 @@ export async function createHorse({ loaders, scene, town, townJson, player, came
         const from = byDistance(graph, position.x, position.z)[0];
         const path = direct ? [] : (findPath(graph, from.id, target.id) ?? []);
         route = [...path.map((id) => pos.get(id)), spot];
+        stopYaw = spot.yaw;
       } else {
         const start = startNode(target);
         if (!start) return { ok: false, reason: 'unreachable' };
@@ -263,14 +271,33 @@ export async function createHorse({ loaders, scene, town, townJson, player, came
         const next = nextId ? pos.get(nextId) : spot;
         yaw = Math.atan2(next.x - position.x, next.z - position.z);
         route = [...start.path.slice(1).map((id) => pos.get(id)), spot];
+        stopYaw = spot.yaw;
         speed = 0;
       }
       lastProgress.copy(position);
       return r;
     },
-    /** Close enough to mount? */
+    /** Close enough to mount? Measured from the body's surface (beside it; he can never be inside). */
     near(p) {
-      return model.visible && ['greet', 'idle', 'wander'].includes(machine.state) && Math.hypot(p.x - position.x, p.z - position.z) < 2.6;
+      if (!model.visible || !['greet', 'idle', 'wander'].includes(machine.state)) return false;
+      const b = this.obstacle();
+      const c = closestOnSegment2D(p.x, p.z, b.ax, b.az, b.bx, b.bz);
+      return Math.hypot(p.x - c.x, p.z - c.z) - b.r < HORSE_BODY.mountReach;
+    },
+    /** The body as a solid horizontal capsule (world XZ) while it stands on its own, else null. */
+    obstacle() {
+      if (!model.visible || machine.riding || machine.state === 'mounting') return null;
+      const s = Math.sin(yaw);
+      const c = Math.cos(yaw);
+      return {
+        ax: position.x + s * HORSE_BODY.tail,
+        az: position.z + c * HORSE_BODY.tail,
+        bx: position.x + s * HORSE_BODY.chest,
+        bz: position.z + c * HORSE_BODY.chest,
+        r: HORSE_BODY.radius,
+        bottom: position.y,
+        top: position.y + HORSE_BODY.top,
+      };
     },
     mount() {
       if (!machine.mount({ near: this.near(player.position) })) return false;
@@ -315,23 +342,19 @@ export async function createHorse({ loaders, scene, town, townJson, player, came
         model.visible = true;
         if (travel(dt)) {
           speed = 0;
-          yaw += angleDelta(yaw, player.facing);
-          machine.arrived();
+          machine.arrived(); // the greet turns it to stopYaw (the footprint was checked facing that way)
         }
         animateGait(dt, speed);
       } else if (state === 'greet') {
+        yaw += angleDelta(yaw, stopYaw) * Math.min(1, dt * 4);
         if (events.includes('greeting')) {
           play('HeadShake', 0.2);
           neigh();
         }
         speed = 0;
       } else if (state === 'wander') {
-        if (!wanderTo) {
-          const a = Math.random() * Math.PI * 2;
-          const x = position.x + Math.sin(a) * 2.5;
-          const z = position.z + Math.cos(a) * 2.5;
-          wanderTo = onLand(x, z) && clear(position.x, position.z, x, z) ? { x, z } : { x: position.x, z: position.z };
-        }
+        // A short stroll, clamped to dry land (never into the surf).
+        if (!wanderTo) wanderTo = wanderTarget({ heightAt, clear, x: position.x, z: position.z }) ?? { x: position.x, z: position.z };
         const d = Math.hypot(wanderTo.x - position.x, wanderTo.z - position.z);
         speed = d > 0.3 ? 0.9 : 0;
         if (speed) {
@@ -342,7 +365,7 @@ export async function createHorse({ loaders, scene, town, townJson, player, came
       } else if (state === 'ridden' || state === 'mounting') {
         if (state === 'ridden') {
           rideStep(ride, rideInput ?? {}, dt);
-          yaw += ride.yawRate * dt;
+          yaw = turnHeading(yaw, ride.yawRate, dt); // D (steer +1) turns right: yaw decreases
           if (!move(Math.sin(yaw) * ride.speed * dt, Math.cos(yaw) * ride.speed * dt) && Math.abs(ride.speed) > 0.2) {
             halt(ride);
             snort();

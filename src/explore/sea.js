@@ -30,6 +30,7 @@ import {
   vec3,
 } from 'three/tsl';
 import { SEA_LEVEL } from './config.js';
+import { SEA_SIZE, WAVE_TRAINS } from './waves.js';
 
 /** Bake water depth (metres, 0–4 → 0–255) into a texture from a height sampler. */
 export function bakeDepthTexture(heightAt, size, half) {
@@ -50,14 +51,6 @@ export function bakeDepthTexture(heightAt, size, half) {
   return tex;
 }
 
-const WAVES = [
-  // direction x, z, steepness, wavelength (m)
-  [1.0, 0.35, 0.16, 18.0],
-  [0.6, -0.8, 0.12, 11.0],
-  [-0.4, 0.9, 0.09, 6.5],
-  [0.9, 0.9, 0.06, 3.3],
-];
-
 /**
  * Sky reflection plus the sun's (or moon's) glitter path, for a surface normal n seen along view.
  * The glints use a noise-jittered reflection vector, so instead of one mirror disc the light breaks
@@ -73,7 +66,7 @@ function seaReflection(u, view, n) {
   return skyRefl.add(vec3(u.sunColor).mul(glints.add(glow)).mul(u.glitter));
 }
 
-export function createSea({ depthTexture, half, size = 240, segments = 192 }) {
+export function createSea({ depthTexture, half, size = SEA_SIZE, segments = 192 }) {
   const u = {
     deep: uniform(new Color(0.004, 0.02, 0.05)),
     shallow: uniform(new Color(0.02, 0.12, 0.12)),
@@ -84,6 +77,9 @@ export function createSea({ depthTexture, half, size = 240, segments = 192 }) {
     glitter: uniform(1),
     foam: uniform(0.5),
     wind: uniform(1),
+    /** Wave phase in seconds of wave travel, integrated on the CPU (phase += dt × wind) so the
+     * rowboat (waves.js) and the shader always agree, and gusts never make the waves jump. */
+    phase: uniform(0),
   };
 
   const depthUV = (p) => vec2(p.x.add(half).div(half * 2), p.z.add(half).div(half * 2));
@@ -99,14 +95,9 @@ export function createSea({ depthTexture, half, size = 240, segments = 192 }) {
   let offset = vec3(0, 0, 0);
   let tangent = vec3(1, 0, 0);
   let binormal = vec3(0, 0, 1);
-  for (const [dx, dz, steep, length] of WAVES) {
-    const k = (2 * Math.PI) / length;
-    const c = Math.sqrt(9.8 / k);
-    const dl = Math.hypot(dx, dz);
-    const ddx = dx / dl;
-    const ddz = dz / dl;
-    const f = float(k).mul(world.x.mul(ddx).add(world.z.mul(ddz)).sub(time.mul(c).mul(u.wind)));
-    const a = calm.mul(steep / k);
+  for (const { dx: ddx, dz: ddz, k, c, steep, amp } of WAVE_TRAINS) {
+    const f = float(k).mul(world.x.mul(ddx).add(world.z.mul(ddz)).sub(u.phase.mul(c)));
+    const a = calm.mul(amp);
     const s = calm.mul(steep);
     const cf = cos(f);
     const sf = sin(f);
@@ -157,9 +148,11 @@ export function createSea({ depthTexture, half, size = 240, segments = 192 }) {
   return { mesh, uniforms: u };
 }
 
-/** The GLB's huge flat sea becomes the far ocean under the detailed sea: the same shading as the
- * detailed sea's calm outer edge (deep body, sky reflection, sun/moon glitter), just without waves. */
-export function createFarSea(seaMesh, u) {
+/** The GLB's huge flat sea becomes the far ocean around the detailed sea: the same shading as the
+ * detailed sea's calm outer edge (deep body, sky reflection, sun/moon glitter), just without waves.
+ * P3.4: it is cut away inside the detailed sea's square. It used to lie 8 cm under the whole detailed
+ * sea, so every trough deeper than that showed a flat plane over the water (and hid the rowboat). */
+export function createFarSea(seaMesh, u, size = SEA_SIZE) {
   const material = new MeshStandardNodeMaterial({ roughness: 0.06, metalness: 0.0 });
   material.name = 'Sea_Far';
   const view = normalize(cameraPosition.sub(positionWorld));
@@ -167,6 +160,7 @@ export function createFarSea(seaMesh, u) {
   const fres = float(0.02).add(float(0.98).mul(pow(float(1).sub(max(view.y, 0.0)), 5.0)));
   material.colorNode = vec3(u.deep);
   material.emissiveNode = seaReflection(u, view, up).mul(fres);
+  material.maskNode = max(abs(positionWorld.x), abs(positionWorld.z)).greaterThan(size / 2 - 0.5);
   seaMesh.material = material;
   seaMesh.position.y -= 0.08;
   seaMesh.receiveShadow = false;

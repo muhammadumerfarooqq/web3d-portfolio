@@ -384,6 +384,15 @@ Visual layer only (structure, content pipeline, filters/URL state, modal, lightb
 - **Budgets measured:** Explore start 342.7 KB gz (≤ 350), lazy 5.3 / 3.0 / 1.8 KB gz, Classic +0.8 KB gz over P3.2, Lighthouse desktop 100s, mobile 98–99; 467 tests.
 - **Next:** P4 (contact + email backend), P5 (RAG). Real-GPU / phone / listening review stays open (L97, L98, L127, L130, L134).
 
+#### P3.4 — Bug fixes from the real-browser test · ✅ step done (16-Nov-2026), fixes only
+- **Controls:** riding steer sign fixed (`turnHeading`), walk directions proven per camera yaw; recentre only on forward walking (`shouldRecentre`), smooth turning (`turnToward`), lower drag sensitivity + clamped pitch, pointer-lock look, five-ray smoothed camera boom (`boomStep`), walking / riding legend.
+- **Classic navigation (`src/ui/scroll-rules.js`):** wheel-only short Lenis, native trackpad / touch / keyboard / reduced motion, scroll keys cancel a smooth scroll, heading-exact link landing, scroll-position active section, back / forward + deep links; deep-link reveal crash fixed (L149).
+- **Horse:** body capsule collider + Mount from the surface (`pushFromSegment`, `HORSE_BODY`); dry-land footprint rule, snapping and clamped wander (`horse-land.js`), tested on the decoded island ground.
+- **Boat arrival:** `Rowboat_baked` floats on the shared waves (`waves.js`, `boat.js`; integrated wave phase), oars from `oars.glb` / `oars.json` synced to the Row clip, splashes and a soft wake, bump / stand / step / walk, one boat; open hull + water depth mask (L152).
+- **Artifacts:** quiet MRT + round cut-out for every transparent effect (`sprite-mrt.js`); night lifted; far ocean masked inside the detailed sea (L150).
+- **Budgets measured:** Explore start 345.6 KB gz (≤ 350), Classic +1.6 KB gz over P3.2, Lighthouse desktop 100s, mobile 98–99; 514 tests.
+- **Next:** P4 (contact + email backend), P5 (RAG). Real-GPU / phone / listening review stays open (L97, L98, L130, L134, L154).
+
 ### P4 — Supabase foundation + contact & email · 9% · 5.1–5.8
 - Supabase project; migrations: all tables, RLS policies, SQL functions (`hit_rate_limit`, `log_event`), `admins` table.
 - Shared zod schemas; `/api/contact` per §2.5; Turnstile; Nodemailer; all UI states.

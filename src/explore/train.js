@@ -7,12 +7,13 @@ import { InstancedBufferAttribute, NormalBlending, Quaternion, Sprite, SpriteNod
 import { clamp, float, instancedBufferAttribute, length, mix, smoothstep, uniform, uv, vec3 } from 'three/tsl';
 import { TRAIN_JSON_URL, TRAIN_URL } from './config.js';
 import { createTrainMachine } from './train-machine.js';
+import { setQuietMrt } from './sprite-mrt.js';
 
 const Z_AXIS = new Vector3(0, 0, 1);
 const PUFFS = 64;
 
 /** Puff pool: smoke (grey, rising, growing) and steam (white, short, low). CPU-fed, one draw call. */
-function createPuffs(scene) {
+function createPuffs(scene, mrtOn) {
   const now = uniform(0);
   const night = uniform(1);
   const dataA = new Float32Array(PUFFS * 4);
@@ -32,6 +33,8 @@ function createPuffs(scene) {
   const steam = mix(vec3(0.92, 0.9, 0.86), vec3(0.42, 0.45, 0.55), night);
   material.colorNode = mix(smoke, steam, b.w);
   material.opacityNode = smoothstep(0.5, 0.0, length(uv().sub(0.5))).mul(float(1).sub(t)).mul(smoothstep(0.0, 0.06, age)).mul(mix(0.5, 0.42, b.w));
+  material.alphaTest = 0.004; // round puffs only (P3.4)
+  setQuietMrt(material, mrtOn, material.opacityNode);
   const sprite = new Sprite(material);
   sprite.count = PUFFS;
   sprite.frustumCulled = false;
@@ -41,6 +44,7 @@ function createPuffs(scene) {
   return {
     now,
     night,
+    setMrt: (on) => setQuietMrt(material, on, material.opacityNode),
     emit(p, v, kind) {
       dataA.set([p.x, p.y, p.z, now.value], head * 4);
       dataB.set([v.x, v.y, v.z, kind], head * 4);
@@ -67,7 +71,7 @@ function whistle(audio, at = 0) {
   audio.noise({ type: 'bandpass', freq: 1800, q: 1.2, gain: 0.05, decay: 1.4, at });
 }
 
-export async function createTrain({ loaders, scene, station, audio, reducedMotion = false, signal }) {
+export async function createTrain({ loaders, scene, station, audio, reducedMotion = false, signal, mrt = false }) {
   const [gltf, meta] = await Promise.all([
     loaders.gltf.loadAsync(TRAIN_URL),
     fetch(TRAIN_JSON_URL, { signal, credentials: 'same-origin' }).then((r) => r.json()),
@@ -115,7 +119,7 @@ export async function createTrain({ loaders, scene, station, audio, reducedMotio
   const y0 = (cfg.rail_top_y ?? 0.35) - 0.35; // train.glb rails sit at 0.35 above its origin
   model.position.set(cfg.enter_from_x, y0, cfg.rail_z);
   scene.add(model);
-  const puffs = createPuffs(scene);
+  const puffs = createPuffs(scene, mrt);
 
   const drive = wheels.reduce((r, w) => Math.max(r, w.radius), 0.78);
   const chuffEvery = (2 * Math.PI * drive) / 4; // four exhaust beats per drive-wheel turn
@@ -148,6 +152,8 @@ export async function createTrain({ loaders, scene, station, audio, reducedMotio
       whistle(audio, 0.2);
       return true;
     },
+    /** The scene pass has an MRT (quality changes): keep the smoke out of the normal / SSR targets. */
+    setMrt: (on) => puffs.setMrt(on),
     overlayOpened: () => machine.overlayOpened(),
     overlayClosed: () => machine.overlayClosed(),
     /** Is a point inside the train's footprint (so the sheriff can be stepped onto the platform)? */

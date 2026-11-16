@@ -77,6 +77,7 @@ export function prepareTown(gltf, uniforms, { lite = false } = {}) {
   let seaMesh = null;
   let dockBox = null;
   let ropeBox = null;
+  let rowboat = null; // floats on the waves (P3.4): kept whole, never merged, never a collider
 
   // Static meshes grouped by (material, region) for merging; collision geometry separately.
   const groups = new Map();
@@ -107,6 +108,14 @@ export function prepareTown(gltf, uniforms, { lite = false } = {}) {
 
     const materials = Array.isArray(obj.material) ? obj.material : [obj.material];
     obj.material = Array.isArray(obj.material) ? materials.map(upgrade) : upgrade(obj.material);
+
+    if (name === NODES.rowboat) {
+      obj.castShadow = true;
+      obj.receiveShadow = true;
+      rowboat = obj;
+      keep.push(obj);
+      return;
+    }
 
     const animated = startsWithAny(name, NODES.flagPrefixes) || name.endsWith(NODES.signSuffix);
     if (startsWithAny(name, NODES.flagPrefixes)) flags.push(obj);
@@ -242,7 +251,7 @@ export function prepareTown(gltf, uniforms, { lite = false } = {}) {
   }
 
   const bounds = new Box3().setFromObject(root);
-  return { root, collider, bvh, heightAt, depthAt, lanterns, chimneys, flags, signs, wallBoxes, surfaceAt, bounds, seaMesh, heightHalf: HEIGHT_HALF };
+  return { root, collider, bvh, heightAt, depthAt, lanterns, chimneys, flags, signs, wallBoxes, surfaceAt, bounds, seaMesh, rowboat, heightHalf: HEIGHT_HALF };
 }
 
 /** Free every geometry and material under an object (used on exit). */

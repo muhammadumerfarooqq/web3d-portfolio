@@ -1,9 +1,10 @@
 // The sheriff: capsule physics against the town BVH (gravity, slopes, step height, the shore as a
 // soft wall), camera-relative movement, AnimationMixer crossfades (Idle/Walk/Run/Jump, IdleArmsCrossed
-// after a long idle, Wave on entering a zone), auto-blink and footstep events.
+// after a long idle, Wave on entering a zone), auto-blink and footstep events. P3.4: he turns smoothly
+// towards where he walks (no snapping) and solid obstacles (the horse's body) push him out.
 import { AnimationMixer, LoopOnce, Vector3 } from 'three/webgpu';
 import { PLAYER, SEA_LEVEL } from './config.js';
-import { angleDelta, approach, castDown, damp, resolveCapsule, softWall, stepUpHeight, worldMove } from './controller-math.js';
+import { approach, castDown, pushFromSegment, resolveCapsule, softWall, stepUpHeight, turnToward, worldMove } from './controller-math.js';
 
 const UP = new Vector3(0, 1, 0);
 
@@ -117,11 +118,22 @@ export function createPlayer({ avatarData, bvh, depthAt, spawn }) {
     get facing() {
       return facing;
     },
+    /** Avatar root height above the physics feet (the model's feet sit on the ground). */
+    get footLift() {
+      return footLift;
+    },
+    /** Current time (s) and length of a clip's action (the arrival syncs the oars to Row). */
+    clipTime(name) {
+      return actions[name]?.time ?? 0;
+    },
+    clipDuration(name) {
+      return actions[name]?.getClip().duration ?? 0;
+    },
     /**
      * One physics + animation step. input: { x, z, magnitude } (camera space), run, jump.
      * Returns events: { footstep: surface|null, landed: bool, jumped: bool }.
      */
-    update(dt, input, cameraYaw, surfaceUnder) {
+    update(dt, input, cameraYaw, surfaceUnder, obstacles = null) {
       const events = { footstep: null, landed: false, jumped: false };
       const dir = worldMove(input, cameraYaw);
       const speed = (input.run ? PLAYER.runSpeed : PLAYER.walkSpeed) * input.magnitude;
@@ -178,9 +190,25 @@ export function createPlayer({ avatarData, bvh, depthAt, spawn }) {
       }
       if (onGround && !wasGround && events.jumped === false) events.landed = true;
 
-      // Facing follows movement.
+      // Solid bodies (the horse): horizontal capsules he cannot stand inside; the velocity into them stops.
+      if (obstacles) {
+        for (const o of obstacles) {
+          if (position.y > o.top || position.y + H < o.bottom) continue;
+          const p = pushFromSegment(position.x, position.z, R, o.ax, o.az, o.bx, o.bz, o.r);
+          if (!p.hit) continue;
+          position.x = p.x;
+          position.z = p.z;
+          const into = velocity.x * p.nx + velocity.z * p.nz;
+          if (into < 0) {
+            velocity.x -= into * p.nx;
+            velocity.z -= into * p.nz;
+          }
+        }
+      }
+
+      // Facing follows movement: a smooth swing (capped turn rate), never a snap.
       const hs = Math.hypot(velocity.x, velocity.z);
-      if (hs > 0.3) facing += angleDelta(facing, Math.atan2(velocity.x, velocity.z)) * damp(12, dt);
+      if (hs > 0.3) facing = turnToward(facing, Math.atan2(velocity.x, velocity.z), dt);
 
       // Animation state.
       if (waving > 0) {

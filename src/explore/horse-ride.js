@@ -24,6 +24,16 @@ export function yawRate(v, steer) {
   return steer * Math.sign(v) * Math.min(1.4, Math.abs(v) / turnRadius(v));
 }
 
+/**
+ * Apply a yaw rate to the heading (P3.4 fix: "D turned left"). Headings use the three.js convention of
+ * the whole engine: yaw 0 faces +Z and the forward vector is (sin yaw, cos yaw), so the rider's RIGHT is
+ * (-cos yaw, sin yaw) and turning right DECREASES yaw. yawRate > 0 means "turning right" (D).
+ */
+export const turnHeading = (yaw, rate, dt) => yaw - rate * dt;
+
+/** Forward and right unit vectors (XZ) for a heading. */
+export const headingVectors = (yaw) => ({ forward: { x: Math.sin(yaw), z: Math.cos(yaw) }, right: { x: -Math.cos(yaw), z: Math.sin(yaw) } });
+
 /** Which clip to play at this ground speed. */
 export function gaitFor(speed, speeds) {
   const s = Math.abs(speed);

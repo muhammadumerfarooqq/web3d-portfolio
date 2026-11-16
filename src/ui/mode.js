@@ -2,6 +2,7 @@
 // "modechange". Explore (the 3D town, src/explore/) is a lazy chunk imported only here, when the
 // effective mode becomes "explore"; leaving disposes it completely. Rules are pure functions
 // (unit-tested).
+import { sectionScrollY } from './scroll-rules.js';
 import { readPref, writePref } from './prefs.js';
 import { readSound } from './sound.js';
 
@@ -109,7 +110,8 @@ function leaveExplore(anchor) {
   chooseMode('classic');
   if (anchor) {
     const target = document.querySelector(anchor);
-    target?.scrollIntoView();
+    // The section's heading lands just below the sticky header (scroll-rules.js), as with nav links.
+    if (target) window.scrollTo({ top: sectionScrollY(target), behavior: 'auto' });
     target?.focus?.({ preventScroll: true });
   }
 }

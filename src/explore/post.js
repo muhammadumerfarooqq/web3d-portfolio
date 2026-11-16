@@ -75,7 +75,7 @@ export function makeLut(grade, size = LUT_SIZE) {
   return tex;
 }
 
-export function createPost({ renderer, scene, camera, settings, sun, sky, particles, reducedMotion }) {
+export function createPost({ renderer, scene, camera, settings, sun, sky, particles, effects = [], reducedMotion }) {
   const u = {
     bloom: uniform(0.8),
     ao: uniform(0.8),
@@ -108,8 +108,11 @@ export function createPost({ renderer, scene, camera, settings, sun, sky, partic
   if (needNormal) outputs.normal = packNormalToRGB(normalView);
   if (settings.ssr) outputs.metalrough = vec2(metalness, roughness);
   if (Object.keys(outputs).length > 1) scenePass.setMRT(mrt(outputs));
+  // Transparent effects blend into every MRT target with their own soft alpha (sprite-mrt.js, P3.4).
+  const hasMrt = Object.keys(outputs).length > 1;
   sky.useEmissiveMrt(fullBloom);
-  particles.setEmissiveMrt(fullBloom);
+  particles.setMrt(hasMrt);
+  for (const e of effects) e?.setMrt?.(hasMrt);
 
   const color = scenePass.getTextureNode('output');
   const depth = scenePass.getTextureNode('depth');
@@ -228,6 +231,7 @@ export function createPost({ renderer, scene, camera, settings, sun, sky, partic
   return {
     uniforms: u,
     enabled,
+    hasMrt,
     render: () => pipeline.render(),
     dispose() {
       for (const d of disposables) d.dispose?.();

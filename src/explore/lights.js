@@ -18,6 +18,7 @@ import {
 } from 'three/webgpu';
 import { densityFogFactor, exponentialHeightFogFactor, float, fog, length, max, smoothstep, uniform, uv, vec3 } from 'three/tsl';
 import { SEA_LEVEL } from './config.js';
+import { setQuietMrt } from './sprite-mrt.js';
 
 const SHADOW_HALF = 20;
 
@@ -66,7 +67,8 @@ export function createLights(scene, renderer, settings, lanternPositions, height
   poolMat.polygonOffset = true;
   poolMat.polygonOffsetFactor = -4;
   const r = length(uv().sub(0.5)).mul(2.0);
-  poolMat.colorNode = vec3(1.0, 0.55, 0.2).mul(smoothstep(1.0, 0.0, r).pow(2.2)).mul(poolUniform).mul(0.45);
+  const poolFall = smoothstep(1.0, 0.0, r).pow(2.2);
+  poolMat.colorNode = vec3(1.0, 0.55, 0.2).mul(poolFall).mul(poolUniform).mul(0.45);
   const decals = new InstancedMesh(new CircleGeometry(3.2, 24), poolMat, Math.max(1, lanternPositions.length));
   decals.name = 'explore_lantern_pools';
   decals.renderOrder = 2;
@@ -98,6 +100,10 @@ export function createLights(scene, renderer, settings, lanternPositions, height
     pool,
     decals,
     fog: fogU,
+    /** on = the scene pass has an MRT: the additive pools never write the normal / SSR targets. */
+    setMrt(on) {
+      setQuietMrt(poolMat, on, float(0));
+    },
     /** Apply a time-of-day palette. */
     apply(pal) {
       sun.color.setRGB(...pal.sunColor);

@@ -5,6 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { SplitText } from 'gsap/SplitText';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
+import { LENIS_OPTIONS, isScrollKey, nativeWheel } from './scroll-rules.js';
 
 gsap.registerPlugin(ScrollTrigger, SplitText);
 
@@ -33,8 +34,13 @@ window.addEventListener('bootdone', () => {
 });
 // Inside [data-reveal-immediate] (the hero) reveals play on load; elsewhere they wait for scroll.
 // [data-reveal-done] (a section shown in an Explore case file) never waits: a re-split plays at once.
+// P3.4: an element already past its start line when it is set up (a #section deep link opens the page
+// scrolled down) just plays: a `once` trigger created past its start fires and kills itself inside
+// ScrollTrigger's own refresh loop, which crashed the whole reveal set-up on deep links.
+const REVEAL_LINE = 0.88;
+const alreadyPassed = (el) => el.getBoundingClientRect().top < window.innerHeight * REVEAL_LINE;
 const triggerFor = (el) =>
-  el.closest('[data-reveal-immediate], [data-reveal-done]') ? undefined : { trigger: el, start: 'top 88%', once: true };
+  el.closest('[data-reveal-immediate], [data-reveal-done]') || alreadyPassed(el) ? undefined : { trigger: el, start: `top ${REVEAL_LINE * 100}%`, once: true };
 
 // Explore shows a Classic section inside a case-file dialog, outside the page scroll: finish every
 // pending reveal and counter in it at once (they would otherwise wait for a scroll that never comes).
@@ -154,7 +160,13 @@ function initCounters() {
 export function initMotion({ reduced }) {
   if (reduced) return;
 
-  lenis = new Lenis({ autoRaf: false, duration: 1.15, smoothWheel: true });
+  // P3.4: a short wheel ease; trackpads, touch and the keyboard scroll natively (scroll-rules.js).
+  lenis = new Lenis({ ...LENIS_OPTIONS, virtualScroll: ({ event }) => !nativeWheel(event) });
+  // A scroll key (arrows, Page Up/Down, Space, Home/End) stops any smooth wheel scroll in flight, so the
+  // browser's own keyboard scrolling takes over at once instead of being pulled back.
+  window.addEventListener('keydown', (event) => {
+    if (lenis?.isScrolling === 'smooth' && isScrollKey(event)) lenis.scrollTo(window.scrollY, { immediate: true, force: true });
+  });
   // Explore mode covers the page: no smooth scrolling underneath it.
   window.addEventListener('modechange', (e) => (e.detail.mode === 'explore' ? lenis?.stop() : lenis?.start()));
   lenis.on('scroll', ScrollTrigger.update);

@@ -3,12 +3,13 @@
 // and the sheriff, wires the controller, camera, zones, HUD, audio and post-processing, and returns
 // { dispose } which frees every GPU and DOM resource (repeated Classic ⇄ Explore toggles do not leak).
 import './explore.css';
-import { ACESFilmicToneMapping, Scene, Vector3, WebGPURenderer } from 'three/webgpu';
+import { ACESFilmicToneMapping, MeshBasicNodeMaterial, Scene, Vector3, WebGPURenderer } from 'three/webgpu';
 import { readPref, writePref } from '../ui/prefs.js';
 import { setSound } from '../ui/sound.js';
 import { createAmbient } from './ambient.js';
 import { createAudio } from './audio.js';
 import { BADGES_EMPTY, BADGES_KEY, BADGES_VALUES, createBadges } from './badges.js';
+import { SEA_ORDER, createBoat } from './boat.js';
 import { createCameraRig } from './camera-rig.js';
 import { ARRIVAL_KEY, ARRIVAL_VALUES, MUSIC_KEY, MUSIC_VALUES, PLAYER, QUALITY_KEY, QUALITY_VALUES, TIERS, TIME_KEY, TIME_VALUES, TOWN_JSON_URL, TUTORIAL_KEY, TUTORIAL_VALUES } from './config.js';
 import { castDown, inputVector } from './controller-math.js';
@@ -22,6 +23,7 @@ import { createPlayer } from './player.js';
 import { createPost } from './post.js';
 import { AdaptiveResolution, isIntegratedGpu, lowerTier, pickTier, tierSettings } from './quality.js';
 import { bakeDepthTexture, createFarSea, createSea } from './sea.js';
+import { depthSampler } from './waves.js';
 import { createSky } from './sky.js';
 import { startTransition, stepTransition, timeOfDay } from './time-of-day.js';
 import { arrowAngle, loadZones, nearestZone, nextUnvisited } from './zones.js';
@@ -177,6 +179,12 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
     scene.add(sea.mesh);
     const farSea = town.seaMesh ? createFarSea(town.seaMesh, sea.uniforms) : null;
     if (farSea) scene.add(farSea);
+    // The moored rowboat rides the same waves as the sea shader (P3.4; waves.js samples the same depth).
+    const seaDepth = depthSampler(depthTexture.image.data, depthTexture.image.width, town.heightHalf);
+    const boat = town.rowboat ? createBoat({ mesh: town.rowboat, depthAt: seaDepth, getPhase: () => sea.uniforms.phase.value, maskMaterial: new MeshBasicNodeMaterial() }) : null;
+    // The sea draws after the boat's water mask (opaque order), so no water shows inside the hull.
+    sea.mesh.renderOrder = SEA_ORDER;
+    if (farSea) farSea.renderOrder = SEA_ORDER;
     const sky = createSky();
     scene.add(sky.mesh);
     const lights = createLights(scene, renderer, settings, town.lanterns, town.heightAt, (x, y, z) => castDown(town.bvh, new Vector3(x, y, z), 6)?.point.y ?? null);
@@ -195,6 +203,15 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       const hit = castDown(town.bvh, rayOrigin.set(x, 30, z), 60);
       return hit ? hit.point.y : null;
     };
+    /** Highest ground in a small cross (± 0.2 m): one ray can fall through a gap between dock planks. */
+    const standAt = (x, z, from = 30, len = 60) => {
+      let best = null;
+      for (const [dx, dz] of [[0, 0], [0.2, 0], [-0.2, 0], [0, 0.2], [0, -0.2]]) {
+        const y = castDown(town.bvh, rayOrigin.set(x + dx, from, z + dz), len)?.point.y;
+        if (y !== undefined && (best === null || y > best)) best = y;
+      }
+      return best;
+    };
     const ambient = createAmbient({ scene, flags: town.flags, signs: town.signs, wallBoxes: town.wallBoxes, heightAt: town.heightAt, bvhRaycastDown: groundAt });
 
     // One plain render first: it creates the sun's shadow map, which the god-ray node reads when the
@@ -206,7 +223,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
     } catch (error) {
       console.warn('[explore] first render', error);
     }
-    let post = createPost({ renderer, scene, camera, settings, sun: lights.sun, sky, particles, reducedMotion });
+    let post = createPost({ renderer, scene, camera, settings, sun: lights.sun, sky, particles, effects: [lights], reducedMotion });
     const audio = createAudio({ enabled: soundOn });
     let music = null; // the lazy score (music.js); declared before applyPalette, which sets its mood
     let musicLoad = null;
@@ -272,6 +289,8 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       ...hud.touchEls,
       onOrbit: (dx, dy) => rig.orbit(dx, dy, now()),
       onZoom: (d) => rig.zoom(d),
+      onDrag: (on) => (rig.dragging = on),
+      onPointerLock: (on) => hud.announce(on ? 'Mouse look on. Press Escape to release the mouse.' : 'Mouse look off.'),
       onKey: (action, down) => {
         audio.unlock();
         startMusic();
@@ -318,14 +337,13 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       post.dispose();
       particles.dispose();
       particles = createParticles({ scene, renderer, settings, backend, chimneys: town.chimneys, forge, heightAt: town.heightAt });
-      post = createPost({ renderer, scene, camera, settings, sun: lights.sun, sky, particles, reducedMotion });
+      post = createPost({ renderer, scene, camera, settings, sun: lights.sun, sky, particles, effects: [lights, fireworks, train, arrival], reducedMotion });
       post.uniforms.fade.value = 0;
       post.uniforms.glitch.value = reducedMotion ? 0 : 0.4;
       glitchT = 0.35;
       // The shadow map is resized in place (the god-ray node keeps a reference to it).
       if (lights.sun.castShadow && settings.shadowMap > 0) lights.sun.shadow.mapSize.set(settings.shadowMap, settings.shadowMap);
       renderer.setPixelRatio(basePR() * resScale);
-      fireworks?.setEmissiveMrt(settings.bloom === 'full');
       palette = applyPalette(tState.t);
     };
 
@@ -393,7 +411,9 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
         rig.update(0.016, player.position, Math.PI, false, town.bvh, 0);
         const final = { position: camera.position.clone(), quaternion: camera.quaternion.clone() };
         arrival?.dispose();
-        arrival = m.createArrival({
+        arrival = null;
+        if (!boat) throw new Error('town.glb has no Rowboat_baked node');
+        arrival = await m.createArrival({
           scene,
           camera,
           player,
@@ -401,6 +421,11 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
           spawn,
           audio,
           final,
+          boat,
+          loaders,
+          groundAt: (x, z) => standAt(x, z, 3, 5),
+          mrt: post.hasMrt,
+          signal: abort.signal,
           onDone: () => {
             cinematic = false;
             input.setPaused(overlayOpen || ceremony);
@@ -411,6 +436,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
         });
       } catch (error) {
         console.warn('[explore] arrival', error);
+        if (first) writePref(ARRIVAL_KEY, 'seen', ARRIVAL_VALUES);
         cinematic = false;
         input.setPaused(false);
         hud.setCinematic(false);
@@ -483,7 +509,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
         const { createFireworks, showOrigin } = await import('./fireworks.js');
         if (disposed) return;
         fireworks?.dispose();
-        fireworks = createFireworks({ scene, origin: showOrigin(camera, player.position), reducedMotion, audio, emissiveMrt: settings.bloom === 'full' });
+        fireworks = createFireworks({ scene, origin: showOrigin(camera, player.position), reducedMotion, audio, mrt: post.hasMrt });
         rig.setView({ pitch: 0.06, distance: Math.max(rig.distance, 8) });
         setTimeout(() => player.wave(true), 350);
         await caseFiles.stamp();
@@ -502,7 +528,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
     const station = zones.find((z) => z.zone === 'journey');
     const loadTrain = () =>
       (trainLoad ??= import('./train.js')
-        .then((m) => m.createTrain({ loaders, scene, station: stationLandmark, audio, reducedMotion, signal: abort.signal }))
+        .then((m) => m.createTrain({ loaders, scene, station: stationLandmark, audio, reducedMotion, signal: abort.signal, mrt: post.hasMrt }))
         .then((t) => {
           if (disposed) {
             t.dispose();
@@ -622,7 +648,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
     if (debug) {
       // Screenshot / QA hooks, only with ?debug=1.
       window.__exploreDebug = {
-        teleport: (x, z, yaw) => player.teleport([x, (groundAt(x, z) ?? 0) + 0.2, z], yaw),
+        teleport: (x, z, yaw) => player.teleport([x, (standAt(x, z) ?? 0) + 0.2, z], yaw),
         view: (o) => rig.setView(o),
         night: (n) => api.setNight(n, true),
         quality: (q) => api.setQuality(q),
@@ -632,7 +658,18 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
         dismount: () => horse?.dismount(true),
         arrival: () => runArrival(false),
         skipArrival: () => arrival?.skip(),
-        horse: () => (horse ? { state: horse.machine.state, x: +horse.position.x.toFixed(2), z: +horse.position.z.toFixed(2), speed: +horse.speed.toFixed(2), riding: horse.riding, nodes: horse.graph.nodes.length, edges: horse.graph.edges.length } : null),
+        horse: () => (horse ? { state: horse.machine.state, x: +horse.position.x.toFixed(2), z: +horse.position.z.toFixed(2), yaw: +horse.yaw.toFixed(3), speed: +horse.speed.toFixed(2), riding: horse.riding, nodes: horse.graph.nodes.length, edges: horse.graph.edges.length, near: horse.near(player.position) } : null),
+        ground: (x, z) => town.heightAt(x, z),
+        ray: (x, y, z, len = 60) => castDown(town.bvh, new Vector3(x, y, z), len)?.point.y ?? null,
+        player: () => ({ x: +player.position.x.toFixed(2), y: +player.position.y.toFixed(2), z: +player.position.z.toFixed(2), facing: +player.facing.toFixed(3), camYaw: +rig.yaw.toFixed(3) }),
+        boat: () => (boat ? { x: +boat.mesh.position.x.toFixed(2), y: +boat.mesh.position.y.toFixed(3), z: +boat.mesh.position.z.toFixed(2), pitch: +boat.mesh.rotation.x.toFixed(3), roll: +boat.mesh.rotation.z.toFixed(3), surface: +boat.pose.surface.toFixed(3), controlled: boat.controlled, arrival: arrival?.state ?? null } : null),
+        boats: () => {
+          let n = 0;
+          scene.traverse((o) => {
+            if (/rowboat/i.test(o.name)) n += 1;
+          });
+          return n;
+        },
         stars: () => api.openStars(),
         award: (id) => {
           const r = badges.award(id);
@@ -670,8 +707,11 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       const blocked = overlayOpen || ceremony || cinematic;
       const riding = Boolean(horse?.riding);
       if (input.take('whistle') && !blocked) whistle();
+      sea.uniforms.phase.value += dt * sea.uniforms.wind.value; // the waves' phase (waves.js / sea.js)
+      arrival?.update(dt); // drives the boat while the cinematic plays; splash timing afterwards
+      boat?.update(dt); // moored: rides the waves (skipped while the arrival owns it)
       if (cinematic) {
-        arrival?.update(dt);
+        // the arrival moves the sheriff and the camera
       } else if (riding) {
         // In the saddle: W/S step the gait, A/D (or the stick) steer; the sheriff rides along.
         const steer = Math.max(-1, Math.min(1, (s.right ? 1 : 0) - (s.left ? 1 : 0) + s.x));
@@ -681,7 +721,8 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
         player.animate(dt);
       } else {
         const moveInput = blocked ? { x: 0, z: 0, magnitude: 0, run: false, jump: false } : { ...iv, run: s.run, jump: input.take('jump') };
-        const ev = player.update(dt, moveInput, rig.yaw, surfaceUnder);
+        const body = horse?.obstacle();
+        const ev = player.update(dt, moveInput, rig.yaw, surfaceUnder, body ? [body] : null);
         if (ev.footstep) {
           audio.footstep(ev.footstep);
           if (ev.footstep === 'sand') particles.puff(player.position.x, player.position.y, player.position.z);
@@ -689,13 +730,14 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
         if (ev.landed) particles.puff(player.position.x, player.position.y, player.position.z);
       }
       if (horse && !riding && !cinematic) horse.update(dt);
-      if (!cinematic) arrival?.update(dt); // the moored boat keeps bobbing
       if (input.take('interact') && !blocked) api.interact();
 
       if (!cinematic) {
         rig.setRide(riding, horse?.gallop ?? 0);
-        const moving = riding ? Math.abs(horse.speed) > 0.4 : player.speed > 0.4;
-        rig.update(dt, player.position, riding ? horse.yaw : player.object.rotation.y, moving, town.bvh, elapsed);
+        hud.setLegend(riding ? 'ride' : 'walk');
+        // Recentre behind him only while he goes forward (shouldRecentre in controller-math.js).
+        const motion = riding ? { forward: horse.speed > 0.4 ? 1 : 0, sideways: 0, speed: Math.abs(horse.speed) } : { forward: blocked ? 0 : iv.z, sideways: blocked ? 0 : iv.x, speed: player.speed };
+        rig.update(dt, player.position, riding ? horse.yaw : player.object.rotation.y, motion, town.bvh, elapsed);
       }
 
       // zones

@@ -137,3 +137,66 @@ export function sampleGrid(grid, size, half, x, z) {
   const b = grid[z1 * size + x0] * (1 - tx) + grid[z1 * size + x1] * tx;
   return a * (1 - tz) + b * tz;
 }
+
+/**
+ * Turn `facing` towards `target` smoothly (P3.4): exponential ease capped at `maxRate` rad/s, so the
+ * sheriff swings round instead of snapping, and reversing direction takes ~0.4 s, not one frame.
+ */
+export function turnToward(facing, target, dt, rate = 9, maxRate = 9) {
+  const d = angleDelta(facing, target);
+  const step = d * damp(rate, dt);
+  const cap = maxRate * dt;
+  return facing + Math.max(-cap, Math.min(cap, step));
+}
+
+/** Closest point on the XZ segment a→b to p: { x, z, t } (t ∈ [0, 1]). */
+export function closestOnSegment2D(px, pz, ax, az, bx, bz) {
+  const dx = bx - ax;
+  const dz = bz - az;
+  const len2 = dx * dx + dz * dz;
+  const t = len2 > 1e-9 ? Math.min(1, Math.max(0, ((px - ax) * dx + (pz - az) * dz) / len2)) : 0;
+  return { x: ax + dx * t, z: az + dz * t, t };
+}
+
+/**
+ * Push a circle (the player capsule seen from above: centre p, radius pr) out of a horizontal capsule
+ * (the horse's body: segment a→b, radius r). Returns { x, z, hit, nx, nz }: the corrected centre and
+ * the push normal (zero when not touching).
+ */
+export function pushFromSegment(px, pz, pr, ax, az, bx, bz, r) {
+  const c = closestOnSegment2D(px, pz, ax, az, bx, bz);
+  let nx = px - c.x;
+  let nz = pz - c.z;
+  let d = Math.hypot(nx, nz);
+  const min = pr + r;
+  if (d >= min) return { x: px, z: pz, hit: false, nx: 0, nz: 0, distance: d - r };
+  if (d < 1e-6) {
+    // Dead centre on the spine: push out sideways (perpendicular to the body).
+    const bl = Math.hypot(bx - ax, bz - az) || 1;
+    nx = -(bz - az) / bl;
+    nz = (bx - ax) / bl;
+    d = 0;
+  } else {
+    nx /= d;
+    nz /= d;
+  }
+  return { x: c.x + nx * min, z: c.z + nz * min, hit: true, nx, nz, distance: d - r };
+}
+
+/**
+ * Camera boom length step (P3.4): pulls in quickly but smoothly when something blocks the view (no
+ * one-frame snaps, so a ray flickering on a corner no longer makes the camera jitter) and eases back
+ * out slowly once the view clears.
+ */
+export function boomStep(current, wanted, dt, inRate = 22, outRate = 2.5) {
+  return approach(current, wanted, wanted < current ? inRate : outRate, dt);
+}
+
+/**
+ * Auto-recentre rule (P3.4): the camera drifts behind the sheriff only while he walks mostly forward
+ * (W, or the stick pushed up), never while the user drags the view or just after a manual orbit, and
+ * never for S / strafing (which used to spin the camera round to face him).
+ */
+export function shouldRecentre({ forward = 0, sideways = 0, speed = 0, dragging = false, sinceManual = Infinity }) {
+  return !dragging && sinceManual > 1.2 && speed > 0.4 && forward > 0.5 && Math.abs(sideways) < 0.75;
+}

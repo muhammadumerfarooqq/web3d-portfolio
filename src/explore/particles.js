@@ -2,6 +2,9 @@
 // wrapped around the player) when the backend runs compute; otherwise the same look is produced by a
 // stateless GPU animation. Fireflies, forge embers and chimney smoke are stateless instanced sprites;
 // footstep puffs are a small CPU-fed pool. Every system is one draw call.
+// P3.4: every sprite is a round soft dot: fragments outside the radial falloff are discarded
+// (alphaTest) and the MRT targets other than the colour are blended with the sprite's own alpha
+// (sprite-mrt.js), so no square quad ever shows in GTAO, SSR or bloom.
 import { AdditiveBlending, Color, InstancedBufferAttribute, NormalBlending, Sprite, SpriteNodeMaterial, Vector3 } from 'three/webgpu';
 import {
   Fn,
@@ -16,7 +19,6 @@ import {
   length,
   mix,
   mod,
-  mrt,
   mx_noise_float,
   sin,
   smoothstep,
@@ -25,6 +27,7 @@ import {
   uv,
   vec3,
 } from 'three/tsl';
+import { setQuietMrt } from './sprite-mrt.js';
 
 const softDot = (power = 1.5) => smoothstep(0.5, 0.0, length(uv().sub(0.5))).pow(power);
 
@@ -47,6 +50,7 @@ export function createParticles({ scene, renderer, settings, backend, chimneys, 
   };
   const objects = [];
   const emissiveTargets = []; // { material, node } routed into the emissive MRT when it exists
+  const quiet = []; // { material, mask, glow } every sprite: its MRT and round cut-out
   const computeNodes = [];
 
   // ── Dust / sand motes ──
@@ -90,6 +94,7 @@ export function createParticles({ scene, renderer, settings, backend, chimneys, 
   // Golden motes in the low sun, pale blue specks in the moonlight.
   dustMat.colorNode = mix(vec3(shared.sunColor).mul(1.6), vec3(0.45, 0.55, 0.85), shared.night);
   dustMat.opacityNode = softDot(1.2).mul(mix(0.55, 0.22, shared.night));
+  quiet.push({ material: dustMat, mask: dustMat.opacityNode });
   const dust = sprite(dustMat, N, 'explore_dust');
   objects.push(dust);
 
@@ -110,6 +115,7 @@ export function createParticles({ scene, renderer, settings, backend, chimneys, 
     ffMat.colorNode = glow;
     ffMat.opacityNode = softDot(2.0).mul(pulse).mul(shared.night);
     emissiveTargets.push({ material: ffMat, node: glow.mul(softDot(2.0)) });
+    quiet.push({ material: ffMat, mask: ffMat.opacityNode, glow });
   }
   objects.push(sprite(ffMat, FF, 'explore_fireflies'));
 
@@ -127,6 +133,7 @@ export function createParticles({ scene, renderer, settings, backend, chimneys, 
     emMat.colorNode = c;
     emMat.opacityNode = softDot(1.5).mul(float(1).sub(life));
     emissiveTargets.push({ material: emMat, node: c.mul(softDot(1.5)) });
+    quiet.push({ material: emMat, mask: emMat.opacityNode, glow: c });
     objects.push(sprite(emMat, EM, 'explore_embers'));
   }
 
@@ -142,6 +149,7 @@ export function createParticles({ scene, renderer, settings, backend, chimneys, 
     smMat.scaleNode = mix(0.5, 3.4, life);
     smMat.colorNode = mix(vec3(0.55, 0.47, 0.42), vec3(0.18, 0.2, 0.3), shared.night);
     smMat.opacityNode = softDot(1.0).mul(sin(life.mul(Math.PI))).mul(0.28).mul(mx_noise_float(vec3(uv().mul(3), life.mul(4).add(seed))).mul(0.4).add(0.8));
+    quiet.push({ material: smMat, mask: smMat.opacityNode });
     objects.push(sprite(smMat, SM, `explore_smoke_${k}`));
   }
 
@@ -159,7 +167,10 @@ export function createParticles({ scene, renderer, settings, backend, chimneys, 
     puffMat.scaleNode = t.mul(0.55).add(0.18);
     puffMat.colorNode = mix(vec3(0.72, 0.52, 0.34), vec3(0.3, 0.3, 0.42), shared.night);
     puffMat.opacityNode = softDot(1.0).mul(float(1).sub(t)).mul(smoothstep(0.0, 0.05, age)).mul(0.38);
+    quiet.push({ material: puffMat, mask: puffMat.opacityNode });
   }
+  // Round cut-out: nothing outside the soft dot is drawn at all (also hides spent puffs entirely).
+  for (const q of quiet) q.material.alphaTest = 0.004;
   objects.push(sprite(puffMat, PUFFS, 'explore_puffs'));
   let puffHead = 0;
 
@@ -170,11 +181,9 @@ export function createParticles({ scene, renderer, settings, backend, chimneys, 
     shared,
     emissiveTargets,
     dustMode,
-    setEmissiveMrt(on) {
-      for (const t of emissiveTargets) {
-        t.material.mrtNode = on ? mrt({ emissive: t.node }) : null;
-        t.material.needsUpdate = true;
-      }
+    /** on = the scene pass renders an MRT (emissive / normal / metal-rough targets). */
+    setMrt(on) {
+      for (const q of quiet) setQuietMrt(q.material, on, q.mask, q.glow ?? null);
     },
     puff(x, y, z) {
       const i = puffHead * 4;
