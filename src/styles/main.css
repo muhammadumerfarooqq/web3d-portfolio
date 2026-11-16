@@ -1136,6 +1136,17 @@
     cursor: default !important;
   }
 
+  /* P3.4b safety net: the Classic ring never hides the system cursor in Explore (cursor.js also
+     drops has-cursor there). */
+  html.has-cursor[data-mode='explore'],
+  html.has-cursor[data-mode='explore'] * {
+    cursor: auto !important;
+  }
+
+  html.has-cursor[data-mode='explore'] :is(a[href], button, [role='button'], select, summary, label) {
+    cursor: pointer !important;
+  }
+
   /* Explore mode (src/explore/, lazy) covers the page; Classic underneath is hidden and inert. */
   html[data-mode='explore'] {
     overflow: hidden;

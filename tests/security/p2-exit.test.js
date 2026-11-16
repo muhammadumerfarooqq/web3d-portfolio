@@ -22,7 +22,7 @@ function jsFiles(dir) {
 }
 
 /** Run public/theme-init.js in a sandbox; returns the attributes it set and its failsafe. */
-function runThemeInit({ storage = {}, reduce = false, throws = false } = {}) {
+function runThemeInit({ storage = {}, session = {}, search = '', reduce = false, throws = false } = {}) {
   const attrs = {};
   const classes = new Set();
   let failsafe = null;
@@ -39,6 +39,18 @@ function runThemeInit({ storage = {}, reduce = false, throws = false } = {}) {
           throw new Error('theme-init.js must never write storage');
         },
       },
+      // P3.4b: the opening's "seen" flag is per browser session.
+      sessionStorage: {
+        getItem: (k) => {
+          reads.push(`session:${k}`);
+          if (throws) throw new Error('SecurityError');
+          return k in session ? session[k] : null;
+        },
+        setItem: () => {
+          throw new Error('theme-init.js must never write storage');
+        },
+      },
+      location: { search },
       matchMedia: (q) => ({ matches: q.includes('reduced-motion') ? reduce : false }),
       setTimeout: (fn) => {
         failsafe = fn;
@@ -67,8 +79,18 @@ describe('C6 boot layer before first paint (theme-init.js)', () => {
     expect(runThemeInit().attrs['data-boot']).toBe('intro');
   });
 
-  it('intro already seen → straight to the start screen', () => {
-    expect(runThemeInit({ storage: { intro: 'seen' } }).attrs['data-boot']).toBe('start');
+  it('intro already seen this session → straight to the start screen (P3.4b: sessionStorage)', () => {
+    expect(runThemeInit({ session: { intro: 'seen' } }).attrs['data-boot']).toBe('start');
+  });
+
+  it('P3.4b: the old localStorage "intro" no longer blocks the opening (a new session plays it)', () => {
+    expect(runThemeInit({ storage: { intro: 'seen' } }).attrs['data-boot']).toBe('intro');
+  });
+
+  it('P3.4b: ?replay=1 forces the opening even when seen this session', () => {
+    expect(runThemeInit({ session: { intro: 'seen' }, search: '?replay=1' }).attrs['data-boot']).toBe('intro');
+    expect(runThemeInit({ session: { intro: 'seen' }, search: '?debug=1&replay=1' }).attrs['data-boot']).toBe('intro');
+    expect(runThemeInit({ session: { intro: 'seen' }, search: '?replay=10' }).attrs['data-boot']).toBe('start');
   });
 
   it('reduced motion → no sting, start screen', () => {
@@ -81,6 +103,7 @@ describe('C6 boot layer before first paint (theme-init.js)', () => {
     'a hostile stored intro value %j is ignored (treated as a first visit)',
     (bad) => {
       expect(runThemeInit({ storage: { intro: bad } }).attrs['data-boot']).toBe('intro');
+      expect(runThemeInit({ session: { intro: bad } }).attrs['data-boot']).toBe('intro');
     },
   );
 
@@ -90,8 +113,8 @@ describe('C6 boot layer before first paint (theme-init.js)', () => {
     expect(attrs['data-boot']).toBe('intro');
   });
 
-  it('reads only the theme and intro keys, and never writes', () => {
-    expect(new Set(runThemeInit().reads)).toEqual(new Set(['theme', 'intro']));
+  it('reads only the theme (localStorage) and intro (sessionStorage) keys, and never writes', () => {
+    expect(new Set(runThemeInit().reads)).toEqual(new Set(['theme', 'session:intro']));
   });
 
   it('failsafe: if the app never takes over, the boot layer and hidden reveals are dropped', () => {

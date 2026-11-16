@@ -4,7 +4,8 @@
 // { dispose } which frees every GPU and DOM resource (repeated Classic ⇄ Explore toggles do not leak).
 import './explore.css';
 import { ACESFilmicToneMapping, MeshBasicNodeMaterial, Scene, Vector3, WebGPURenderer } from 'three/webgpu';
-import { readPref, writePref } from '../ui/prefs.js';
+import { REPLAY } from '../ui/boot-rules.js';
+import { readPref, sessionStore, writePref } from '../ui/prefs.js';
 import { setSound } from '../ui/sound.js';
 import { createAmbient } from './ambient.js';
 import { createAudio } from './audio.js';
@@ -290,7 +291,10 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       onOrbit: (dx, dy) => rig.orbit(dx, dy, now()),
       onZoom: (d) => rig.zoom(d),
       onDrag: (on) => (rig.dragging = on),
-      onPointerLock: (on) => hud.announce(on ? 'Mouse look on. Press Escape to release the mouse.' : 'Mouse look off.'),
+      onPointerLock: (on) => {
+        hud.setPointerLock(on);
+        hud.announce(on ? 'Mouse look on. Press Escape to release the mouse.' : 'Mouse look off.');
+      },
       onKey: (action, down) => {
         audio.unlock();
         startMusic();
@@ -396,6 +400,14 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
     // ── the boat arrival (lazy chunk; first visit, replayable) ──
     let arrival = null;
     let cinematic = false;
+    // P3.4b: once per browser session (sessionStorage), or forced with ?replay=1. The localStorage key
+    // stays whitelisted and written, but it no longer blocks the arrival.
+    const session = sessionStore();
+    const arrivalSeenThisSession = () => !REPLAY && readPref(ARRIVAL_KEY, ARRIVAL_VALUES, null, session) === 'seen';
+    const markArrivalSeen = () => {
+      writePref(ARRIVAL_KEY, 'seen', ARRIVAL_VALUES, session);
+      writePref(ARRIVAL_KEY, 'seen', ARRIVAL_VALUES);
+    };
     async function runArrival(first) {
       if (cinematic || overlayOpen || ceremony || reducedMotion) return;
       if (horse?.riding) horse.dismount(true);
@@ -431,12 +443,12 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
             input.setPaused(overlayOpen || ceremony);
             hud.setCinematic(false);
             hud.canvasHost.focus({ preventScroll: true });
-            if (first) writePref(ARRIVAL_KEY, 'seen', ARRIVAL_VALUES);
+            if (first) markArrivalSeen();
           },
         });
       } catch (error) {
+        // A failed load is not "seen": the next visit in this session tries again.
         console.warn('[explore] arrival', error);
-        if (first) writePref(ARRIVAL_KEY, 'seen', ARRIVAL_VALUES);
         cinematic = false;
         input.setPaused(false);
         hud.setCinematic(false);
@@ -643,7 +655,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
     post.uniforms.fade.value = 1;
     if (!reducedMotion) post.uniforms.glitch.value = 0.8;
     let fadeIn = 0;
-    if (readPref(ARRIVAL_KEY, ARRIVAL_VALUES, null) !== 'seen') runArrival(true);
+    if (!arrivalSeenThisSession()) runArrival(true);
 
     if (debug) {
       // Screenshot / QA hooks, only with ?debug=1.

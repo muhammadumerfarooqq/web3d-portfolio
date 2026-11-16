@@ -235,7 +235,8 @@ export async function createArrival({ scene, camera, player, root, spawn, audio,
     onDone?.();
   }
   const onKey = (e) => {
-    if (SKIP_IGNORE.includes(e.key)) return;
+    // A key still held from before the cinematic (auto-repeat, e.g. W during loading) never skips it.
+    if (SKIP_IGNORE.includes(e.key) || e.repeat) return;
     e.preventDefault();
     e.stopPropagation();
     finish();

@@ -2,9 +2,12 @@
 // public/video/intro.mp4 when it exists) and the start screen (sound + mode). Without JS neither
 // exists: the Classic page is simply shown. Stored values are whitelisted: intro ∈ {"seen"}; sound
 // and mode via their own modules. Reduced motion: a static title card under the start screen.
+// P3.4b: the opening plays once per browser session (sessionStorage) or with ?replay=1; it waits for
+// the tab to be visible and the fonts (capped) before it starts, pauses while the tab is hidden, and
+// start.js always sets html[data-boot] itself, so it can never run invisibly and be marked seen.
 import gsap from 'gsap';
 import { SplitText } from 'gsap/SplitText';
-import { bootPlan, isSkipKey, readIntro, writeIntro } from './boot-rules.js';
+import { bootPlan, introSeenThisSession, isSkipKey, writeIntro, writeIntroSession } from './boot-rules.js';
 import { setupDialog } from './dialog.js';
 import { getLenis } from './motion.js';
 import { canOfferExplore, chooseMode, exploreUnavailableReason, getCapabilities, readMode, urlMode } from './mode.js';
@@ -63,9 +66,10 @@ function startDust(canvas) {
 function playOpening(intro, onDone) {
   const stage = intro.querySelector('[data-opening]');
   const centre = intro.querySelector('.intro__center');
-  const stopDust = startDust(intro.querySelector('[data-intro-dust]'));
+  let stopDust = () => {};
   const split = SplitText.create(intro.querySelector('.intro__tagline'), { type: 'words,chars' }); // words keep line breaks between words
-  const tl = gsap.timeline({ onComplete: onDone });
+  // Built paused: runIntro starts it once the tab is visible and the fonts are in (see whenReady).
+  const tl = gsap.timeline({ onComplete: onDone, paused: true });
   const shake = (at) => tl.to(centre, { keyframes: [{ x: 4, y: -2 }, { x: -3, y: 2 }, { x: 2, y: -1 }, { x: 0, y: 0 }], duration: 0.24, ease: 'none' }, at);
   tl.fromTo(intro.querySelector('.intro__sun'), { y: '26vh' }, { y: '0vh', duration: OPENING_SECONDS, ease: 'power1.out' }, 0)
     .fromTo(intro.querySelector('.intro__badge'), { scale: 3.2, rotation: -32, opacity: 0 }, { scale: 1, rotation: -8, opacity: 1, duration: 0.3, ease: 'power4.in' }, 0.3);
@@ -75,17 +79,41 @@ function playOpening(intro, onDone) {
   tl.set(intro.querySelector('.intro__tagline'), { opacity: 1 }, 1.7)
     .from(split.chars, { opacity: 0, duration: 0.01, stagger: 0.042, ease: 'none' }, 1.7)
     .to(stage, { opacity: 0, duration: 0.35, ease: 'power2.in' }, OPENING_SECONDS - 0.35);
-  return () => {
-    tl.kill();
-    stopDust();
-    split.revert();
+  let started = false;
+  return {
+    play() {
+      if (!started) stopDust = startDust(intro.querySelector('[data-intro-dust]'));
+      started = true;
+      tl.play();
+    },
+    pause: () => tl.pause(),
+    stop() {
+      tl.kill();
+      stopDust();
+      split.revert();
+    },
   };
+}
+
+/** Resolves when the tab is visible and the web fonts are in (fonts capped at 1.5 s; visibility not). */
+function whenReady() {
+  const fonts = Promise.race([document.fonts?.ready ?? Promise.resolve(), new Promise((r) => setTimeout(r, 1500))]);
+  const visible = () =>
+    new Promise((resolve) => {
+      if (document.visibilityState !== 'hidden') return resolve();
+      const onChange = () => {
+        if (document.visibilityState === 'hidden') return;
+        document.removeEventListener('visibilitychange', onChange);
+        resolve();
+      };
+      document.addEventListener('visibilitychange', onChange);
+    });
+  return fonts.then(visible);
 }
 
 function playVideo(video, onDone) {
   video.addEventListener('ended', onDone, { once: true });
-  video.play().catch(onDone);
-  return () => video.pause();
+  return { play: () => video.play().catch(onDone), pause: () => video.pause(), stop: () => video.pause() };
 }
 
 export function initStart(options) {
@@ -111,7 +139,10 @@ function boot({ reduced }) {
     return;
   }
 
-  const plan = bootPlan({ introSeen: readIntro() === 'seen', storedMode: readMode(), reducedMotion: reduced });
+  const plan = bootPlan({ introSeen: introSeenThisSession(), storedMode: readMode(), reducedMotion: reduced });
+  // start.js owns the boot layer from here: theme-init.js guessed it before paint, and its 4 s
+  // failsafe may already have dropped it on a slow load; either way the layer now matches the plan.
+  root.dataset.boot = plan.showIntro ? 'intro' : 'start';
   const caps = getCapabilities();
   const exploreOffered = canOfferExplore(caps);
 
@@ -196,15 +227,24 @@ function boot({ reduced }) {
     const skip = intro.querySelector('[data-intro-skip]');
     skip.focus();
 
-    let stop = () => {};
+    let player = null;
     let finished = false;
+    // A hidden tab pauses the opening (the GSAP ticker has no lag smoothing, so it would otherwise
+    // jump to the end on return and count as seen without being seen).
+    const onVisibility = () => {
+      if (!player || finished) return;
+      if (document.visibilityState === 'hidden') player.pause();
+      else player.play();
+    };
     const done = () => {
       if (finished) return;
       finished = true;
-      stop();
+      player?.stop();
       document.removeEventListener('keydown', onKey);
+      document.removeEventListener('visibilitychange', onVisibility);
       intro.removeEventListener('pointerdown', onPointer);
-      writeIntro('seen');
+      writeIntroSession('seen');
+      writeIntro('seen'); // the P2 key stays whitelisted and written; it no longer blocks the opening
       root.dataset.boot = 'start';
       intro.hidden = true;
       openStart();
@@ -221,7 +261,11 @@ function boot({ reduced }) {
     skip.addEventListener('click', done, { once: true });
 
     const video = intro.querySelector('[data-intro-video]');
-    stop = video ? playVideo(video, done) : playOpening(intro, done);
+    player = video ? playVideo(video, done) : playOpening(intro, done);
+    document.addEventListener('visibilitychange', onVisibility);
+    whenReady().then(() => {
+      if (!finished && document.visibilityState !== 'hidden') player.play();
+    });
   }
 
   // Reduced motion, first visit: the opening's final frame as a still title card behind the start screen.
@@ -230,6 +274,7 @@ function boot({ reduced }) {
     intro.classList.add('is-static');
     intro.querySelector('[data-intro-skip]')?.setAttribute('hidden', '');
     intro.hidden = false;
+    writeIntroSession('seen');
     writeIntro('seen');
     dialog.addEventListener(
       'close',

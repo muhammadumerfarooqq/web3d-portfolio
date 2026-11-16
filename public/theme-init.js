@@ -9,9 +9,16 @@
   try {
     var stored = window.localStorage.getItem('theme');
     if (stored === 'light' || stored === 'dark') theme = stored;
-    introSeen = window.localStorage.getItem('intro') === 'seen';
   } catch (e) {
     // Storage blocked (privacy mode, sandbox): fall through to the system preference.
+  }
+  // P3.4b: the opening plays once per browser session (sessionStorage "intro"), and ?replay=1 forces
+  // it. Mirrors introSeenThisSession() in src/ui/boot-rules.js; start.js then owns html[data-boot].
+  try {
+    var replay = /(?:^\?|&)replay=1(?:&|$)/.test(window.location.search);
+    introSeen = !replay && window.sessionStorage.getItem('intro') === 'seen';
+  } catch (e) {
+    introSeen = false; // no session storage: treat as a new session
   }
 
   if (theme !== 'light' && theme !== 'dark') {

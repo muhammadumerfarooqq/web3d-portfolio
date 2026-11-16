@@ -1082,3 +1082,22 @@
     display: none;
   }
 }
+
+/* P3.4b: pointer-lock look shows a small centre dot (the browser hides the cursor while locked). */
+.xp-crosshair {
+  position: fixed;
+  inset-block-start: 50%;
+  inset-inline-start: 50%;
+  z-index: 6;
+  inline-size: 6px;
+  block-size: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: #f4ead8;
+  box-shadow: 0 0 0 1.5px rgb(20 14 8 / 0.85);
+  pointer-events: none;
+}
+
+.xp-crosshair[hidden] {
+  display: none;
+}

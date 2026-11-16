@@ -234,10 +234,12 @@ describe('street graph (from town.json) against the real building footprints', (
 });
 
 describe('boat arrival and opening: once-only rules', () => {
-  it('the arrival runs only when explore.arrival is not "seen", and stores "seen" only after a first run', () => {
+  it('the arrival runs only when explore.arrival is not "seen" (P3.4b: this session, or ?replay=1), and stores "seen" only after a first run', () => {
     const c = src('index.js');
-    expect(c).toMatch(/if \(readPref\(ARRIVAL_KEY, ARRIVAL_VALUES, null\) !== 'seen'\) runArrival\(true\);/);
-    expect(c).toMatch(/if \(first\) writePref\(ARRIVAL_KEY, 'seen', ARRIVAL_VALUES\);/);
+    expect(c).toMatch(/const arrivalSeenThisSession = \(\) => !REPLAY && readPref\(ARRIVAL_KEY, ARRIVAL_VALUES, null, session\) === 'seen';/);
+    expect(c).toMatch(/if \(!arrivalSeenThisSession\(\)\) runArrival\(true\);/);
+    expect(c).toMatch(/if \(first\) markArrivalSeen\(\);/);
+    expect(c).toMatch(/writePref\(ARRIVAL_KEY, 'seen', ARRIVAL_VALUES, session\);/);
     expect(c).toMatch(/replayArrival\(\) \{\s*runArrival\(false\);/);
   });
 

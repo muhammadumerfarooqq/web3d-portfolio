@@ -107,6 +107,9 @@ export function createHud({ zones, tiers, quality, sound, music = true, night, t
   // A short line for things the sheriff should know ("Your horse can't reach you here").
   const toast = el('p', { class: 'xp-toast', role: 'status' });
   toast.hidden = true;
+  // P3.4b: a small centre dot while pointer-lock look is on (the system cursor is hidden then).
+  const crosshair = el('span', { class: 'xp-crosshair', 'aria-hidden': 'true' });
+  crosshair.hidden = true;
   let toastTimer = 0;
 
   // ── Prompt, arrow, announcer ──
@@ -147,7 +150,7 @@ export function createHud({ zones, tiers, quality, sound, music = true, night, t
   const debugBox = el('pre', { class: 'xp-debug', 'aria-hidden': 'true' });
   debugBox.hidden = !debug;
 
-  const hud = el('div', { class: 'xp-hud' }, [top, bottom, promptBtn, toast, arrow, tutorial, touchLayer]);
+  const hud = el('div', { class: 'xp-hud' }, [top, bottom, promptBtn, toast, arrow, tutorial, touchLayer, crosshair]);
   hud.hidden = true;
   // Order matters: Back to Classic is the first focusable element and is visible during loading too.
   root.append(back, canvasHost, hud, loader, announcer, debugBox);
@@ -234,6 +237,10 @@ export function createHud({ zones, tiers, quality, sound, music = true, night, t
     },
     setMusic(on) {
       musicBtn.setAttribute('aria-pressed', String(on));
+    },
+    /** Pointer-lock look on / off: the centre dot replaces the (browser-hidden) cursor. */
+    setPointerLock(on) {
+      crosshair.hidden = !on;
     },
     /** 'walk' | 'ride': the legend lists the controls for the current mode. */
     setLegend(mode) {

@@ -4,7 +4,7 @@ Every limitation or issue since P0, big or small. **Rules:** this file is update
 
 Sources: `docs/security.md` (limitations, risk register R1–R5, finding F1), `docs/PLAN.md` §12, the README progress log, and the QA of each step.
 
-Last updated: P3 Step 4, bug fixes from the real-browser test: controls, Classic navigation, horse collision and placement, boat arrival, visual artifacts (16-Nov-2026).
+Last updated: P3 Step 4b, opening and arrival once per session, Explore cursor (17-Nov-2026).
 
 | ID | Limitation | Since | Impact | Viva defence | Planned fix (phase) | Status |
 |---|---|---|---|---|---|---|
@@ -168,3 +168,4 @@ Last updated: P3 Step 4, bug fixes from the real-browser test: controls, Classic
 | L158 | QA found: one ray could fall through a gap between dock planks | P3.4 | The kit leaves gaps and a few missing planks; the debug teleport (and, by luck, nothing else) put the sheriff under the dock at the spawn. | The arrival's deck height and the debug teleport take the highest of five rays in a ±0.2 m cross; the player capsule (0.32 m) already spanned the gaps. | — | SOLVED in P3.4 |
 | L159 | The oars appear only once the arrival has played | P3.4 | oars.glb loads with the arrival chunk, so on later visits (arrival seen) the moored boat has no oars until Replay arrival. | Keeps 4.6 KB and a request off every later visit; the boat itself always floats. | — | ACCEPTED |
 | L160 | The arrival lasts 9.5 s instead of about 8 | P3.4 | Standing up, crossing the boat and stepping up onto the dock need the extra time. | Skippable at any moment (Skip is focused, any key or a click), first visit only. | — | ACCEPTED |
+| L161 | The opening and the boat arrival played once ever, could be silently skipped, and Explore had no visible cursor | P3.4b | A returning visitor never saw them again; a hidden tab (GSAP has no lag smoothing) or a slow load past theme-init's 4 s failsafe could mark the opening "seen" unseen; a failed arrival load wrote "seen"; Classic's cursor ring hid the system cursor over the 3D town. | Both now play once per browser session (sessionStorage, same whitelisted keys; the localStorage keys stay but no longer block) and `?replay=1` forces them; start.js owns `data-boot`, the opening starts only on a visible tab with fonts in (capped 1.5 s) and pauses while hidden; a failed arrival is not "seen" and held keys cannot skip it; the ring stands down in Explore and pointer lock shows a centre dot. Tests in tests/p34b.test.js; headless QA of every case. | — | SOLVED in P3.4b |

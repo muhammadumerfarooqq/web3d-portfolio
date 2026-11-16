@@ -102,7 +102,9 @@ describe('C9 Explore source hygiene', () => {
     expect(writePref('audio.music', 'loud', MUSIC_VALUES, store)).toBe(false);
     expect(writePref('audio.music', 'off', MUSIC_VALUES, store)).toBe(true);
     // index.js reads both through readPref with the whitelist (checked by the storage regex above)
-    expect(code('index.js')).toMatch(/readPref\(ARRIVAL_KEY, ARRIVAL_VALUES, null\)/);
+    // P3.4b: the arrival's flag is read from sessionStorage (once per session), still whitelisted.
+    expect(code('index.js')).toMatch(/readPref\(ARRIVAL_KEY, ARRIVAL_VALUES, null, session\)/);
+    expect(code('index.js')).toMatch(/const session = sessionStore\(\);/);
     expect(code('index.js')).toMatch(/readPref\(MUSIC_KEY, MUSIC_VALUES, 'on'\)/);
   });
 

@@ -1,5 +1,7 @@
 // Custom cursor: dot + lagging ring. Only for a fine pointer without reduced
 // motion. The native cursor returns over text fields; keyboard focus rings are never covered.
+// P3.4b: Classic only. In Explore (html[data-mode="explore"]) it stands down completely, so the
+// system cursor is always visible there (pointer lock hides it itself, and the HUD shows a dot).
 import gsap from 'gsap';
 
 const INTERACTIVE = 'a[href], button, [role="button"], [data-cursor], label, summary';
@@ -27,10 +29,19 @@ export function initCursor({ reduced }) {
   let placed = false;
 
   const hide = () => root.classList.remove('cursor-visible');
+  const inExplore = () => root.dataset.mode === 'explore';
+  const standDown = () => root.classList.remove('has-cursor', 'cursor-visible', 'cursor-native');
+  window.addEventListener('modechange', (event) => {
+    if (event.detail?.mode === 'explore') standDown();
+  });
 
   window.addEventListener(
     'pointermove',
     (event) => {
+      if (inExplore()) {
+        standDown();
+        return;
+      }
       if (event.pointerType !== 'mouse') {
         // Touch or pen: the native cursor and no custom one.
         hide();
