@@ -1,0 +1,16 @@
+/* P9.3 promo capture mode (dev server only): only the 3D canvas is visible, no HUD, overlays, loader,
+   letterbox, toasts or cursor. */
+html[data-capture],
+html[data-capture] * {
+  cursor: none !important;
+}
+
+html[data-capture] .xp > :not(.xp-canvas),
+html[data-capture] .cursor,
+html[data-capture] [data-boot-layer] {
+  display: none !important;
+}
+
+html[data-capture] .xp {
+  background: #000;
+}

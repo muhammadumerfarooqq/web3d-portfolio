@@ -55,12 +55,16 @@ function detectSoftware(renderer) {
  * Start Explore. options: { onExit(anchor?), soundOn, reducedMotion }.
  * Resolves to { dispose } once the loader is up (the town keeps loading behind it).
  */
-export async function startExplore({ onExit, soundOn = false, reducedMotion = false, debug = false, forceWebGL = false } = {}) {
+export async function startExplore(options = {}) {
+  const { onExit, soundOn = false, reducedMotion = false, debug = false, forceWebGL = false } = options;
+  // P9.3 promo capture (dev server only): import.meta.env.DEV is false in production builds, so every
+  // `import.meta.env.DEV && dev` branch below and the capture module itself are dropped from dist/.
+  const dev = import.meta.env.DEV && options.devCapture ? await import('./capture-mode.js').then((m) => m.createCaptureMode(options.devCapture)) : null;
   const touch = window.matchMedia('(pointer: coarse)').matches;
-  let quality = readQuality();
-  let night = (readTime() ?? 'night') === 'night'; // night is the hero and the default
+  let quality = import.meta.env.DEV && dev ? dev.tier : readQuality();
+  let night = import.meta.env.DEV && dev ? dev.night : (readTime() ?? 'night') === 'night'; // night is the hero and the default
   let musicOn = readPref(MUSIC_KEY, MUSIC_VALUES, 'on') === 'on';
-  const showTutorial = readTutorial() !== 'done';
+  const showTutorial = !(import.meta.env.DEV && dev) && readTutorial() !== 'done';
 
   let disposed = false;
   const cleanups = [];
@@ -113,7 +117,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
   (async () => {
     let renderer;
     try {
-      renderer = new WebGPURenderer({ antialias: false, forceWebGL });
+      renderer = new WebGPURenderer(import.meta.env.DEV && dev ? { antialias: false, forceWebGL, powerPreference: 'high-performance' } : { antialias: false, forceWebGL });
       await renderer.init();
       if (disposed) {
         renderer.dispose();
@@ -751,6 +755,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
         const motion = riding ? { forward: horse.speed > 0.4 ? 1 : 0, sideways: 0, speed: Math.abs(horse.speed) } : { forward: blocked ? 0 : iv.z, sideways: blocked ? 0 : iv.x, speed: player.speed };
         rig.update(dt, player.position, riding ? horse.yaw : player.object.rotation.y, motion, town.bvh, elapsed);
       }
+      if (import.meta.env.DEV && dev) dev.afterCamera(dt);
 
       // zones
       const near = nearestZone([player.position.x, player.position.y, player.position.z], zones, PLAYER.zoneRadius);
@@ -816,6 +821,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
 
       // world systems
       tmpFocus.copy(player.position);
+      if (import.meta.env.DEV && dev?.focus()) tmpFocus.copy(dev.focus());
       lights.update(tmpFocus, elapsed, camera.position);
       particles.update(tmpFocus, elapsed);
       ambient.update(dt, elapsed);
@@ -841,7 +847,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
       }
 
       // adaptive resolution
-      const r = adaptive.update(dt);
+      const r = import.meta.env.DEV && dev ? { scale: resScale, changed: false, wantLowerTier: false } : adaptive.update(dt);
       if (r.changed) {
         resScale = r.scale;
         renderer.setPixelRatio(basePR() * resScale);
@@ -851,7 +857,8 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
         hud.announce(`Graphics lowered to ${tier} to keep it smooth.`);
       }
 
-      post.render();
+      if (import.meta.env.DEV && dev) dev.beforeRender(dt);
+      if (!(import.meta.env.DEV && dev?.skipRender)) post.render();
 
       // debug overlay
       frames += 1;
@@ -880,6 +887,7 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
     };
 
     listen(document, 'visibilitychange', () => {
+      if (import.meta.env.DEV && dev) return; // capture steps frames itself
       if (document.hidden) {
         renderer.setAnimationLoop(null);
         audio.suspend();
@@ -891,7 +899,34 @@ export async function startExplore({ onExit, soundOn = false, reducedMotion = fa
         music?.resume();
       }
     });
-    renderer.setAnimationLoop(frame);
+    if (import.meta.env.DEV && dev) {
+      dev.attach({
+        frame,
+        renderer,
+        scene,
+        camera,
+        player,
+        input,
+        sky,
+        boat,
+        loaders,
+        audio,
+        standAt,
+        stationLandmark,
+        signal: abort.signal,
+        post: () => post,
+        palette: () => palette,
+        horse: () => horse,
+        loadHorse,
+        runArrival: () => runArrival(false),
+        setTime: (t) => {
+          night = t > 0.5;
+          tState = startTransition(t, t);
+          tState.progress = 1;
+          palette = applyPalette(t);
+        },
+      });
+    } else renderer.setAnimationLoop(frame);
   })().catch((error) => {
     console.error('[explore]', error);
     if (!disposed) hud.showError('Something went wrong in the 3D town. The Classic portfolio has everything.');

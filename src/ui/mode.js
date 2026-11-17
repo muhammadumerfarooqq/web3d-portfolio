@@ -28,6 +28,10 @@ export function launchParams(search = typeof window === 'undefined' ? '' : windo
   };
 }
 const LAUNCH = launchParams();
+// P9.3 promo capture (dev server only; this block is removed from production builds): ?capture=<shot>
+// starts Explore in the deterministic capture mode (src/explore/capture-mode.js).
+let devCapture = null;
+if (import.meta.env.DEV && typeof window !== 'undefined') devCapture = /^(?:F\d{1,2}|probe)$/.exec(new URLSearchParams(window.location.search).get('capture') ?? '')?.[0] ?? null;
 
 /** `?mode=explore` / `?mode=classic` (anything else is ignored). */
 export function urlMode(search) {
@@ -121,7 +125,11 @@ async function startSession() {
   returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   setClassicInert(true);
   starting = import('../explore/index.js')
-    .then((m) => m.startExplore({ onExit: leaveExplore, soundOn: readSound() === 'on', reducedMotion: getCapabilities().reducedMotion, debug: LAUNCH.debug, forceWebGL: LAUNCH.forceWebGL }))
+    .then((m) => {
+      const options = { onExit: leaveExplore, soundOn: readSound() === 'on', reducedMotion: getCapabilities().reducedMotion, debug: LAUNCH.debug, forceWebGL: LAUNCH.forceWebGL };
+      if (import.meta.env.DEV && devCapture) options.devCapture = devCapture;
+      return m.startExplore(options);
+    })
     .then((s) => {
       if (currentMode() !== 'explore') s.dispose(); // left while it was starting
       else session = s;

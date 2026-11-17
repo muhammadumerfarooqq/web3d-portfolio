@@ -1,0 +1,197 @@
+{
+  "version": 1,
+  "note": "P9.3 promo footage, scripted for src/explore/capture-mode.js (dev server, ?capture=<id>) and scripts/capture/browser-shots.mjs. World units are metres (town.json: +Y up, the street runs along X = 0 from the dock z = +43 to the station z = -44). 'at' is seconds from the shot's first frame (negative = during the pre-roll). Path cameras: centripetal Catmull-Rom splines of position and look-at, sampled at constant speed and eased over the shot; follow cameras: [right, up, forward] in the target's heading frame, damped.",
+  "fps": 24,
+  "seed": 20261117,
+  "tier": "ULTRA",
+  "final": { "width": 3840, "height": 2160 },
+  "preview": { "width": 960, "height": 540 },
+  "shots": [
+    {
+      "id": "F1",
+      "title": "Low over the sea towards the lit town, lighthouse in frame, the boat rowing in",
+      "frames": 96,
+      "time": "night",
+      "preroll": 1,
+      "focus": [5, 0, 50],
+      "events": [
+        { "at": -1, "type": "arrival" }
+      ],
+      "camera": {
+        "type": "path",
+        "ease": "inOutSine",
+        "fov": [38, 36],
+        "position": [[-0.5, 1.9, 63.5], [0.2, 1.8, 61], [1, 1.7, 58.5]],
+        "lookAt": [[5, 1.4, 40], [5, 1.5, 38], [4.5, 1.6, 36]]
+      },
+      "dof": { "focus": 12, "focal": 45 }
+    },
+    {
+      "id": "F2",
+      "title": "Close on the rowboat: oars pulling, splashes, the sheriff rowing",
+      "frames": 48,
+      "time": "night",
+      "preroll": 2.4,
+      "focus": [6, 0, 48],
+      "events": [
+        { "at": -2.4, "type": "arrival" }
+      ],
+      "camera": {
+        "type": "follow",
+        "target": "boat",
+        "offset": [-3.4, 0, 1.6],
+        "height": 1.35,
+        "look": [0, 0.95, 0.2],
+        "damping": 3,
+        "fov": 38
+      },
+      "dof": { "focus": 4, "focal": 18 }
+    },
+    {
+      "id": "F3",
+      "title": "Slow dolly past the Blacksmith's Workshop with dust",
+      "frames": 72,
+      "time": "golden-hour",
+      "preroll": 1,
+      "player": {
+        "pos": [-1.3, -5.6],
+        "yaw": -1.5708
+      },
+      "focus": [-3, 0, -5],
+      "events": [],
+      "camera": {
+        "type": "path",
+        "ease": "inOutSine",
+        "fov": [40, 40],
+        "position": [[2.4, 1.55, 0.5], [2.4, 1.7, -4], [2.4, 1.85, -8.5]],
+        "lookAt": [[-5.5, 1.9, -2.2], [-5.5, 1.85, -5.4], [-5.5, 1.8, -8.4]]
+      },
+      "dof": { "focus": 7, "focal": 40 },
+      "exposure": 1.6
+    },
+    {
+      "id": "F4",
+      "title": "Push-in on the Bounty Board",
+      "frames": 60,
+      "time": "night",
+      "preroll": 1,
+      "focus": [-1.2, 0, -21],
+      "events": [],
+      "camera": {
+        "type": "path",
+        "ease": "inOutSine",
+        "fov": [40, 34],
+        "position": [[0.6, 1.7, -13.2], [0.1, 1.75, -15.8], [-0.6, 1.8, -18.2]],
+        "lookAt": [[-1.2, 2.2, -23], [-1.2, 2.25, -23], [-1.2, 2.3, -23]]
+      },
+      "dof": { "focus": 8, "focal": 45 }
+    },
+    {
+      "id": "F6",
+      "title": "The train arriving at Byte Island Station",
+      "frames": 96,
+      "time": "night",
+      "preroll": 2,
+      "focus": [2, 0, -33],
+      "events": [
+        { "at": -2, "type": "train" }
+      ],
+      "camera": {
+        "type": "path",
+        "ease": "inOutSine",
+        "fov": [38, 36],
+        "position": [[18, 3, -25], [17, 2.8, -25.5], [16, 2.6, -26]],
+        "lookAt": [[-14, 2, -33], [-6, 1.9, -33.5], [2, 1.8, -34]]
+      },
+      "dof": { "focus": 20, "focal": 60 }
+    },
+    {
+      "id": "F7",
+      "title": "Tracking shot: the sheriff gallops on the horse down the main street",
+      "frames": 72,
+      "time": "golden-hour",
+      "preroll": 2.6,
+      "player": {
+        "pos": [0.6, 22],
+        "yaw": 3.1416
+      },
+      "events": [
+        { "at": -60, "type": "mount" },
+        {
+          "at": -2.6,
+          "type": "gallop",
+          "waypoints": [[0.4, 14], [0.2, 0], [0, -20], [0, -30]]
+        }
+      ],
+      "camera": {
+        "type": "follow",
+        "target": "horse",
+        "offset": [1.3, 1.5, 7],
+        "look": [0, 1.35, 0.6],
+        "damping": 5,
+        "fov": 42
+      },
+      "dof": { "focus": 7, "focal": 40 }
+    },
+    {
+      "id": "F8",
+      "title": "Fireworks over the town (the stars flying to the counter are an After Effects overlay)",
+      "frames": 72,
+      "time": "night",
+      "preroll": 1,
+      "player": {
+        "pos": [0.6, 16],
+        "yaw": 3.1416
+      },
+      "focus": [0, 0, 0],
+      "events": [
+        {
+          "at": -0.2,
+          "type": "fireworks",
+          "origin": [0, 0, -26]
+        }
+      ],
+      "camera": {
+        "type": "path",
+        "ease": "inOutSine",
+        "fov": [50, 48],
+        "position": [[1.6, 1.3, 10.5], [1.5, 1.4, 9.8], [1.4, 1.5, 9]],
+        "lookAt": [[0, 7.5, -20], [0, 8, -20], [0, 8.5, -20]]
+      },
+      "dof": { "focus": 30, "focal": 70 }
+    },
+    {
+      "id": "F10",
+      "title": "Slow aerial pull-back over the whole island",
+      "frames": 120,
+      "time": "night",
+      "preroll": 1,
+      "focus": [0, 0, -4],
+      "events": [],
+      "camera": {
+        "type": "path",
+        "ease": "inOutSine",
+        "fov": [42, 44],
+        "position": [[4, 16, 14], [14, 24, 38], [26, 33, 62]],
+        "lookAt": [[0, 2, -8], [0, 1, -8], [0, 0, -8]]
+      },
+      "dof": { "focus": 60, "focal": 80 }
+    }
+  ],
+  "browser": [
+    {
+      "id": "F5",
+      "title": "Classic projects gallery: chip clicks, Flip, a modal opening",
+      "frames": 72,
+      "theme": "light",
+      "viewport": { "width": 1920, "height": 1080 }
+    },
+    {
+      "id": "F9",
+      "title": "Classic hero and WANTED poster scroll",
+      "frames": 60,
+      "theme": "light",
+      "viewport": { "width": 1920, "height": 1080 }
+    }
+  ]
+}

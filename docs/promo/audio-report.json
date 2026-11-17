@@ -1,0 +1,46 @@
+{
+  "note": "Written by scripts/promo/render-audio.mjs (WAVs are git-ignored). Stems: the same gain and the same look-ahead peak limiter each (ceilingDbfs); mix.wav = their sum through the same limiter.",
+  "date": "2026-11-17",
+  "sampleRate": 48000,
+  "bitDepth": 24,
+  "channels": 2,
+  "renderSeconds": 7.5,
+  "gainDb": 7.03,
+  "ceilingDbfs": -2.01,
+  "rawMix": {
+    "I": -20.43,
+    "TP": 0.16,
+    "LRA": 6
+  },
+  "files": {
+    "music.wav": {
+      "samples": 2160000,
+      "seconds": 45,
+      "samplePeakDbfs": -2.01,
+      "truePeakDbtp": -1.56,
+      "integratedLufs": -14.86
+    },
+    "sfx.wav": {
+      "samples": 2160000,
+      "seconds": 45,
+      "samplePeakDbfs": -2.01,
+      "truePeakDbtp": 0.18,
+      "integratedLufs": -18.13
+    },
+    "ambience.wav": {
+      "samples": 2160000,
+      "seconds": 45,
+      "samplePeakDbfs": -9.85,
+      "truePeakDbtp": -9.83,
+      "integratedLufs": -29.49
+    },
+    "mix.wav": {
+      "samples": 2160000,
+      "seconds": 45,
+      "samplePeakDbfs": -2.01,
+      "integratedLufs": -14.29,
+      "truePeakDbtp": -1.1,
+      "loudnessRangeLu": 5.3
+    }
+  }
+}

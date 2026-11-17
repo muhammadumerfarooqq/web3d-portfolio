@@ -5,13 +5,15 @@
 // campfire guitar and harmonica; the crickets come from the ambience bus) crossfade on day/night.
 // CPU: a 50 ms timer schedules 200 ms ahead (music-core.js); plucks are rendered once per note and
 // cached; the whistle and harmonica voices are persistent nodes, re-pitched and gated per note.
+// P9.3: the voices and one-shots are exported so the promo film's offline score render
+// (scripts/promo/audio/render.js) reuses exactly the same synthesis.
 import { SCORE, createMoodMixer, createScheduler, indexScore, midiToFreq } from './music-core.js';
 
 let seed = 12345;
 const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647 - 0.5;
 
 /** Karplus-Strong pluck (1.6 s, mono), slightly bright for the spaghetti-western twang. */
-function pluck(ctx, freq) {
+export function pluck(ctx, freq) {
   const sr = ctx.sampleRate;
   const len = Math.floor(sr * 1.6);
   const buf = ctx.createBuffer(1, len, sr);
@@ -38,7 +40,7 @@ function pluck(ctx, freq) {
 }
 
 /** Spring-reverb impulse: dense decaying noise with a "boing" chirp and early taps (stereo, 2.4 s). */
-function springImpulse(ctx) {
+export function springImpulse(ctx) {
   const sr = ctx.sampleRate;
   const len = Math.floor(sr * 2.4);
   const buf = ctx.createBuffer(2, len, sr);
@@ -58,28 +60,28 @@ function springImpulse(ctx) {
 }
 
 /** One-shot percussion, rendered once. */
-function render(ctx, seconds, fn) {
+export function render(ctx, seconds, fn) {
   const sr = ctx.sampleRate;
   const buf = ctx.createBuffer(1, Math.floor(sr * seconds), sr);
   const d = buf.getChannelData(0);
   for (let i = 0; i < d.length; i += 1) d[i] = fn(i / sr);
   return buf;
 }
-const kickBuf = (ctx) => {
+export const kickBuf = (ctx) => {
   let ph = 0;
   return render(ctx, 0.35, (t) => {
     ph += (2 * Math.PI * (45 + 80 * Math.exp(-t * 18))) / ctx.sampleRate;
     return Math.sin(ph) * Math.exp(-t * 9) * 0.9;
   });
 };
-const shakerBuf = (ctx) => render(ctx, 0.06, (t) => rnd() * Math.exp(-t * 70) * (t < 0.006 ? t / 0.006 : 1));
-const tambBuf = (ctx) => render(ctx, 0.22, (t) => (rnd() * 0.5 + Math.sin(2 * Math.PI * 6800 * t) * 0.25 + Math.sin(2 * Math.PI * 8900 * t) * 0.2) * Math.exp(-t * 22));
-const bellBuf = (ctx) =>
+export const shakerBuf = (ctx) => render(ctx, 0.06, (t) => rnd() * Math.exp(-t * 70) * (t < 0.006 ? t / 0.006 : 1));
+export const tambBuf = (ctx) => render(ctx, 0.22, (t) => (rnd() * 0.5 + Math.sin(2 * Math.PI * 6800 * t) * 0.25 + Math.sin(2 * Math.PI * 8900 * t) * 0.2) * Math.exp(-t * 22));
+export const bellBuf = (ctx) =>
   render(ctx, 3.5, (t) => [1, 2, 2.76, 5.4, 8.9].reduce((s, r, i) => s + Math.sin(2 * Math.PI * 196 * r * t) * Math.exp(-t * (0.8 + i * 0.9)) / (i + 1.4), 0) * 0.4);
-const anvilBuf = (ctx) => render(ctx, 1.2, (t) => [1, 2.7, 5.1, 8.2].reduce((s, r, i) => s + Math.sin(2 * Math.PI * 880 * r * t) * Math.exp(-t * (4 + i * 3)) / (i + 1), 0) * 0.3);
+export const anvilBuf = (ctx) => render(ctx, 1.2, (t) => [1, 2.7, 5.1, 8.2].reduce((s, r, i) => s + Math.sin(2 * Math.PI * 880 * r * t) * Math.exp(-t * (4 + i * 3)) / (i + 1), 0) * 0.3);
 
 /** A persistent pitched voice (whistle / harmonica): osc → (filter) → gate gain; notes re-pitch it. */
-function voice(ctx, out, { type, filter, vibrato, breath, noise }) {
+export function voice(ctx, out, { type, filter, vibrato, breath, noise }) {
   const osc = ctx.createOscillator();
   osc.type = type;
   const gate = ctx.createGain();

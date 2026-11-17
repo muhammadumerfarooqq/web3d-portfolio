@@ -24,6 +24,10 @@ supabase/.temp/
 # Blender backups, After Effects footage and large renders
 *.blend1
 aftereffects/assets/footage/
+# P9.3 promo film: footage frames, WAV stems and renders are large; never committed
+aftereffects/footage/
+aftereffects/audio/*.wav
+aftereffects/render/
 *.mov
 *.avi
 # Render logs After Effects writes next to the project ("<project>.aep Logs/")
