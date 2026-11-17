@@ -292,6 +292,7 @@ export async function createCaptureMode(shotId) {
       simTime = -preroll / 24;
     }
     if (types.has('arrival')) await ctx.runArrival();
+    await ctx.loadPosters?.(); // P9.5: the bounty posters are in every shot (the game loads them near the board)
     clock.virtualise();
     for (let i = 0; i < preroll; i += 1) {
       const render = i >= preroll - 6; // render the last frames of the pre-roll (shaders, history)

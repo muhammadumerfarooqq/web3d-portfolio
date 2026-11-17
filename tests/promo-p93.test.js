@@ -27,7 +27,7 @@ describe('cue sheet (docs/promo/cues.json)', () => {
     const c = validateCues(cues);
     expect([c.fps, c.duration, c.bpm, c.beatFrames, c.barFrames]).toEqual([24, 1080, 96, 15, 60]);
     expect(c.scenes.map((s) => s.id)).toEqual(['cold-open', 'office', 'workshop', 'bounties', 'railway', 'town', 'end-card']);
-    expect(c.liveUrl).toBe('TBD');
+    expect(c.liveUrl).toBe('umerfarooq-ai.vercel.app');
     expect(c.text.some((t) => t.text === '{liveUrl}' && t.layer === 'end-url')).toBe(true);
   });
 

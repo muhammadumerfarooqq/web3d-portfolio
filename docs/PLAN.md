@@ -459,6 +459,7 @@ Visual layer only (structure, content pipeline, filters/URL state, modal, lightb
 - **Footage:** Explore capture mode (dev only, `?capture=`), scripted by `docs/promo/shots.json`; browser captures of Classic for F5 and F9; driver `scripts/capture/capture.mjs` (playwright-core + installed Chrome). Previews, contact sheets and the 4K PNG sequences are in `aftereffects/footage/` (git-ignored). Determinism is verified by frame hashes.
 - **Audio:** an original score, SFX and ambience rendered offline (`scripts/promo/render-audio.mjs`): 24-bit 48 kHz stems and a mix at about −14 LUFS / ≤ −1 dBTP; `aftereffects/LICENCE-AUDIO.md`.
 - **Next (P9.4):** After Effects assembly from the cue sheet (`aftereffects/promo.jsx`), aerender + ffmpeg, captions, the web encode and the poster frame; set `liveUrl`.
+- **P9.5–7 part A ✅ (17-Nov-2026):** bounty posters in Explore, F4 re-captured, liveUrl set, `scripts/promo/render.mjs` written (not run), promo player + VTT wired with /media cache headers. **Part B (render, frames, submission folder) is run by Umer.**
 
 ### P10 — Analytics, accessibility audit & polish · 4% · E7, E8
 - Vercel Web Analytics on; first-party events wired (allow-listed names, no PII, DNT respected).
@@ -504,7 +505,7 @@ Overall  [██░░░░░░░░░░░░░░░░░░]  8%
 | P6 Voice chat | 4% | ⬜ |
 | P7 Admin dashboard & secure login | 7% | ⬜ |
 | P8 Blender avatar (AI twin) + world art | 14% | ⬜ |
-| P9 AE intro sting + promo video | 8% | 🟡 P9.3 assets done |
+| P9 AE intro sting + promo video | 8% | 🟡 P9.5 part A done; render pending |
 | P10 Analytics, a11y audit & polish | 4% | ⬜ |
 | P11 Security, QA & production | 4% | ⬜ |
 | P12 Documentation & submission | 5% | ⬜ |

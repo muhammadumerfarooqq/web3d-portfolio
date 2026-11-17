@@ -143,3 +143,31 @@ export const ARRIVAL_KEY = 'explore.arrival';
 export const ARRIVAL_VALUES = ['seen'];
 export const MUSIC_KEY = 'audio.music';
 export const MUSIC_VALUES = ['on', 'off'];
+
+/**
+ * P9.5 bounty posters: artwork over the 9 blank poster panels of the Bounty Board (baked into
+ * Props_baked in town.glb; built by blender/town/kit.py bounty_board() with random.Random(2)).
+ * Each slot is [dx, y, rz] from the board's town.json centre: dx along +X, y up from the ground, rz
+ * the panel's tilt about +Z (radians). The panels face +Z (the street); their front face is `front`
+ * metres in front of the board centre, and the artwork plane sits `lift` in front of that. Checked
+ * against the Draco-decoded Props_baked faces in P9.5 (every corner within 1 mm).
+ */
+export const BOUNTY_POSTERS = {
+  size: [0.95, 0.75],
+  front: 0.11,
+  lift: 0.004,
+  texture: [324, 256], // ≈ the panel's 1.267 aspect; 9 × 442 KB with mips = 3.98 MB
+  budgetBytes: 4 * 1024 * 1024,
+  near: 40, // metres: the chunk loads the first time the sheriff comes this close to the board
+  slots: [
+    [-1.4088, 2.9896, 0.07095],
+    [-0.083, 2.9671, -0.03776],
+    [1.5339, 2.8616, -0.01695],
+    [-1.4786, 1.9662, 0.05466],
+    [-0.0139, 1.9287, -0.03568],
+    [1.599, 2.0399, -0.00707],
+    [-1.511, 0.9536, 0.07425],
+    [-0.0945, 0.993, 0.02905],
+    [1.476, 1.0784, -0.00412],
+  ],
+};

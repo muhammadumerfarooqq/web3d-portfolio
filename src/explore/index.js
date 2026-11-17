@@ -12,7 +12,7 @@ import { createAudio } from './audio.js';
 import { BADGES_EMPTY, BADGES_KEY, BADGES_VALUES, createBadges } from './badges.js';
 import { SEA_ORDER, createBoat } from './boat.js';
 import { createCameraRig } from './camera-rig.js';
-import { ARRIVAL_KEY, ARRIVAL_VALUES, MUSIC_KEY, MUSIC_VALUES, PLAYER, QUALITY_KEY, QUALITY_VALUES, TIERS, TIME_KEY, TIME_VALUES, TOWN_JSON_URL, TUTORIAL_KEY, TUTORIAL_VALUES } from './config.js';
+import { ARRIVAL_KEY, ARRIVAL_VALUES, BOUNTY_POSTERS, MUSIC_KEY, MUSIC_VALUES, PLAYER, QUALITY_KEY, QUALITY_VALUES, TIERS, TIME_KEY, TIME_VALUES, TOWN_JSON_URL, TUTORIAL_KEY, TUTORIAL_VALUES } from './config.js';
 import { castDown, inputVector } from './controller-math.js';
 import { createHud } from './hud.js';
 import { createInput } from './input.js';
@@ -389,6 +389,25 @@ export async function startExplore(options = {}) {
           return h;
         })
         .catch((error) => console.warn('[explore] horse', error)));
+    // ── the Bounty Board posters (lazy chunk, P9.5): painted the first time the sheriff comes near ──
+    const bountyZone = zones.find((z) => z.zone === 'projects');
+    let postersLoad = null;
+    const loadPosters = () =>
+      (postersLoad ??= bountyZone
+        ? import('./bounty-posters.js')
+            .then((m) => m.createBountyPosters({ projects: m.readProjects(document), center: bountyZone.center }))
+            .then((p) => {
+              if (disposed) {
+                p.dispose();
+                return null;
+              }
+              scene.add(p.group);
+              cleanups.push(() => p.dispose());
+              return p;
+            })
+            .catch((error) => console.warn('[explore] posters', error))
+        : Promise.resolve(null));
+
     function whistle() {
       if (horse?.riding) return;
       player.playOnce('Whistle');
@@ -823,6 +842,7 @@ export async function startExplore(options = {}) {
       tmpFocus.copy(player.position);
       if (import.meta.env.DEV && dev?.focus()) tmpFocus.copy(dev.focus());
       lights.update(tmpFocus, elapsed, camera.position);
+      if (!postersLoad && bountyZone && Math.hypot(tmpFocus.x - bountyZone.center[0], tmpFocus.z - bountyZone.center[2]) < BOUNTY_POSTERS.near) loadPosters();
       particles.update(tmpFocus, elapsed);
       ambient.update(dt, elapsed);
       sky.mesh.position.copy(camera.position);
@@ -918,6 +938,7 @@ export async function startExplore(options = {}) {
         palette: () => palette,
         horse: () => horse,
         loadHorse,
+        loadPosters,
         runArrival: () => runArrival(false),
         setTime: (t) => {
           night = t > 0.5;

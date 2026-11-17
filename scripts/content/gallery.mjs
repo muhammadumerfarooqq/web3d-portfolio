@@ -1,6 +1,7 @@
 // Build-time renderers for the projects gallery, achievements and the reusable video player.
 // Everything is static HTML (works with JS off); src/ui/projects/* and src/ui/lightbox.js enhance it.
-import { existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { renderCover } from './covers.mjs';
 import { ICONS, chips, externalAttrs, html, imageSize, isExternal, isSafeUrl, md, raw, timeEl } from './html.mjs';
@@ -46,8 +47,8 @@ function projectLinks(project, className = 'pill-link') {
 }
 
 /** Reusable player markup; src/ui/video.js replaces the native controls with accessible custom ones. */
-export function renderPlayer({ src, poster = null, size = null, title, noAudio = false, preload = 'metadata', tracks = [] }) {
-  return html`<figure class="player" data-player${noAudio ? raw(' data-no-audio') : ''}>
+export function renderPlayer({ src, poster = null, size = null, title, noAudio = false, preload = 'metadata', tracks = [], lazy = false }) {
+  return html`<figure class="player" data-player${noAudio ? raw(' data-no-audio') : ''}${lazy ? raw(' data-lazy') : ''}>
             <div class="player__frame">
               <video class="player__video" src="${src}"${poster ? html` poster="${poster}"` : ''}${size ? html` width="${size.width}" height="${size.height}"` : ''} preload="${preload}" playsinline${noAudio ? raw(' muted') : ''} controls>${tracks.map(
                 (t) => html`<track kind="captions" src="${t.src}" srclang="${t.lang}" label="${t.label}" />`,
@@ -99,7 +100,7 @@ function projectCard(project, root) {
   const hasVideo = Boolean(project.links.video);
   const reward = rewardOf(project);
   const bullets = project.highlights.filter((h) => h !== reward).slice(0, 2);
-  return html`<li class="gallery__item${hero ? ' gallery__item--hero' : ''}" data-project="${project.slug}">
+  return html`<li class="gallery__item${hero ? ' gallery__item--hero' : ''}" data-project="${project.slug}" data-order="${project.order}">
           <article class="project-card paper" id="${project.anchor}" aria-labelledby="${project.anchor}-title">
             <div class="project-card__cover" data-project-cover>${cover(project, root)}</div>
             <div class="project-card__body">
@@ -236,16 +237,23 @@ export function renderAchievements({ achievements }, { root }) {
 
 /* ────────────────────────── Video section ────────────────────────── */
 
-export const PROMO = { video: '/video/promo.mp4', poster: '/video/promo-poster.webp', tracks: [['en', 'English'], ['ur', 'اردو']] };
+// P9.5: the 1080p web file, poster and captions written by scripts/promo/render.mjs and build-vtt.mjs.
+// Nothing loads until the visitor presses play (preload="none", data-lazy keeps the player from
+// upgrading it to metadata); the 4K master is not public (no download link).
+export const PROMO = { video: '/media/promo-1080.mp4', poster: '/media/promo-poster.jpg', size: { width: 1920, height: 1080 }, tracks: [['en', 'English']] };
+
+/** /media is served immutable (vercel.json): a content hash in the query busts it after a re-render. */
+const versioned = (root, url) => `${url}?v=${createHash('sha256').update(readFileSync(join(root, 'public', url))).digest('hex').slice(0, 10)}`;
 
 export function renderVideoSection({ root }) {
   if (existsSync(join(root, 'public', PROMO.video))) {
-    const poster = existsSync(join(root, 'public', PROMO.poster)) ? PROMO.poster : null;
+    const poster = existsSync(join(root, 'public', PROMO.poster)) ? versioned(root, PROMO.poster) : null;
     const tracks = PROMO.tracks
-      .map(([lang, label]) => ({ src: `/video/promo.${lang}.vtt`, lang, label }))
-      .filter((t) => existsSync(join(root, 'public', t.src)));
+      .map(([lang, label]) => ({ src: `/media/promo.${lang}.vtt`, lang, label }))
+      .filter((t) => existsSync(join(root, 'public', t.src)))
+      .map((t) => ({ ...t, src: versioned(root, t.src) }));
     return html`<div class="video-stage">
-            ${renderPlayer({ src: PROMO.video, poster, title: 'Promo film', tracks })}
+            ${renderPlayer({ src: versioned(root, PROMO.video), poster, size: PROMO.size, title: 'Promo film: The Case File of Umer (45 s)', tracks, preload: 'none', lazy: true })}
             <div class="video-stage__transcript" data-slot="video-transcript"></div>
           </div>`;
   }

@@ -4,7 +4,7 @@ Every limitation or issue since P0, big or small. **Rules:** this file is update
 
 Sources: `docs/security.md` (limitations, risk register R1–R5, finding F1), `docs/PLAN.md` §12, the README progress log, and the QA of each step.
 
-Last updated: P9 Step 3, promo film assets: cue sheet, deterministic 4K capture, original score and SFX (17-Nov-2026).
+Last updated: P9 Steps 5–7 part A, bounty posters, render script and promo embed (17-Nov-2026).
 
 | ID | Limitation | Since | Impact | Viva defence | Planned fix (phase) | Status |
 |---|---|---|---|---|---|---|
@@ -177,3 +177,4 @@ Last updated: P9 Step 3, promo film assets: cue sheet, deterministic 4K capture,
 | L167 | The SFX stem can peak above −1 dBTP | P9.3 | Each stem passes the same look-ahead peak limiter at the mix gain, so no stem clips. Short clicks can still have inter-sample peaks: the SFX stem measures about −0.5 dBTP. | Only the reference mix.wav is a delivery, and it measures ≤ −1 dBTP. AE gets headroom through layer levels in P9.4. | — | ACCEPTED |
 | L168 | The rider waves during the F7 gallop | P9.3 | The sheriff's existing zone greeting (a wave when he passes a building door) also plays in the saddle. | It reads as a friendly salute in the tracking shot. It is the game's own behaviour and was left unchanged. | — | ACCEPTED |
 | L169 | The 4K footage is large and not in git | P9.3 | A 3840×2160 PNG is about 8.5 MB; all ten shots total about 6.4 GB on disk. | aftereffects/footage/, aftereffects/audio/*.wav and aftereffects/render/ are git-ignored. Anyone can regenerate them deterministically with scripts/capture/capture.mjs --final and scripts/promo/render-audio.mjs. Contact sheets (small JPGs), the reports and the cue sheet are committed. | — | ACCEPTED |
+| L170 | The promo player shows the placeholder until the film is rendered, and only 8 projects fill the 9 bounty panels | P9.5 | public/media/promo-1080.mp4 is produced by scripts/promo/render.mjs, which needs After Effects; OVERDRIVE is a draft hidden from Classic, so the ninth poster is an "open case" pointing to the Telegraph Office. | Run render.mjs once promo.aep is final; the section then renders the player automatically at build time. A new public project replaces the open-case poster with no code change. | P9 part B | OPEN |

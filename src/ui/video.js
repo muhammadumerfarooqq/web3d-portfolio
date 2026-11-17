@@ -54,7 +54,8 @@ export function initPlayer(figure) {
   const noAudio = 'noAudio' in figure.dataset;
   video.controls = false;
   video.removeAttribute('controls');
-  if (video.preload === 'none') video.preload = 'metadata';
+  // Lazy players (the promo film, data-lazy) fetch nothing until play; the rest load metadata.
+  if (video.preload === 'none' && !('lazy' in figure.dataset)) video.preload = 'metadata';
   if (noAudio) video.muted = true;
 
   // ── Controls ──
