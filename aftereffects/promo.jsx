@@ -29,6 +29,7 @@
     try { app.project.close(CloseOptions.DO_NOT_SAVE_CHANGES); } catch (e) {}
     app.newProject();
     var proj = app.project;
+    try { proj.gpuAccelType = GpuAccelType.SOFTWARE; } catch (e) {}       // Mercury Software Only: 4K + many effects overflowed the 4 GB GPU
     var BIN = proj.items.addFolder("PROMO (built by promo.jsx)");
     var BIN_SC = proj.items.addFolder("Scenes"); BIN_SC.parentFolder = BIN;
     var BIN_FT = proj.items.addFolder("Footage"); BIN_FT.parentFolder = BIN;
