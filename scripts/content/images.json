@@ -96,16 +96,16 @@
     "orientation": "landscape"
   },
   "/images/projects/taleem360-1600.webp": {
-    "width": 944,
-    "height": 1600,
-    "aspect": 0.59,
-    "orientation": "portrait"
+    "width": 1600,
+    "height": 1000,
+    "aspect": 1.6,
+    "orientation": "landscape"
   },
   "/images/projects/taleem360-800.webp": {
-    "width": 472,
-    "height": 800,
-    "aspect": 0.59,
-    "orientation": "portrait"
+    "width": 800,
+    "height": 500,
+    "aspect": 1.6,
+    "orientation": "landscape"
   },
   "/images/projects/tiny-village-1600.webp": {
     "width": 1517,
