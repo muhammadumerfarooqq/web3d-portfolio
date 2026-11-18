@@ -179,15 +179,17 @@ describe('P6 fix: portrait covers fill the frame (cover, top centre)', () => {
 
   it('images.mjs records each image’s size and orientation (manifest); orientation = height > width', () => {
     const m = JSON.parse(read('scripts/content/images.json'));
-    expect(m['/images/projects/taleem360-1600.webp']).toMatchObject({ orientation: 'portrait' });
-    expect(m['/images/projects/taleem360-1600.webp'].height).toBeGreaterThan(m['/images/projects/taleem360-1600.webp'].width);
+    // 19-Nov-2026: Umer replaced the TALEEM360 phone screenshot with a wide composed cover (landscape).
+    expect(m['/images/projects/taleem360-1600.webp']).toMatchObject({ orientation: 'landscape' });
     expect(m['/images/projects/tiny-village-1600.webp'].orientation).toBe('landscape');
     for (const [file, v] of Object.entries(m)) expect(v.orientation, file).toBe(v.height > v.width ? 'portrait' : 'landscape');
   });
 
   it('a portrait cover is a plain image with the portrait class (no letterbox wrapper); landscape covers are unchanged', () => {
-    expect(card('taleem360')).toMatch(/<img class="project-card__img project-card__img--portrait" src="\/images\/projects\/taleem360-800\.webp"/);
+    expect(card('taleem360')).toMatch(/<img class="project-card__img" src="\/images\/projects\/taleem360-800\.webp"/);
     expect(card('taleem360')).not.toContain('cover-fit');
+    // the portrait path is still in the generator (a portrait image gets the class)
+    expect(read('scripts/content/gallery.mjs')).toMatch(/project-card__img\$\{portrait \? ' project-card__img--portrait' : ''\}/);
     expect(card('tiny-village')).toMatch(/<img class="project-card__img" src=/);
     expect(card('tiny-village')).not.toContain('--portrait');
     expect(html).not.toContain('cover-fit');

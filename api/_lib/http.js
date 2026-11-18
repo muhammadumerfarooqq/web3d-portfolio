@@ -1,6 +1,8 @@
 // Shared HTTP helpers for the Vercel Functions in api/ (plain Node req/res, so the same handler runs on
 // Vercel and in the Vite dev middleware). No CORS headers anywhere: the API is same-origin only.
 
+import { logEvent } from './log.js';
+
 export const ALLOWED_ORIGINS = ['https://umerfarooq-ai.vercel.app', 'https://web3d-portfolio-three.vercel.app'];
 /** This project's Vercel preview URLs, and local development. */
 const PREVIEW = /^https:\/\/web3d-portfolio-[a-z0-9-]+-umer-134e\.vercel\.app$/;
@@ -95,5 +97,20 @@ export async function readBytes(req, limit) {
   }
   return Buffer.concat(chunks);
 }
+
+/**
+ * P11: the default export of every function. Anything a handler did not expect (a thrown error, a rejected
+ * promise) becomes a generic 500 with no detail, and one PII-free log line, instead of a platform error page
+ * or a stack trace.
+ */
+export const safe = (handler, event) => async (req, res) => {
+  try {
+    return await handler(req, res);
+  } catch {
+    logEvent(event, { status: 500, reason: 'unhandled' });
+    if (!res.headersSent && !res.writableEnded) sendJson(res, 500, { ok: false, error: 'server_error' });
+    return undefined;
+  }
+};
 
 export { header as getHeader };

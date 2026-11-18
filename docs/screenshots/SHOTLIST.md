@@ -126,3 +126,16 @@ Every step adds its rows here. Save each screenshot under `docs/screenshots/<mod
 | P6-11 | Security / Tests | `npm run test:security` (or the full suite) with p6-voice.test.js and p6-screen.test.js passing | Terminal | ⬜ |
 | P6-12 | Eval / Report after fix 1 | `docs/reports/rag-eval.md` latest section: 19/19 answerable (7 Urdu / Roman Urdu), 7/7 refusals | `npm run rag:eval` | ⬜ |
 | P6-13 | Projects / TALEEM360 cover | The TALEEM360 card, modal and bounty poster now filled with the phone screenshot (top centre), no backdrop | Projects section, then the Explore bounty board | ⬜ |
+| P11-1 | Security / Secret scan | `npm run scan:secrets` ending in "RESULT: clean", and (if installed) the gitleaks "no leaks found" line | Terminal in the project folder | ⬜ |
+| P11-2 | Security / Test summary | `npm run test:security` summary: 12 files, 350 tests, "every security test passed" | Terminal | ⬜ |
+| P11-3 | Security / Observatory | The MDN Observatory result for the live site: A+ (130) | developer.mozilla.org/en-US/observatory/analyze?host=umerfarooq-ai.vercel.app | ⬜ |
+| P11-4 | QA / Lighthouse mobile | The four gauges (Performance, Accessibility, Best practices, SEO), Mobile | Chrome DevTools → Lighthouse on the live site, Incognito | ⬜ |
+| P11-5 | QA / Lighthouse desktop | The four gauges, Desktop | Same, Desktop | ⬜ |
+| P11-6 | Security / Live check | `npm run live:check` ending in "78/78 checks passed" (after the deploy) | Terminal | ⬜ |
+| P11-7 | Security / Anon blocked | `npm run rls:verify`: every "anon cannot …" line PASS (after running 0004_hardening.sql) | Terminal | ⬜ |
+| P11-8 | Data / Security Advisor | Dashboard → Advisors → Security with the findings read against `docs/reports/supabase-advisor.md` | Supabase dashboard | ⬜ |
+| P11-9 | Security / ZAP baseline | The summary of `docs/reports/zap-baseline.html` (0 high / 0 medium) | The Docker command in docs/reports/zap-baseline.md | ⬜ |
+| P11-10 | QA / Accessibility | `node scripts/qa/a11y-check.mjs` with 0 violations in dark, light and reduced motion | npm run build, then the script | ⬜ |
+| P11-11 | Security / Headers | DevTools → Network → the document response headers (CSP, HSTS, COOP, Permissions-Policy) | DevTools on the live site | ⬜ |
+| P11-12 | Security / Cross-origin refused | `curl.exe -i -X POST https://umerfarooq-ai.vercel.app/api/chat -H "Origin: https://evil.example"` returning 403 with no CORS headers | Terminal (VIVA_SECURITY_DEMO step 3) | ⬜ |
+| P11-13 | QA / Performance budget | `node scripts/qa/budget.mjs` output: entry +1.8 KB, Explore 349.7 KB, first visit 406 KB | npm run build, then the script | ⬜ |

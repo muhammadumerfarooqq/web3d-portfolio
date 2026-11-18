@@ -2,7 +2,7 @@
 // (HMAC-SHA256 over the time and the visitor's hashed IP, key IP_HASH_SALT; see api/_lib/security.js).
 // Same-origin only; 503 when the contact system is not configured (the form then shows the email link).
 import { CONTACT_ENV, readEnv } from './_lib/env.js';
-import { clientIp, isAllowedOrigin, requestOrigin, sendJson } from './_lib/http.js';
+import { clientIp, isAllowedOrigin, requestOrigin, safe, sendJson } from './_lib/http.js';
 import { hashIp, issueStamp } from './_lib/security.js';
 
 export function createTokenHandler({ env = process.env, now = Date.now } = {}) {
@@ -16,4 +16,4 @@ export function createTokenHandler({ env = process.env, now = Date.now } = {}) {
   };
 }
 
-export default createTokenHandler();
+export default safe(createTokenHandler(), 'contact_token');

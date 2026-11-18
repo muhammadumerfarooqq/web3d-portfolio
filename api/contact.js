@@ -7,7 +7,7 @@
 import nodemailer from 'nodemailer';
 import { contactRequestSchema, fieldErrors, LIMITS } from '../src/shared/contact-schema.js';
 import { CONTACT_ENV, readEnv } from './_lib/env.js';
-import { HttpError, clientIp, getHeader, isAllowedOrigin, readBody, requestOrigin, sendJson } from './_lib/http.js';
+import { clientIp, getHeader, HttpError, isAllowedOrigin, readBody, requestOrigin, safe, sendJson } from './_lib/http.js';
 import { logEvent } from './_lib/log.js';
 import { buildMail, createMailer } from './_lib/mail.js';
 import { checkStamp, hashIp } from './_lib/security.js';
@@ -113,4 +113,4 @@ export function createContactHandler({ env = process.env, fetch = globalThis.fet
   };
 }
 
-export default createContactHandler();
+export default safe(createContactHandler(), 'contact');

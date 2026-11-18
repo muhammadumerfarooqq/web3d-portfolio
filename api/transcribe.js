@@ -1,7 +1,7 @@
 // POST /api/transcribe — speech to text for the chat's microphone button (Vercel Function, Node, bom1,
 // maxDuration 15 s in vercel.json). The body is the raw recording.
-// Order: method → origin → audio content type (webm | ogg | mp4 | wav) → size (≤ 2 MB) → configuration →
-// language header → chat session (X-Chat-Session, from GET /api/chat-token) → rate limit + the shared daily
+// Order: method → origin → audio content type (webm | ogg | mp4 | wav) → declared size (≤ 2 MB) → configuration →
+// language header → chat session (X-Chat-Session, from GET /api/chat-token) → body read (≤ 2 MB) → rate limit + the shared daily
 // cap (stt_submit: 10 per 10 minutes per hashed IP) → container signature + WAV length → Groq Whisper
 // (STT_MODEL) → length check (≤ 30 s) → cleaning → the chat's injection and private-data screens (heuristics
 // + Prompt Guard 2) → { ok, text, seconds } or a fixed refusal. Audio is never stored; logs hold metadata only
@@ -12,7 +12,7 @@ import { chatSettings } from './chat.js';
 import { screenInput } from './_lib/chat-filter.js';
 import { REPLIES } from './_lib/chat-prompt.js';
 import { readEnv } from './_lib/env.js';
-import { HttpError, clientIp, getHeader, isAllowedOrigin, readBytes, requestOrigin, sendJson } from './_lib/http.js';
+import { HttpError, clientIp, getHeader, isAllowedOrigin, readBytes, requestOrigin, safe, sendJson } from './_lib/http.js';
 import { GUARD_THRESHOLD, promptGuard } from './_lib/llm.js';
 import { logEvent } from './_lib/log.js';
 import { checkSession, hashIp } from './_lib/security.js';
@@ -34,12 +34,10 @@ export function createTranscribeHandler({ env = process.env, fetch = globalThis.
     if (!isAllowedOrigin(requestOrigin(req))) return fail(403, 'forbidden');
     const type = baseType(getHeader(req, 'content-type'));
     if (!AUDIO_TYPES.includes(type)) return fail(415, 'unsupported_media_type');
-    let bytes;
-    try {
-      bytes = await readBytes(req, VOICE_LIMITS.bytes);
-    } catch (error) {
-      return error instanceof HttpError ? fail(error.status, error.code) : fail(400, 'bad_request');
-    }
+    // P11: a declared size over the limit is refused before anything else; the body itself is read only after
+    // the chat session has been checked, so an unauthenticated client cannot make the function buffer 2 MB.
+    const declared = Number(getHeader(req, 'content-length'));
+    if (Number.isFinite(declared) && declared > VOICE_LIMITS.bytes) return fail(413, 'payload_too_large');
 
     const config = readEnv(STT_ENV, env);
     if (!config.ok) {
@@ -56,6 +54,13 @@ export function createTranscribeHandler({ env = process.env, fetch = globalThis.
     const ipHash = hashIp(ip, cfg.IP_HASH_SALT);
     const sess = checkSession(String(getHeader(req, 'x-chat-session') ?? '').slice(0, 300), now(), ipHash, cfg.IP_HASH_SALT);
     if (!sess.ok) return fail(401, 'session', { reason: sess.reason });
+
+    let bytes;
+    try {
+      bytes = await readBytes(req, VOICE_LIMITS.bytes);
+    } catch (error) {
+      return error instanceof HttpError ? fail(error.status, error.code) : fail(400, 'bad_request');
+    }
 
     const db = createSupabase({ url: cfg.SUPABASE_URL, key: cfg.SUPABASE_SERVICE_ROLE_KEY, fetch });
     let gate;
@@ -109,4 +114,4 @@ export function createTranscribeHandler({ env = process.env, fetch = globalThis.
   };
 }
 
-export default createTranscribeHandler();
+export default safe(createTranscribeHandler(), 'transcribe');

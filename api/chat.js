@@ -8,7 +8,7 @@
 import { chatRequestSchema, CHAT_LIMITS, looksUrdu } from '../src/shared/chat-schema.js';
 import { fieldErrors } from '../src/shared/contact-schema.js';
 import { readEnv } from './_lib/env.js';
-import { HttpError, clientIp, getHeader, isAllowedOrigin, readBody, requestOrigin, sendJson } from './_lib/http.js';
+import { clientIp, getHeader, HttpError, isAllowedOrigin, readBody, requestOrigin, safe, sendJson } from './_lib/http.js';
 import { logEvent } from './_lib/log.js';
 import { checkSession, hashIp } from './_lib/security.js';
 import { createSupabase } from './_lib/supabase.js';
@@ -185,4 +185,4 @@ export function createChatHandler({ env = process.env, fetch = globalThis.fetch,
   };
 }
 
-export default createChatHandler();
+export default safe(createChatHandler(), 'chat');

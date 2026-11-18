@@ -267,14 +267,14 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 | 5.3 | Input validation on frontend and backend | Same zod schema both sides; inline errors | P4 | Error screenshots + tests | 🟡 built, live evidence pending |
 | 5.4 | Send messages to the designated email | Gmail SMTP → `xmuhammadumerfarooq2003@gmail.com`, reply-to = visitor | P4 | Inbox screenshot | 🟡 built, live evidence pending |
 | 5.5 | Display success and error messages | Loading / success / validation / rate-limit / server-error states, `aria-live` | P4 | Screenshots of each | 🟡 built, live evidence pending |
-| 5.6 | Protect credentials and API keys with env vars | `.env` local, Vercel env in prod, `.env.example` names only, gitleaks | P4, P11 | gitleaks output | 🟡 built, live evidence pending |
+| 5.6 | Protect credentials and API keys with env vars | `.env` local, Vercel env in prod, `.env.example` names only, gitleaks | P4, P11 | gitleaks output | 🟡 own scanner over tree + full history: 0 findings (gitleaks itself not run, L209) |
 | 5.7 | Basic spam protection and secure input handling | Turnstile + honeypot + time-trap + rate limit + header-injection guard + plain-text body | P4 | Rejected-bot screenshot / test output | 🟡 built, live evidence pending |
 | 5.8 | Working form + evidence of successful delivery | Inbox screenshot + stored row in Supabase | P4 | Screenshots | 🟡 built, live evidence pending |
 
 ### Module 6 — Deployment and Documentation
 | # | Brief line | How we meet it | Phase | Evidence | Status |
 |---|---|---|---|---|---|
-| 6.1 | Deploy the completed portfolio online | Vercel (site + API) + Supabase; placeholder live in P0, production in P11 | P0, P11 | Live URL | ⬜ |
+| 6.1 | Deploy the completed portfolio online | Vercel (site + API) + Supabase; placeholder live in P0, production in P11 | P0, P11 | Live URL | ✅ https://umerfarooq-ai.vercel.app (live; P11 checks: live-check 77/78, Observatory A+ 130, Lighthouse 100 / 97) |
 | 6.2 | Documentation | README, report PDF, `rag-pipeline.md`, `security.md`, `api.md` | P12 | Files | ⬜ |
 
 ### Extra credit (all 10)
@@ -302,7 +302,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 | S6 | Project report (PDF) | P12 | ⬜ |
 | S7 | README with setup and installation | P12 | ⬜ |
 | S8 | Screenshots of the major modules | every phase → P12 | ⬜ |
-| S9 | Live deployment URL | P11 | ⬜ |
+| S9 | Live deployment URL | P11 | ✅ umerfarooq-ai.vercel.app |
 | S10 | GitHub repo link or complete source archive | P12 | ⬜ |
 
 ---
@@ -498,6 +498,20 @@ Visual layer only (structure, content pipeline, filters/URL state, modal, lightb
 
 **Exit:** desktop Perf ≥ 85, A11y ≥ 95, BP ≥ 95, SEO ≥ 95; mobile Perf ≥ 70; zero secrets in history; `test:security` 100% pass; ZAP baseline 0 high/medium alerts; Observatory A or better; Supabase Advisor 0 errors; demo script runs end to end.
 
+#### P11 result (19-Nov-2026): 🟡 audits and tooling done; five items need Umer
+| Exit criterion | Result |
+|---|---|
+| Desktop Perf ≥ 85, A11y ≥ 95, BP ≥ 95, SEO ≥ 95 | **Met**: live 100 / 100 / 100 / 100 (`docs/reports/lighthouse.md`) |
+| Mobile Perf ≥ 70 | **Met**: 97 (A11y, BP, SEO 100) |
+| Zero secrets in history | **Met** by `scripts/security/scan-secrets.mjs` (299 files, 32 commits, 0 findings); gitleaks itself not run (L209) |
+| `test:security` 100% pass | **Met**: 12 files, 350 tests (`npm run test:security`); full suite 792 |
+| Observatory A or better | **Met**: A+ 130, 12 of 12 (`docs/reports/observatory.md`) |
+| ZAP baseline 0 high / medium | **Not run**: no Docker (L210); command in `docs/reports/zap-baseline.md` |
+| Supabase Advisor 0 errors | **Not read**: needs the dashboard (L211); expected results reasoned in `docs/reports/supabase-advisor.md`; the anon key is blocked everywhere except one helper function that `0004_hardening.sql` fixes |
+| Demo script runs end to end | Written (`docs/VIVA_SECURITY_DEMO.md`); steps 1–4 and 8 were run for the expected outputs, 5–7 need the live site and Umer |
+
+Reports: `docs/reports/{dependencies,licences,live-check,observatory,lighthouse,accessibility,performance-budget,supabase-advisor,zap-baseline}.md`. Tools: `npm run scan:secrets | rls:verify | live:check | licences | test:security`, `node scripts/qa/a11y-check.mjs`, `node scripts/qa/budget.mjs`. Code changes (each fixes a real finding): transcribe reads the body after the session check, crash guard `safe()`, canonical / absolute og / sitemap, three axe fixes, `ignore-scripts=true`, `0004_hardening.sql`.
+
 ### P12 — Documentation & submission · 5% · 6.2, S1–S10
 - README: setup, env table, Supabase migrations, ingest, eval, deploy, MCP setup, admin setup.
 - Report PDF: headings copied word for word from the brief · architecture diagram · RAG pipeline · security model · tests + eval · screenshots · extra-credit section · limitations · licenses/credits.
@@ -529,7 +543,7 @@ Overall  [██░░░░░░░░░░░░░░░░░░]  8%
 | P8 Blender avatar (AI twin) + world art | 14% | ⬜ |
 | P9 AE intro sting + promo video | 8% | 🟡 P9.5 part A done; render pending |
 | P10 Analytics, a11y audit & polish | 4% | ⬜ |
-| P11 Security, QA & production | 4% | ⬜ |
+| P11 Security, QA & production | 4% | 🟡 audits, tooling and reports done; Umer's steps pending (0004 SQL, gitleaks, ZAP, DevTools shots) |
 | P12 Documentation & submission | 5% | ⬜ |
 | **Total** | **100%** | |
 

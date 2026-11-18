@@ -3,7 +3,7 @@
 // (1 hour, bound to the visitor's hashed IP). POST /api/chat requires it, so bots cannot spend the LLM
 // budget. Same-origin only; 503 when not configured. Logs are PII-free.
 import { readEnv } from './_lib/env.js';
-import { clientIp, getHeader, isAllowedOrigin, requestOrigin, sendJson } from './_lib/http.js';
+import { clientIp, getHeader, isAllowedOrigin, requestOrigin, safe, sendJson } from './_lib/http.js';
 import { logEvent } from './_lib/log.js';
 import { hashIp, issueSession, SESSION_MS } from './_lib/security.js';
 import { verifyTurnstile } from './_lib/turnstile.js';
@@ -34,4 +34,4 @@ export function createChatTokenHandler({ env = process.env, fetch = globalThis.f
   };
 }
 
-export default createChatTokenHandler();
+export default safe(createChatTokenHandler(), 'chat_token');

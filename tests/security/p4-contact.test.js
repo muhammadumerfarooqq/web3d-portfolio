@@ -118,7 +118,7 @@ describe('C10 secrets stay on the server', () => {
       expect(c, f).not.toMatch(/import\.meta\.env|VITE_/);
       expect(c, f).not.toMatch(/console\.(?:log|error|warn|info)\(/); // only api/_lib/log.js writes logs
     }
-    expect(read('api/_lib/log.js')).toMatch(/const SAFE = new Set\(\['event', 'status', 'reason', 'ms', 'missing'\]\)/);
+    expect(read('api/_lib/log.js')).toMatch(/const SAFE = new Set\(\['event', 'status', 'reason', 'ms', 'missing', 'bytes', 'seconds', 'lang', 'model'\]\)/);
   });
 });
 

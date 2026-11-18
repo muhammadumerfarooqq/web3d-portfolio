@@ -179,6 +179,7 @@ describe('C6 the built page (P2 exit)', () => {
   it('loads nothing from another origin (HTML resources, CSS url()/@import, JS imports/fetch)', () => {
     // Resource-loading attributes in HTML (plain <a href> links to profiles are fine)
     for (const [tag] of site.indexHtml.matchAll(/<(?:script|link|img|source|video|audio|track|iframe|embed|object)\b[^>]*>/gi)) {
+      if (/^<link rel="canonical" href="https:\/\/umerfarooq-ai\.vercel\.app\/"/.test(tag)) continue; // P11: a canonical link names our own origin; it loads nothing
       expect(tag, tag).not.toMatch(/\s(?:src|href|poster|srcset|data)\s*=\s*["']?(?:https?:)?\/\//i);
     }
     for (const out of site.outputs) {

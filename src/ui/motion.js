@@ -75,6 +75,7 @@ const REVEALS = {
       type: 'lines',
       mask: 'lines',
       linesClass: 'split-line',
+      aria: 'none', // P11: the default adds aria-label to the <p>, which ARIA prohibits; the text stays readable in the DOM
       autoSplit: true,
       onSplit: (self) =>
         hold(el, gsap.from(self.lines, {
@@ -90,6 +91,7 @@ const REVEALS = {
   chars: (el) =>
     SplitText.create(el, {
       type: 'words,chars',
+      aria: 'none',
       autoSplit: true,
       onSplit: (self) =>
         hold(el, gsap.from(self.chars, {
@@ -113,6 +115,7 @@ const REVEALS = {
   'type-on': (el) =>
     SplitText.create(el, {
       type: 'words,chars',
+      aria: 'none',
       onSplit: (self) =>
         hold(el, gsap.from(self.chars, {
           opacity: 0,

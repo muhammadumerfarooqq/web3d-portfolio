@@ -1674,6 +1674,12 @@
     color: var(--strip-num);
   }
 
+  /* P11: the number sits on the ink strip, so it takes the strip's number colour; the page-wide .text-rust is
+     for paper (in the light theme it was dark rust on an ink strip: contrast 1.84). */
+  .stat__value .text-rust {
+    color: inherit;
+  }
+
   .stat__label {
     font-family: var(--font-mono);
     font-size: 0.875rem;

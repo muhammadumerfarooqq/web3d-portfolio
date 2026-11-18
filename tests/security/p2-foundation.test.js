@@ -44,7 +44,9 @@ describe('C6 no inline scripts, handlers or third-party assets in the HTML', () 
     const external = [
       ...html.matchAll(/<script\b[^>]*\ssrc=["']?(https?:)?\/\//gi),
       ...html.matchAll(/<link\b[^>]*\shref=["']?(https?:)?\/\/[^"'\s>]*/gi),
-    ].map((m) => m[0]);
+    ]
+      .map((m) => m[0])
+      .filter((tag) => !/rel=["']canonical["']/.test(tag) || !/href=["']https:\/\/umerfarooq-ai\.vercel\.app\//.test(tag)); // P11: the canonical link names our own origin and loads nothing
     expect(external).toEqual([]);
     expect(html).not.toMatch(/fonts\.(googleapis|gstatic)\.com/i);
   });

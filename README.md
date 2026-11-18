@@ -21,7 +21,7 @@ Overall  [██░░░░░░░░░░░░░░░░░░]  8%
 | P8 Blender avatar | 12% | ⬜ |
 | P9 After Effects video | 9% | ✅ |
 | P10 Analytics, a11y audit & polish | 4% | ⬜ |
-| P11 Security, QA & production | 4% | ⬜ |
+| P11 Security, QA & production | 4% | 🟡 audits and tooling done, Umer's steps pending |
 | P12 Documentation & submission | 6% | ⬜ |
 | **Total** | **100%** | |
 
@@ -70,6 +70,15 @@ Copy `.env.example` to `.env` and fill in the values. **Never commit `.env`**: i
 2. **Vercel env var** (Production and Preview), in addition to the P4 and P5 ones: `STT_MODEL` (use `whisper-large-v3`; `whisper-large-v3-turbo` is faster and a little less accurate for Urdu). It is not a secret; the Groq key is the same `GROQ_API_KEY` as the chat's.
 3. **Headers:** nothing to do: `vercel.json` already allows the microphone for this site only (`Permissions-Policy: microphone=(self)`); the CSP is unchanged.
 4. **Local test:** `npm run dev`, open http://localhost:5173/#chat, press the microphone (Chrome asks once), speak, press it again, check the text, press Send. Listen needs a voice installed on the device (Urdu voices are rare; the chat then says so).
+
+## Production checks (P11)
+
+1. **Supabase SQL editor:** run `supabase/migrations/0004_hardening.sql` once, then `npm run rls:verify` (every line PASS) and open Dashboard → Advisors → Security (`docs/reports/supabase-advisor.md` says what to expect). Turn off "Allow new users to sign up" (Authentication → Sign In / Providers) until the admin login exists.
+2. **Vercel:** Firewall → add a rate-limit rule on `/api/*` (for example 60 requests per minute per IP). Redeploy, then `npm run live:check` (expect 78/78).
+3. **Secrets:** `npm run scan:secrets`; optionally gitleaks (`gitleaks detect --source . --log-opts="--all"`). Rotate any key that was ever shown outside `.env` and Vercel.
+4. **ZAP:** the Docker command in `docs/reports/zap-baseline.md`, saved as `docs/reports/zap-baseline.html`.
+5. **Screenshots:** the P11 rows of `docs/screenshots/SHOTLIST.md`, saved in `docs/screenshots/p11/`.
+6. **Rehearse** `docs/VIVA_SECURITY_DEMO.md` once from top to bottom.
 
 ## Security
 
@@ -188,3 +197,4 @@ Every known limitation and issue since P0, with its impact, a plain-English defe
   - **Tests:** 546 passing (23 files). They cover the cue-sheet schema and generator, the shot schema against the real island ground and building bounds, the recorded determinism, the audio length and sample-exact cue alignment, and no capture code in dist/.
 - **P5: RAG chatbot "Ask my AI" (Module 4).** The Classic Ask my AI section and the Explore Saloon share one chat that answers only from the site's own content: `npm run rag:ingest` turns `/content` into 20 embedded chunks in Supabase (pgvector + full-text, hybrid RRF search); `/api/chat` verifies a Turnstile-backed session, rate-limits, screens prompt injection (heuristics + Llama Prompt Guard 2) and private-data requests, retrieves, applies a relevance gate, answers with Groq (fallback Gemini, then a second Groq model) from a grounded prompt, filters the output and cites its sources, which link to the cited section or project. English, Urdu (RTL) and Roman Urdu. **Evaluation** (`npm run rag:eval`, `docs/reports/rag-eval.md`, 20 questions: 15 answerable incl. 3 Urdu / Roman Urdu, 5 unanswerable): the chosen model `qwen/qwen3.8-27b` answers 15/15 correctly, refuses 5/5, cites only real sources, and has p50 1.5 s / p95 2.1 s (gpt-oss-120b also 15/15 at p95 3.5 s; gpt-oss-20b 14/15). Setup steps are below; the Saloon sheriff thinks, talks and nods.
 - **P6: voice chat (Module E3) + 2 fixes.** A microphone button in the chat records up to 30 seconds (press, press again), `POST /api/transcribe` turns it into text with Groq Whisper (`STT_MODEL`, language hint from the EN / اردو / Roman Urdu selector), the text lands in the input for you to check and **Send** (never auto-sent), and every answer has a **Listen** button that reads it aloud with the browser's own voices (no network, no cost). The server checks the origin, the audio type and signature, 2 MB, 30 s, the chat session, a limit of 10 recordings per 10 minutes plus the shared daily cap, and runs the transcript through the same injection and private-data screens as typed questions; audio is never stored and logs hold no text. In Explore the sheriff thinks while you speak and talks while an answer is read. Fixes: harmless Roman Urdu questions were refused as phone-number requests (now only real requests are; evaluation after the fix 19/19 answerable, 7/7 refusals, p95 1.9 s) and portrait covers now fill their frame (top centre). Setup below.
+- **P11: security, QA and production hardening.** One command per evidence item: `npm run test:security` (12 files, **350 tests**, one summary), `npm run scan:secrets` (tree + whole git history + exact match of the real `.env` secrets: 0 findings), `npm run rls:verify` (the anon key against EVERY table and function), `npm run live:check` (78 black-box checks of the live headers and API without spending quota), `node scripts/qa/a11y-check.mjs` (axe-core: 0 violations in dark, light and reduced motion), `node scripts/qa/budget.mjs` (bundle and first-visit numbers). Results: Observatory **A+ (130)**, Lighthouse live desktop 100 / 100 / 100 / 100 and mobile 97 / 100 / 100 / 100, `npm audit` 0 vulnerabilities, licences all permissive. Fixes: the voice upload is read only after the session check, every function has a crash guard, canonical + absolute Open Graph image + sitemap, three accessibility fixes, `ignore-scripts=true`, and `supabase/migrations/0004_hardening.sql` (the anon key could execute a Supabase helper function). Evidence pack: `docs/security.md`, `docs/reports/`, `docs/VIVA_SECURITY_DEMO.md` (8-step live demo) and `docs/VIVA_CHEATSHEET.md` (every open limitation with its defence). Not run here: gitleaks, ZAP (no Docker), the Supabase Security Advisor (dashboard); the exact steps are in the reports.
