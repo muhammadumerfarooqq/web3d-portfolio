@@ -79,7 +79,7 @@ describe('C10 secrets stay on the server', () => {
 
   it('.env.example lists names only (every value empty), including all P4 names', () => {
     for (const line of read('.env.example').split(/\r?\n/)) if (/^[A-Z][A-Z0-9_]*=/.test(line)) expect(line, line.split('=')[0]).toMatch(/^[A-Z0-9_]+=$/);
-    for (const n of ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'TURNSTILE_SECRET_KEY', 'VITE_TURNSTILE_SITE_KEY', 'SMTP_USER', 'SMTP_APP_PASSWORD', 'CONTACT_TO', 'IP_HASH_SALT']) expect(envNames).toContain(n);
+    for (const n of ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'TURNSTILE_SECRET_KEY', 'VITE_TURNSTILE_SITE_KEY', 'SMTP_USER', 'SMTP_APP_PASSWORD', 'CONTACT_TO', 'IP_HASH_SALT', 'GEMINI_API_KEY', 'GROQ_API_KEY']) expect(envNames).toContain(n);
   });
 
   it('dist/ contains no env NAME except VITE_TURNSTILE_SITE_KEY’s value', () => {
@@ -98,8 +98,14 @@ describe('C10 secrets stay on the server', () => {
       if (m) values[m[1]] = m[2].trim().replace(/^['"]|['"]$/g, '');
     }
     const text = outputs.map((o) => String(o.code ?? o.source ?? '')).join('\n');
+    // The one address the site publishes on purpose (content/profile.md links.email) may equal an env value
+    // (CONTACT_TO): it is public by design, not a leaked secret.
+    const publicEmail = /^\s*email:\s*(\S+)/m.exec(read('content/profile.md'))?.[1]?.toLowerCase();
+    expect(publicEmail).toBe('mumerfarooq.ned@gmail.com');
+    // P5: the AI provider keys, by name (their values are covered by the loop below).
+    for (const key of ['GEMINI_API_KEY', 'GROQ_API_KEY']) expect(text.includes(key), `${key} name in the bundle`).toBe(false);
     for (const [name, value] of Object.entries(values)) {
-      if (name === 'VITE_TURNSTILE_SITE_KEY' || value.length < 12 || /^\d+$/.test(value)) continue;
+      if (name === 'VITE_TURNSTILE_SITE_KEY' || value.length < 12 || /^\d+$/.test(value) || value.toLowerCase() === publicEmail) continue;
       expect(text.includes(value), `the value of ${name} is in the bundle`).toBe(false);
     }
     // the one public value is there (the widget needs it), when configured
@@ -158,6 +164,11 @@ describe('C10 accessible contact form (built HTML)', () => {
       for (const d of described) expect(html).toContain(`id="${d}"`);
       expect(html).toMatch(new RegExp(`<p class="field__error" id="${id}-error" data-error-for="${name}" hidden></p>`));
     }
+  });
+
+  it('P5 fix: the email field asks for the visitor’s own address (placeholder + one described hint)', () => {
+    expect(html).toMatch(/<input[^>]*id="contact-email"[^>]*placeholder="your-email@example\.com"[^>]*aria-describedby="contact-email-hint contact-email-error"/);
+    expect(html).toContain('<p class="field__hint" id="contact-email-hint">Type your own email so I can reply to you.</p>');
   });
 
   it('subject options are exactly the server allow-list', () => {

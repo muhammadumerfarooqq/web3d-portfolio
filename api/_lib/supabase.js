@@ -7,12 +7,23 @@ export function createSupabase({ url, key, fetch }) {
   async function call(path, init) {
     const res = await fetch(`${base}${path}`, { ...init, headers: { ...headers, ...init.headers }, signal: AbortSignal.timeout(8000) });
     if (!res.ok) throw new Error(`supabase ${init.method} ${path.split('?')[0]} → ${res.status}`);
-    return res.status === 204 ? null : res.json();
+    if (res.status === 204) return null;
+    const text = await res.text(); // return=minimal answers 201 with an empty body
+    return text ? JSON.parse(text) : null;
   }
   return {
     /** Call a SQL function: POST /rest/v1/rpc/<name>. */
     rpc: (name, args) => call(`/rpc/${name}`, { method: 'POST', body: JSON.stringify(args) }),
     /** PATCH rows matching `query` (PostgREST filter syntax); returns nothing. */
     patch: (table, query, values) => call(`/${table}?${query}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(values) }),
+    /** P5: GET rows (`query` = PostgREST select/filter string). */
+    select: (table, query) => call(`/${table}?${query}`, { method: 'GET' }),
+    /** P5: INSERT … ON CONFLICT (onConflict) DO UPDATE; returns the rows (representation). */
+    upsert: (table, rows, onConflict) =>
+      call(`/${table}?on_conflict=${encodeURIComponent(onConflict)}`, { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=representation' }, body: JSON.stringify(rows) }),
+    /** P5: INSERT rows; returns nothing. */
+    insert: (table, rows) => call(`/${table}`, { method: 'POST', headers: { Prefer: 'return=minimal' }, body: JSON.stringify(rows) }),
+    /** P5: DELETE rows matching `query`; returns nothing. */
+    remove: (table, query) => call(`/${table}?${query}`, { method: 'DELETE', headers: { Prefer: 'return=minimal' } }),
   };
 }

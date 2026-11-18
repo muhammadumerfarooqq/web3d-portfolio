@@ -29,7 +29,7 @@ export function createPlayer({ avatarData, bvh, depthAt, spawn }) {
   const mixer = new AnimationMixer(avatar);
   const actions = {};
   for (const clip of clips) actions[clip.name] = mixer.clipAction(clip);
-  for (const name of ['Jump', 'Wave', 'Whistle']) {
+  for (const name of ['Jump', 'Wave', 'Whistle', 'Nod']) {
     if (actions[name]) {
       actions[name].setLoop(LoopOnce, 1);
       actions[name].clampWhenFinished = true;
@@ -55,6 +55,28 @@ export function createPlayer({ avatarData, bvh, depthAt, spawn }) {
   const R = PLAYER.radius;
   const H = PLAYER.height;
   const maxSlopeY = Math.cos((PLAYER.maxSlopeDeg * Math.PI) / 180);
+
+  // P5: the Saloon chat drives the sheriff (Think while waiting, Talk with a moving mouth, then a Nod).
+  const mouthMeshes = morphMeshes.filter((m) => m.morphTargetDictionary?.Mouth_Open !== undefined);
+  const setMouth = (v) => {
+    for (const m of mouthMeshes) m.morphTargetInfluences[m.morphTargetDictionary.Mouth_Open] = v;
+  };
+  let talkLeft = 0;
+  let talkT = 0;
+  let nodNext = false;
+  function mouth(dt) {
+    if (talkLeft <= 0) return;
+    talkLeft -= dt;
+    talkT += dt;
+    setMouth(talkLeft > 0 ? 0.12 + 0.48 * Math.abs(Math.sin(talkT * 11) * Math.sin(talkT * 3.7 + 1)) : 0);
+    if (talkLeft <= 0 && nodNext) {
+      nodNext = false;
+      if (actions.Nod) {
+        waving = actions.Nod.getClip().duration;
+        play('Nod', 0.2);
+      }
+    }
+  }
 
   function blink(dt) {
     blinkIn -= dt;
@@ -104,6 +126,31 @@ export function createPlayer({ avatarData, bvh, depthAt, spawn }) {
       play(name, 0.2);
       return waving;
     },
+    /** P5: hold a looping clip over the locomotion state for up to `seconds` (Think while the chat waits). */
+    pose(name, seconds) {
+      if (!actions[name] || !onGround) return;
+      waving = seconds;
+      play(name, 0.3);
+    },
+    /** P5: Talk for `seconds` with the Mouth_Open morph moving, then Nod once; back to Idle after. */
+    talk(seconds) {
+      if (!actions.Talk || !onGround) return 0;
+      waving = seconds + 0.05;
+      talkLeft = seconds;
+      talkT = 0;
+      nodNext = true;
+      play('Talk', 0.25);
+      return seconds;
+    },
+    /** P5: drop any chat pose (the case file closed). */
+    release() {
+      if (talkLeft > 0 || waving > 0) {
+        talkLeft = 0;
+        nodNext = false;
+        setMouth(0);
+        waving = 0;
+      }
+    },
     /** Loop a clip outside the locomotion state machine (Ride on the horse, Walk in the boat cinematic). */
     playClip(name, fade = 0.3) {
       waving = 0;
@@ -113,6 +160,7 @@ export function createPlayer({ avatarData, bvh, depthAt, spawn }) {
     /** Animation only (mixer + blink), for when something else moves the sheriff (horse, boat). */
     animate(dt) {
       blink(dt);
+      mouth(dt);
       mixer.update(dt);
     },
     get facing() {
@@ -239,6 +287,7 @@ export function createPlayer({ avatarData, bvh, depthAt, spawn }) {
       }
 
       blink(dt);
+      mouth(dt);
       mixer.update(dt);
       sync();
       return events;

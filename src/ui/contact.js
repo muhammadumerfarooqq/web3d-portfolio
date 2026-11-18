@@ -9,9 +9,9 @@
 //   the form renders), Turnstile, rate limit. No-JS / no site key / 503 → the email link only.
 // DOM is built with createElement / textContent only.
 import { LIMITS, validateContact } from '../shared/contact-schema.js';
+import { SITE_KEY, loadTurnstile, turnstileTheme } from './turnstile.js';
 
-export const TURNSTILE_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-const SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '';
+export { TURNSTILE_SRC } from './turnstile.js';
 const FIELDS = ['name', 'email', 'subject', 'message'];
 
 export const MESSAGES = {
@@ -42,27 +42,6 @@ export function outcome(status, body = {}, retryAfter = null) {
   if (status === 503) return { kind: 'unavailable' };
   return { kind: 'status', text: MESSAGES.server };
 }
-
-let scriptPromise = null;
-function loadTurnstile() {
-  if (window.turnstile) return Promise.resolve(window.turnstile);
-  scriptPromise ??= new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = TURNSTILE_SRC;
-    s.async = true;
-    s.defer = true;
-    s.addEventListener('load', () => (window.turnstile ? resolve(window.turnstile) : reject(new Error('turnstile'))));
-    s.addEventListener('error', () => {
-      scriptPromise = null;
-      s.remove();
-      reject(new Error('turnstile'));
-    });
-    document.head.append(s);
-  });
-  return scriptPromise;
-}
-
-const themeNow = () => (document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
 
 export function initContact(box) {
   if (!box || box.dataset.contactReady) return;
@@ -136,7 +115,7 @@ export function initContact(box) {
     widgetId = t.render(holder, {
       sitekey: SITE_KEY,
       action: 'contact',
-      theme: themeNow(),
+      theme: turnstileTheme(),
       size: 'flexible',
       'refresh-expired': 'manual',
       callback: (value) => {

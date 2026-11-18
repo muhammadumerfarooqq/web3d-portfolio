@@ -61,6 +61,7 @@ describe('C1 secrets management (.gitignore + .env.example)', () => {
       'GROQ_API_KEY',
       'LLM_MODEL',
       'LLM_FALLBACK_MODEL',
+      'LLM_SECONDARY_MODEL', // P5: the second Groq model in the fallback chain
       'EMBED_MODEL',
       'EMBED_DIM',
       'STT_MODEL',

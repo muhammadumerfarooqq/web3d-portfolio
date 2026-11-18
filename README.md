@@ -15,7 +15,7 @@ Overall  [██░░░░░░░░░░░░░░░░░░]  8%
 | P2 Frontend structure & sections | 11% | ⬜ |
 | P3 3D scene & interactions | 11% | ⬜ |
 | P4 Supabase + contact & email | 10% | 🟡 built, live checks pending |
-| P5 RAG chatbot | 13% | ⬜ |
+| P5 RAG chatbot | 13% | 🟡 built and evaluated, live checks pending |
 | P6 Voice chat | 4% | ⬜ |
 | P7 Admin dashboard & secure login | 8% | ⬜ |
 | P8 Blender avatar | 12% | ⬜ |
@@ -55,6 +55,14 @@ Copy `.env.example` to `.env` and fill in the values. **Never commit `.env`**: i
 3. **Turnstile hostnames** (Cloudflare dashboard): `umerfarooq-ai.vercel.app`, `web3d-portfolio-three.vercel.app` and `localhost` (for `npm run dev`).
 4. **Local test:** `npm run dev`, open http://localhost:5173/#contact, send a telegram, check the inbox and the new row in the Supabase table editor.
 5. **CSP check:** `npm run build`, then `node scripts/csp-check.mjs` (zero violations expected).
+
+## Chat system setup (P5)
+
+1. **Database:** run `supabase/migrations/0002_rag.sql` in the Supabase SQL editor once (idempotent).
+2. **Knowledge base:** `npm run rag:ingest` (reads `.env`; re-run it whenever `/content` changes: only changed chunks are re-embedded), then `npm run rag:verify` (every line should say PASS).
+3. **Vercel env vars** (Production and Preview), in addition to the P4 ones: `GEMINI_API_KEY`, `GROQ_API_KEY`, `EMBED_MODEL`, `EMBED_DIM`, `LLM_MODEL`, `LLM_FALLBACK_MODEL`, `LLM_SECONDARY_MODEL`, `RAG_MIN_SIMILARITY`, `CHAT_DAILY_CAP`.
+4. **Turnstile:** the same widget and hostnames as the contact form (the chat uses the action name `chat`).
+5. **Local test:** `npm run dev`, open http://localhost:5173/#chat and ask a question. **Evaluation:** `npm run rag:eval` (about 5 minutes per model: it waits 12 s between questions for Groq's free-tier token limit).
 
 ## Security
 
@@ -171,3 +179,4 @@ Every known limitation and issue since P0, with its impact, a plain-English defe
 - **P4: contact system (Module 5).** `POST /api/contact` (Vercel Function, bom1) validates with the shared zod schema, verifies Turnstile, applies a honeypot, a 3 s time trap and a 5/hour + 20/day rate limit per salted IP hash, stores the message in Supabase (`contact_messages`, RLS on, service role only) and emails Umer through Gmail SMTP (plain text, reply-to = visitor). One accessible form serves Classic and Explore's Telegraph office; a strict CSP with one third-party origin (Cloudflare Turnstile) now protects every page. Local: `npm run dev` serves `/api/contact` from `.env` (no Vercel CLI). Setup steps: see *Contact system setup (P4)* below.
   - **Content images (P4 step D):** `node scripts/content/images.mjs <source> <public/images/…/name>` writes optimised WebP at 1600 and 800 px (metadata stripped; PDFs rasterised with PyMuPDF). All 8 public projects now have a cover with alt text (TALEEM360 and Tiny Village screenshots; original case-file illustrations for KnoDesk RAG, the KnoDesk voice agent, the sales pipeline, face-recognition attendance and the NED assistant, made by `scripts/content/illustrated-covers.py`; APEX keeps its poster), used by the cards (`srcset`), the modal and the Explore bounty posters; the three certificates show their scans in the vault (lightbox). `content-inbox/` is git-ignored. No CV was published: the supplied file is a screenshot that shows a phone number.
   - **Tests:** 546 passing (23 files). They cover the cue-sheet schema and generator, the shot schema against the real island ground and building bounds, the recorded determinism, the audio length and sample-exact cue alignment, and no capture code in dist/.
+- **P5: RAG chatbot "Ask my AI" (Module 4).** The Classic Ask my AI section and the Explore Saloon share one chat that answers only from the site's own content: `npm run rag:ingest` turns `/content` into 20 embedded chunks in Supabase (pgvector + full-text, hybrid RRF search); `/api/chat` verifies a Turnstile-backed session, rate-limits, screens prompt injection (heuristics + Llama Prompt Guard 2) and private-data requests, retrieves, applies a relevance gate, answers with Groq (fallback Gemini, then a second Groq model) from a grounded prompt, filters the output and cites its sources, which link to the cited section or project. English, Urdu (RTL) and Roman Urdu. **Evaluation** (`npm run rag:eval`, `docs/reports/rag-eval.md`, 20 questions: 15 answerable incl. 3 Urdu / Roman Urdu, 5 unanswerable): the chosen model `qwen/qwen3.8-27b` answers 15/15 correctly, refuses 5/5, cites only real sources, and has p50 1.5 s / p95 2.1 s (gpt-oss-120b also 15/15 at p95 3.5 s; gpt-oss-20b 14/15). Setup steps are below; the Saloon sheriff thinks, talks and nods.

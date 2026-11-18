@@ -1,0 +1,122 @@
+{
+  "/images/achievements/cert-ai-fluency-1600.webp": {
+    "width": 1600,
+    "height": 1236,
+    "aspect": 1.2945,
+    "orientation": "landscape"
+  },
+  "/images/achievements/cert-ai-fluency-800.webp": {
+    "width": 800,
+    "height": 618,
+    "aspect": 1.2945,
+    "orientation": "landscape"
+  },
+  "/images/achievements/cert-google-data-1600.webp": {
+    "width": 1600,
+    "height": 1236,
+    "aspect": 1.2945,
+    "orientation": "landscape"
+  },
+  "/images/achievements/cert-google-data-800.webp": {
+    "width": 800,
+    "height": 618,
+    "aspect": 1.2945,
+    "orientation": "landscape"
+  },
+  "/images/achievements/cert-kaggle-python-1600.webp": {
+    "width": 1600,
+    "height": 986,
+    "aspect": 1.6227,
+    "orientation": "landscape"
+  },
+  "/images/achievements/cert-kaggle-python-800.webp": {
+    "width": 800,
+    "height": 494,
+    "aspect": 1.6194,
+    "orientation": "landscape"
+  },
+  "/images/projects/face-recognition-attendance-1600.webp": {
+    "width": 1600,
+    "height": 1000,
+    "aspect": 1.6,
+    "orientation": "landscape"
+  },
+  "/images/projects/face-recognition-attendance-800.webp": {
+    "width": 800,
+    "height": 500,
+    "aspect": 1.6,
+    "orientation": "landscape"
+  },
+  "/images/projects/knodesk-rag-1600.webp": {
+    "width": 1600,
+    "height": 1000,
+    "aspect": 1.6,
+    "orientation": "landscape"
+  },
+  "/images/projects/knodesk-rag-800.webp": {
+    "width": 800,
+    "height": 500,
+    "aspect": 1.6,
+    "orientation": "landscape"
+  },
+  "/images/projects/knodesk-voice-agent-1600.webp": {
+    "width": 1600,
+    "height": 1000,
+    "aspect": 1.6,
+    "orientation": "landscape"
+  },
+  "/images/projects/knodesk-voice-agent-800.webp": {
+    "width": 800,
+    "height": 500,
+    "aspect": 1.6,
+    "orientation": "landscape"
+  },
+  "/images/projects/ned-rag-assistant-1600.webp": {
+    "width": 1600,
+    "height": 1000,
+    "aspect": 1.6,
+    "orientation": "landscape"
+  },
+  "/images/projects/ned-rag-assistant-800.webp": {
+    "width": 800,
+    "height": 500,
+    "aspect": 1.6,
+    "orientation": "landscape"
+  },
+  "/images/projects/sales-pipeline-1600.webp": {
+    "width": 1600,
+    "height": 1000,
+    "aspect": 1.6,
+    "orientation": "landscape"
+  },
+  "/images/projects/sales-pipeline-800.webp": {
+    "width": 800,
+    "height": 500,
+    "aspect": 1.6,
+    "orientation": "landscape"
+  },
+  "/images/projects/taleem360-1600.webp": {
+    "width": 944,
+    "height": 1600,
+    "aspect": 0.59,
+    "orientation": "portrait"
+  },
+  "/images/projects/taleem360-800.webp": {
+    "width": 472,
+    "height": 800,
+    "aspect": 0.59,
+    "orientation": "portrait"
+  },
+  "/images/projects/tiny-village-1600.webp": {
+    "width": 1517,
+    "height": 802,
+    "aspect": 1.8915,
+    "orientation": "landscape"
+  },
+  "/images/projects/tiny-village-800.webp": {
+    "width": 800,
+    "height": 422,
+    "aspect": 1.8957,
+    "orientation": "landscape"
+  }
+}

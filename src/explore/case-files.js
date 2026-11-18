@@ -11,7 +11,7 @@ import { STAR, el } from './hud.js';
 export const ENGAGE_MS = 3000;
 
 export const CERTIFICATE_TEXT = "Every case on Byte Island is closed, deputy. Umer's ready to ride with your team.";
-export const BARKEEP_TEXT = 'The barkeep will answer in P5.';
+export const BARKEEP_TEXT = 'The barkeep hands you to Umer’s AI twin: it answers from his case files only.';
 /** Must be one of SUBJECTS in src/shared/contact-schema.js (tested); not imported, to keep zod out of this chunk. */
 export const INTERVIEW_SUBJECT = 'Job / interview';
 export const INTERVIEW_DRAFT = 'Hi Umer, I closed every case on Byte Island and would like to schedule an interview with you about a role on our team. When would suit you?';

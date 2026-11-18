@@ -195,7 +195,7 @@ web3d-portfolio/
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | api, ingest | No |
 | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` | admin page | Yes (RLS protects) |
 | `GEMINI_API_KEY`, `GROQ_API_KEY` | api, ingest | No |
-| `LLM_MODEL`, `LLM_FALLBACK_MODEL`, `EMBED_MODEL`, `EMBED_DIM=768`, `STT_MODEL` | api | No |
+| `LLM_MODEL`, `LLM_FALLBACK_MODEL`, `LLM_SECONDARY_MODEL` (P5), `EMBED_MODEL`, `EMBED_DIM=768`, `STT_MODEL` | api | No |
 | `RAG_MIN_SIMILARITY`, `CHAT_DAILY_CAP` | api/chat | No |
 | `SMTP_USER`, `SMTP_APP_PASSWORD`, `CONTACT_TO` | api/contact | No |
 | `TURNSTILE_SECRET_KEY` / `VITE_TURNSTILE_SITE_KEY` | contact / browser | No / Yes |
@@ -248,16 +248,16 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 ### Module 4 — RAG-Based AI Chatbot
 | # | Brief line | How we meet it | Phase | Evidence | Status |
 |---|---|---|---|---|---|
-| 4.1 | AI chatbot answering questions about you using provided information | `/api/chat` grounded on Umer's documents only | P5 | Chat screenshots | ⬜ |
-| 4.2 | Collect info from CV, project descriptions, skills, education, achievements | `content/*.md` (projects, skills, education, achievements) + **CV PDF parsed directly** (phone redacted) | P5 | Ingest log | ⬜ |
-| 4.3 | Process documents and divide into searchable chunks | Heading-aware chunker (~350–500 tokens, ~15% overlap, metadata) | P5 | Chunk table screenshot | ⬜ |
-| 4.4 | Generate embeddings and store in a vector database or index | Gemini embeddings (768d) in Supabase pgvector, HNSW index | P5 | Table + index screenshot | ⬜ |
-| 4.5 | Retrieve relevant information based on the question | Hybrid search (vector + full-text, RRF), top-5 | P5 | Debug view of retrieved chunks | ⬜ |
-| 4.6 | Use an LLM to generate answers grounded in retrieved info | Groq LLM, context-only prompt, cites chunk ids, temperature 0.2 | P5 | Answer with sources | ⬜ |
-| 4.7 | Integrate with a user-friendly chat interface | Floating widget + hero CTA, suggested questions, typing state, mobile layout, keyboard support | P5 | Screenshots | ⬜ |
-| 4.8 | Provide relevant answers about background and projects | 20-question eval: ≥ 90% correct | P5 | Eval output | ⬜ |
-| 4.9 | Avoid inventing personal info when documents lack the answer | Relevance gate (no LLM call below threshold) + prompt rule + 5 unanswerable test questions | P5 | Refusal screenshots + eval | ⬜ |
-| 4.10 | Working chatbot + brief explanation of the RAG pipeline | Live widget + `docs/rag-pipeline.md` + in-chat "How this works" panel | P5, P12 | Doc + screenshot | ⬜ |
+| 4.1 | AI chatbot answering questions about you using provided information | `/api/chat` grounded on Umer's documents only | P5 | Chat screenshots | 🟡 built, live evidence pending |
+| 4.2 | Collect info from CV, project descriptions, skills, education, achievements | `content/*.md` (projects, skills, education, achievements) + **CV PDF parsed directly** (phone redacted) | P5 | Ingest log | 🟡 built, live evidence pending |
+| 4.3 | Process documents and divide into searchable chunks | Heading-aware chunker (~350–500 tokens, ~15% overlap, metadata) | P5 | Chunk table screenshot | 🟡 built, live evidence pending |
+| 4.4 | Generate embeddings and store in a vector database or index | Gemini embeddings (768d) in Supabase pgvector, HNSW index | P5 | Table + index screenshot | 🟡 built, live evidence pending |
+| 4.5 | Retrieve relevant information based on the question | Hybrid search (vector + full-text, RRF), top-5 | P5 | Debug view of retrieved chunks | 🟡 built, live evidence pending |
+| 4.6 | Use an LLM to generate answers grounded in retrieved info | Groq LLM, context-only prompt, cites chunk ids, temperature 0.2 | P5 | Answer with sources | 🟡 built, live evidence pending |
+| 4.7 | Integrate with a user-friendly chat interface | Floating widget + hero CTA, suggested questions, typing state, mobile layout, keyboard support | P5 | Screenshots | 🟡 built, live evidence pending |
+| 4.8 | Provide relevant answers about background and projects | 20-question eval: ≥ 90% correct | P5 | Eval output | 🟡 built, live evidence pending |
+| 4.9 | Avoid inventing personal info when documents lack the answer | Relevance gate (no LLM call below threshold) + prompt rule + 5 unanswerable test questions | P5 | Refusal screenshots + eval | 🟡 built, live evidence pending |
+| 4.10 | Working chatbot + brief explanation of the RAG pipeline | Live widget + `docs/rag-pipeline.md` + in-chat "How this works" panel | P5, P12 | Doc + screenshot | 🟡 built, live evidence pending |
 
 ### Module 5 — Email and Contact System
 | # | Brief line | How we meet it | Phase | Evidence | Status |
@@ -283,12 +283,12 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 | E1 | Interactive 3D objects that respond to mouse movement | Particle parallax, skill nodes react on hover (raycast), avatar head/eyes follow cursor, drag to rotate | P3, P8 | 🟨 (P3.1: drag/touch orbit, zone prompts, Wave on approach; cursor-follow head in P8) |
 | E2 | Dark and light themes | Token-based themes, system default + remembered choice, View Transition on switch, **3D scene lights/fog/background change with the theme** | P2, P3 | ✅ (P3.1: sky, fog, sun/moon, lanterns, windows and grade follow day/night and the theme switch) |
 | E3 | Voice interaction with the chatbot | Push-to-talk → Groq Whisper → chat; answers read aloud with `speechSynthesis`; mute toggle; fallback message where unsupported | P6 | ⬜ |
-| E4 | Multilingual chatbot support | English, Urdu (RTL) and Roman Urdu: answers in the user's language, chat UI strings EN/UR, voice input in Urdu | P5, P6 | ⬜ |
+| E4 | Multilingual chatbot support | English, Urdu (RTL) and Roman Urdu: answers in the user's language, chat UI strings EN/UR, voice input in Urdu | P5, P6 | 🟡 text chat in EN / UR (RTL) / Roman Urdu built; voice in P6 |
 | E5 | Animated 3D avatar expressions or gestures | Blink, Smile, Wave, Think, Nod. Event-driven: wave on load/click, think while the bot answers, nod on answer, smile on contact success | P8 | ⬜ |
 | E6 | Project filtering and search | Category chips + tech-stack filter + live search, URL-shareable state | P2 | ✅ |
 | E7 | Website analytics | Vercel Web Analytics (views, referrers, devices) + first-party events (chat, voice, video, project views, CV downloads, contact) charted in admin; no cookies, respects Do-Not-Track | P10 | ⬜ |
 | E8 | Accessibility enhancements | WCAG 2.2 AA: keyboard, skip link, focus, ARIA for chat/modals, captions (EN/UR) + transcript, accessible 3D alternatives, **accessibility menu** (reduce motion, pause 3D, larger text), `lang`/`dir` for Urdu, axe 0 serious | P2, P10 | 🟨 (base done in P2.4; accessibility menu later) |
-| E9 | Chatbot source citations linking to portfolio content | Source chips under each answer → scroll to and highlight the `#anchor` | P5 | ⬜ |
+| E9 | Chatbot source citations linking to portfolio content | Source chips under each answer → scroll to and highlight the `#anchor` | P5 | 🟡 source chips built, live evidence pending |
 | E10 | Project / task ordering system | **Visitor:** sort by featured / newest / A–Z. **Admin:** drag-and-drop project order (keyboard alternative), saved to Supabase and live instantly. **Task board:** contact messages as tasks (New → In progress → Replied → Archived), drag between columns | P2, P7 | 🟨 (admin ordering in P7) |
 
 ### Required submission materials
@@ -417,6 +417,13 @@ Visual layer only (structure, content pipeline, filters/URL state, modal, lightb
 
 **Exit:** ≥ 90% answerable correct; 5/5 refusals; injection test fails safely; p95 < 4 s.
 
+#### P5 — RAG chatbot · 🟡 built (18-Nov-2026), live evidence pending
+- **Knowledge base:** `supabase/migrations/0002_rag.sql` (documents, chunks with 768-d embeddings + generated tsvector, HNSW + GIN, hybrid `match_chunks` with RRF, `chat_logs`, `chat_hits` + `chat_submit`; RLS forced, service role only). `npm run rag:ingest` builds it from `/content` (15 documents, 20 chunks, PII guard, change-only re-embedding); `npm run rag:verify` checks the embeddings and that the anon key is refused.
+- **API:** `GET /api/chat-token` (Turnstile once → 1-hour HMAC session) and `POST /api/chat` (zod, session, atomic rate limit + daily cap, injection and private-data screens with Prompt Guard 2, retrieval, relevance gate, grounded prompt, Groq → Gemini → Groq fallback, output filter, PII-free logs).
+- **UI:** one lazy component for Classic `#chat` and the Explore Saloon (suggestions, EN / اردو RTL / Roman Urdu, source chips, "How this works", error states, no-JS note); the sheriff thinks, talks (mouth morph) and nods.
+- **Evaluation:** `tests/rag/eval.json` (20 questions) and `npm run rag:eval` → `docs/reports/rag-eval.md`; `npm run rag:similarity` for the gate analysis. **Result (exit targets met):** `qwen/qwen3.8-27b` 15/15 answerable (100%, target ≥ 90%), 5/5 refusals, citations valid, p95 2.1 s (target < 4 s); injection tests fail safely (6 prompts incl. Roman Urdu and Urdu script + Prompt Guard). Models: LLM_MODEL qwen/qwen3.8-27b, LLM_SECONDARY_MODEL openai/gpt-oss-120b, LLM_FALLBACK_MODEL gemini-3.5-flash; RAG_MIN_SIMILARITY 0.55 (similarity alone cannot separate the unanswerable questions; documented).
+- **Not done by Claude:** the live checks (Vercel env vars, a real answer on the deployed site, the 21st-question 429, anon refusal on production) and the CV in the index (no phone-free CV yet).
+
 ### P6 — Voice chat · 4% · E3, E4 (voice)
 - Push-to-talk (MediaRecorder, 30 s cap, visual recording state), `/api/transcribe` (Groq Whisper, size/type checks, rate limit).
 - Read answers aloud (`speechSynthesis`, language-matched voice, mute toggle, stops when chat closes).
@@ -509,7 +516,7 @@ Overall  [██░░░░░░░░░░░░░░░░░░]  8%
 | P2 Classic mode (UI layer + sections) | 9% | ⬜ |
 | P3 Explore mode (world engine + character + effects) | 15% | ⬜ |
 | P4 Supabase + contact & email | 9% | 🟡 contact system built; live checks pending |
-| P5 RAG chatbot | 13% | ⬜ |
+| P5 RAG chatbot | 13% | 🟡 built and evaluated; live checks pending |
 | P6 Voice chat | 4% | ⬜ |
 | P7 Admin dashboard & secure login | 7% | ⬜ |
 | P8 Blender avatar (AI twin) + world art | 14% | ⬜ |

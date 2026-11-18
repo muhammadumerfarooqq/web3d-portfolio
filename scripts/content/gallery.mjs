@@ -62,6 +62,24 @@ export function renderPlayer({ src, poster = null, size = null, title, noAudio =
  * P4: an image with its optimised 800 px sibling (scripts/content/images.mjs writes <name>-1600.webp and
  * <name>-800.webp): src = the 800, srcset offers both. Other images are used as they are.
  */
+let manifestCache = null;
+/** scripts/content/images.json (written by scripts/content/images.mjs), keyed by public URL. */
+function manifest(root) {
+  if (!manifestCache || manifestCache.root !== root) {
+    const file = join(root, 'scripts', 'content', 'images.json');
+    manifestCache = { root, data: existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {} };
+  }
+  return manifestCache.data;
+}
+
+/** 'portrait' (h > w) or 'landscape', from the manifest, else measured. */
+export function orientationOf(image, root) {
+  const known = manifest(root)[image];
+  if (known) return known.orientation;
+  const { width, height } = imageSize(join(root, 'public', image));
+  return height > width ? 'portrait' : 'landscape';
+}
+
 export function responsiveImage(image, root) {
   const size = imageSize(join(root, 'public', image));
   const small = image.replace(/-1600\.webp$/, '-800.webp');
@@ -73,7 +91,11 @@ function cover(project, root) {
   const image = project.images[0];
   if (image && existsSync(join(root, 'public', image))) {
     const img = responsiveImage(image, root);
-    return html`<img class="project-card__img" src="${img.src}"${img.srcset ? html` srcset="${img.srcset}" sizes="(min-width: 64rem) 34vw, (min-width: 40rem) 50vw, 100vw"` : ''} width="${img.size.width}" height="${img.size.height}" alt="${project.image_alt ?? ''}" loading="lazy" decoding="async" />`;
+    const tag = html`<img class="project-card__img" src="${img.src}"${img.srcset ? html` srcset="${img.srcset}" sizes="(min-width: 64rem) 34vw, (min-width: 40rem) 50vw, 100vw"` : ''} width="${img.size.width}" height="${img.size.height}" alt="${project.image_alt ?? ''}" loading="lazy" decoding="async" />`;
+    // P5: a portrait image (a phone screenshot) is shown whole, centred on a parchment backdrop with the
+    // site's paper grain (CSS only; the modal clones this wrapper as the cover's first element).
+    if (orientationOf(image, root) === 'portrait') return html`<span class="cover-fit cover-fit--portrait">${tag}</span>`;
+    return tag;
   }
   return renderCover(project);
 }

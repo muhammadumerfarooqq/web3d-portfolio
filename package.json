@@ -10,7 +10,11 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:security": "vitest run tests/security"
+    "test:security": "vitest run tests/security",
+    "rag:ingest": "node scripts/rag/ingest.mjs",
+    "rag:verify": "node scripts/rag/verify.mjs",
+    "rag:eval": "node scripts/rag/eval.mjs",
+    "rag:similarity": "node scripts/rag/similarity.mjs"
   },
   "allowScripts": {
     "fsevents": false

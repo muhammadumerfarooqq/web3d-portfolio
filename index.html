@@ -243,20 +243,59 @@
             <p class="hud-label" aria-hidden="true" data-reveal="type-on">07 · Question the sheriff</p>
             <h2 id="chat-title" class="section__title" data-reveal="mask-lines">Ask my AI</h2>
           </div>
-          <div class="placeholder-card paper case-frame" data-slot="chat" data-reveal="fade-up">
-            <div class="placeholder-card__icon stamp-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M4 5h16v11H9l-5 4z" /><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" /></svg>
+          <div class="chat paper case-frame" data-slot="chat" data-chat data-reveal="fade-up">
+            <div class="chat__intro">
+              <div class="placeholder-card__icon stamp-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" focusable="false"><path d="M4 5h16v11H9l-5 4z" /><path d="M8.5 10.5h.01M12 10.5h.01M15.5 10.5h.01" /></svg>
+              </div>
+              <p class="hud-label">AI twin · answers from my case files</p>
+              <p class="chat__title">Ask my AI twin about my work</p>
+              <p class="chat__text">It answers only from the documents on this site, cites its sources and replies in English, Urdu or Roman Urdu. If something is not in my case files, it says so.</p>
+              <p class="chat__fallback" data-chat-fallback>The chat needs JavaScript. You can still <a class="text-link" href="#contact">send me a telegram</a> and I will reply by email.</p>
+              <p class="chat__fallback" data-chat-unavailable hidden role="status">The AI twin is not available right now. Please <a class="text-link" href="#contact">send me a telegram</a> instead.</p>
             </div>
-            <div class="placeholder-card__body">
-              <p class="hud-label">AI twin · arrives in P5</p>
-              <p class="placeholder-card__title">Ask my AI twin about my work</p>
-              <p class="placeholder-card__text">It will answer only from my own documents, with links to the sources on this page, in English or Urdu.</p>
-              <p class="sr-only">Sample questions, available in P5:</p>
-              <ul class="chips placeholder-card__questions">
-                <li class="chip chip--disabled">What did you build at Axisero?</li>
-                <li class="chip chip--disabled">Tell me about TALEEM360</li>
-                <li class="chip chip--disabled">Which tech stack do you use?</li>
-              </ul>
+            <div class="chat__panel" data-chat-panel hidden>
+              <div class="chat__toolbar">
+                <div class="chat__langs" role="group" aria-label="Answer language">
+                  <button class="chat__lang" type="button" aria-pressed="true" data-chat-lang="en" lang="en">EN</button>
+                  <button class="chat__lang" type="button" aria-pressed="false" data-chat-lang="ur" lang="ur">اردو</button>
+                  <button class="chat__lang" type="button" aria-pressed="false" data-chat-lang="roman" lang="en">Roman Urdu</button>
+                </div>
+                <details class="chat__how" data-chat-how>
+                  <summary class="chat__how-summary">How this works</summary>
+                  <div class="chat__how-body">
+                    <ol class="chat__how-steps">
+                      <li><strong>Case files.</strong> The text of this site (projects, skills, experience, education, awards) is split into short passages.</li>
+                      <li><strong>Embeddings.</strong> Each passage is turned into numbers that capture its meaning (Google Gemini embeddings) and stored in a vector database.</li>
+                      <li><strong>Hybrid search.</strong> Your question is matched by meaning and by keywords, and the best passages are picked.</li>
+                      <li><strong>Grounded answer.</strong> A language model (Groq) answers only from those passages and cites them; if they do not cover the question, it says so instead of guessing.</li>
+                    </ol>
+                    <p class="chat__how-note">Nothing you type is used to train a model. Questions are logged without your IP address (a salted hash only) to check answer quality. Do not share personal details.</p>
+                  </div>
+                </details>
+              </div>
+              <ol class="chat__log" data-chat-log aria-live="polite" aria-relevant="additions" aria-label="Conversation"></ol>
+              <p class="chat__typing" data-chat-typing hidden aria-hidden="true"><span class="chat__dots"><span></span><span></span><span></span></span> Checking the case files…</p>
+              <p class="chat__status" data-chat-status role="status" aria-live="polite"></p>
+              <div class="chat__suggest">
+                <p class="hud-label" id="chat-suggest-label">Try asking</p>
+                <ul class="chips chat__suggestions" aria-labelledby="chat-suggest-label">
+                  <li><button class="chip chat__suggestion" type="button" data-chat-ask>What did you build at Axisero?</button></li>
+                  <li><button class="chip chat__suggestion" type="button" data-chat-ask>Tell me about TALEEM360</button></li>
+                  <li><button class="chip chat__suggestion" type="button" data-chat-ask>Which AI projects are live?</button></li>
+                  <li><button class="chip chat__suggestion" type="button" data-chat-ask data-chat-ask-lang="roman">Kya aap remote kaam karte hain?</button></li>
+                </ul>
+              </div>
+              <div class="chat__turnstile" data-chat-turnstile></div>
+              <form class="chat__form" data-chat-form action="/api/chat" method="post" novalidate>
+                <label class="field__label" for="chat-input">Your question</label>
+                <div class="chat__compose">
+                  <textarea class="field__input chat__input" id="chat-input" name="message" rows="2" maxlength="500" dir="auto" aria-describedby="chat-input-hint chat-input-error" autocomplete="off"></textarea>
+                  <button class="btn btn--ink chat__send" type="submit" data-chat-send data-cursor><span class="contact__spinner" aria-hidden="true"></span><span data-chat-send-label>Ask</span></button>
+                </div>
+                <p class="field__hint" id="chat-input-hint">Enter sends, Shift + Enter adds a line. Up to 500 characters.</p>
+                <p class="field__error" id="chat-input-error" data-chat-error hidden></p>
+              </form>
             </div>
           </div>
         </div>
@@ -295,8 +334,8 @@
               </div>
               <div class="field">
                 <label class="field__label" for="contact-email">Email</label>
-                <input class="field__input" id="contact-email" name="email" type="email" inputmode="email" autocomplete="email" required maxlength="120" aria-describedby="contact-email-hint contact-email-error" />
-                <p class="field__hint" id="contact-email-hint">I reply to this address.</p>
+                <input class="field__input" id="contact-email" name="email" type="email" inputmode="email" autocomplete="email" required maxlength="120" placeholder="your-email@example.com" aria-describedby="contact-email-hint contact-email-error" />
+                <p class="field__hint" id="contact-email-hint">Type your own email so I can reply to you.</p>
                 <p class="field__error" id="contact-email-error" data-error-for="email" hidden></p>
               </div>
               <div class="field">

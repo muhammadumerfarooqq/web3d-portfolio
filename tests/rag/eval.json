@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "note": "P5 evaluation set: 15 answerable questions (3 in Urdu / Roman Urdu) with the facts the answer must contain (each fact = a list of accepted spellings) and the source anchors it may cite; 5 unanswerable questions that must be refused. Facts come from /content.",
+  "questions": [
+    { "id": "a01", "lang": "en", "q": "What is your current job?", "facts": [["Associate AI Engineer"], ["Axisero"]], "sources": ["experience", "home", "about"] },
+    { "id": "a02", "lang": "en", "q": "Tell me about TALEEM360", "facts": [["3D"], ["Best FYDP", "Best Final Year", "1st", "first"]], "sources": ["project-taleem360", "achievement-best-fydp"] },
+    { "id": "a03", "lang": "en", "q": "How many businesses does the KnoDesk RAG pipeline serve?", "facts": [["10+", "10 +", "more than 10", "over 10"]], "sources": ["project-knodesk-rag", "about", "experience"] },
+    { "id": "a04", "lang": "en", "q": "What pass rate did the AI voice agent reach before deployment?", "facts": [["100%", "100 %", "100 percent"]], "sources": ["project-knodesk-voice-agent"] },
+    { "id": "a05", "lang": "en", "q": "How many people use the Sales Pipeline feature every day?", "facts": [["25+", "25 +", "more than 25", "over 25"]], "sources": ["project-sales-pipeline", "about", "experience"] },
+    { "id": "a06", "lang": "en", "q": "What Recall@5 did the NED regulations assistant achieve?", "facts": [["1.000", "1.0", "100%"]], "sources": ["project-ned-rag-assistant"] },
+    { "id": "a07", "lang": "en", "q": "Which face recognition model does the attendance system use?", "facts": [["ArcFace", "InsightFace"]], "sources": ["project-face-recognition-attendance"] },
+    { "id": "a08", "lang": "en", "q": "Where do you study and what is your CGPA?", "facts": [["NED"], ["3.65"]], "sources": ["education", "about", "home"] },
+    { "id": "a09", "lang": "en", "q": "Which certifications do you have?", "facts": [["AI Fluency"], ["Kaggle", "Python"], ["Google", "Data, Data, Everywhere", "Coursera"]], "sources": ["achievements", "cert-ai-fluency", "cert-kaggle-python", "cert-google-data"] },
+    { "id": "a10", "lang": "en", "q": "What languages do you speak?", "facts": [["English"], ["Urdu"], ["French"]], "sources": ["home", "about"] },
+    { "id": "a11", "lang": "en", "q": "Which vector databases have you worked with?", "facts": [["ChromaDB", "pgvector"]], "sources": ["skills", "project-knodesk-rag", "project-ned-rag-assistant"] },
+    { "id": "a12", "lang": "en", "q": "What was Tiny Village built for?", "facts": [["competition"], ["20"]], "sources": ["project-tiny-village"] },
+    { "id": "u01", "lang": "roman", "q": "Kya aap remote kaam karte hain?", "facts": [["remote"]], "sources": ["home", "about"] },
+    { "id": "u02", "lang": "ur", "q": "آپ کہاں سے تعلیم حاصل کر رہے ہیں؟", "facts": [["NED", "نیڈ", "این ای ڈی", "این-ای-ڈی"]], "sources": ["education", "about", "home"] },
+    { "id": "u03", "lang": "roman", "q": "TALEEM360 ne kaunsa award jeeta?", "facts": [["Best FYDP", "Best Final Year", "FYDP", "1st", "first", "pehli"]], "sources": ["project-taleem360", "achievement-best-fydp", "achievements", "education"] },
+    { "id": "r01", "lang": "en", "q": "What is your favourite movie?", "refuse": true },
+    { "id": "r02", "lang": "en", "q": "What salary are you expecting?", "refuse": true },
+    { "id": "r03", "lang": "en", "q": "Are you married?", "refuse": true },
+    { "id": "r04", "lang": "en", "q": "What did you work on during your internship at Google?", "refuse": true },
+    { "id": "r05", "lang": "en", "q": "What is Umer's home address?", "refuse": true }
+  ]
+}

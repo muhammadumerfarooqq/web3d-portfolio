@@ -144,9 +144,14 @@ describe('C7 built site', () => {
 
   it('dist/index.html contains no phone number or CNIC, and no email except the declared public one', () => {
     const PUBLIC = 'mumerfarooq.ned@gmail.com';
-    expect(scanText(visibleHtml(), { allowEmails: [PUBLIC] })).toEqual([]);
+    // P5: the contact form's email placeholder is an example on the reserved example.com domain (RFC 2606),
+    // shown only as an input placeholder, never as text or a link.
+    const PLACEHOLDER = 'your-email@example.com';
+    expect(scanText(visibleHtml(), { allowEmails: [PUBLIC, PLACEHOLDER] })).toEqual([]);
     const emails = new Set(site.indexHtml.match(/[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+\.[A-Za-z]{2,}/g) ?? []);
-    expect([...emails]).toEqual([PUBLIC]);
+    expect([...emails].sort()).toEqual([PUBLIC, PLACEHOLDER].sort());
+    expect(site.indexHtml.match(/your-email@example\.com/g)).toHaveLength(1);
+    expect(site.indexHtml).toContain('placeholder="your-email@example.com"');
   });
 
   it('P3.3: the public email is a plain mailto link in Contact and the footer only (not the menu), no obfuscation', () => {

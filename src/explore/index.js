@@ -408,6 +408,23 @@ export async function startExplore(options = {}) {
             .catch((error) => console.warn('[explore] posters', error))
         : Promise.resolve(null));
 
+    // P5: the Saloon's chat (the shared Classic module, src/ui/chat.js) reports its state with a window
+    // event; the sheriff thinks while it waits, talks while the answer appears, then nods.
+    // P5: a source chip in the Saloon chat → leave Explore for Classic at the cited section / project.
+    listen(window, 'chatsource', (event) => {
+      const anchor = event.detail?.anchor;
+      if (typeof anchor !== 'string' || !/^[a-z0-9-]{1,80}$/.test(anchor)) return;
+      event.preventDefault();
+      onExit(anchor);
+    });
+    listen(window, 'chatstate', (event) => {
+      if (horse?.riding || cinematic || ceremony || reducedMotion) return;
+      const state = event.detail?.state;
+      if (state === 'thinking') player.pose('Think', 20);
+      else if (state === 'answer') player.talk(Math.min(6, Math.max(1.5, (Number(event.detail?.chars) || 120) / 28)));
+      else player.release();
+    });
+
     function whistle() {
       if (horse?.riding) return;
       player.playOnce('Whistle');
@@ -509,6 +526,7 @@ export async function startExplore(options = {}) {
               if (open) train?.overlayOpened();
               else train?.overlayClosed();
             }
+            if (!open) player.release(); // P5: no chat pose left over
             if (!open && ceremonyPending) runCeremony();
           },
           onEngaged: (zoneId) => {

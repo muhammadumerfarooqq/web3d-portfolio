@@ -89,17 +89,26 @@ await session('classic: opening + sound + video + contact form', {}, async (page
   notes.formVisible = await page.locator('[data-contact-form]').isVisible();
   notes.turnstileFrame = page.frames().some((f) => f.url().startsWith('https://challenges.cloudflare.com/'));
   notes.tokenEndpoint = await page.evaluate(async () => (await fetch('/api/contact-token')).status);
+  // P5: the Ask my AI panel (lazy chat chunk + its Turnstile widget)
+  await page.locator('#chat').scrollIntoViewIfNeeded();
+  await page.waitForTimeout(4000);
+  notes.chatPanelVisible = await page.locator('[data-chat-panel]').isVisible();
+  notes.chatEndpoint = await page.evaluate(async () => (await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"message":"hi there","session":""}' })).status);
 });
 
 for (const backend of process.argv.includes('--classic-only') ? [] : ['webgpu', 'webgl']) {
   await session(`explore: ${backend}`, { storage: { intro: 'seen', mode: 'explore', sound: 'on', 'explore.tutorial': 'done' }, session: { intro: 'seen', 'explore.arrival': 'seen' } }, async (page, notes) => {
-    await page.goto(`${base}/${backend === 'webgl' ? '?backend=webgl' : ''}`, { waitUntil: 'load' });
+    await page.goto(`${base}/?debug=1${backend === 'webgl' ? '&backend=webgl' : ''}`, { waitUntil: 'load' });
     const cont = page.locator('[data-start-continue]');
     await page.waitForTimeout(1500);
     if (await cont.isVisible().catch(() => false)) await cont.click();
     await page.waitForFunction(() => window.__explore?.ready, null, { timeout: 90000 });
     await page.waitForTimeout(4000);
     notes.backend = await page.evaluate(() => window.__explore.backend);
+    // P5: the Saloon case file shows the same chat
+    await page.evaluate(() => window.__exploreDebug?.open('chat'));
+    await page.waitForTimeout(4000);
+    notes.saloonChatVisible = await page.locator('dialog[open] [data-chat-panel]').isVisible().catch(() => false);
   });
 }
 
