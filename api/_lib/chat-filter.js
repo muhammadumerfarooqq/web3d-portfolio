@@ -17,8 +17,29 @@ const INJECTION = [
   /\b(?:system|sistem)\s+prompt\b.{0,30}\b(?:dikhao|batao|likho)\b/i,
   /ہدایات.{0,30}(?:نظر\s?انداز|بھول|چھوڑ)|سسٹم\s?پرامپٹ|پرامپٹ.{0,20}(?:دکھا|بتا)/,
 ];
-// Requests for private contact data (not "what number/position did you get in class", which is fine).
-const PRIVATE = [/\b(?:phone|mobile|cell\s?phone|whats\s?app|telephone|contact number|home address|cnic|fone?)\b/i, /(?:فون|موبائل|واٹس\s?ایپ|گھر کا پتہ|شناختی کارڈ)/];
+// Requests for private data (phone, address, CNIC, passwords). A bare word such as "mobile" or "phone" is NOT
+// enough ("a mobile app", "phone calls" are harmless, and so is "what number did you get in class?"): the
+// screen needs a private-data phrase, or a private noun asked for (possessive or request word next to it).
+const NOUN = String.raw`(?:phone|mobile|cell(?:\s?phone)?|whats\s?app|telephone|fone?|contact|number|home|house|ghar|address|cnic|passport|password|passcode)`;
+const OWNER = String.raw`(?:your|his|umer['’]s|ur|aap\s?ka|aap\s?ki|aapka|aapki|apna|apni|tumhara|tumhari|uska|uski|umer\s?ka|umer\s?ki|inka|inki|unka|unki)`;
+const ASK = String.raw`(?:give|share|send|tell|text|provide|need|want|dedo|de\s?do|dein|batao|bata\s?do|bataiye|bhejo|bhej\s?do|chahiye|chahie|share\s?karo)`;
+const PRIVATE = [
+  // fixed phrases that only ever mean private data. No leading word boundary on "<phone> number": a speech
+  // transcript can glue words together ("Umarphone number").
+  /(?:phone|mobile|cell(?:\s?phone)?|whats\s?app|telephone|fone?)\s?(?:number|no\.?|num|nmbr|nambar|#)/i,
+  /\b(?:contact\s?(?:number|no\.?)|home\s+address|house\s+address|residential\s+address|cnic|national\s+id|id\s+card|passport\s+number|passwords?|passcode|private\s+(?:data|details|info\w*)|personal\s+(?:phone|address|details))\b/i,
+  // a possessive next to a private noun: "your phone", "umer ka number", "uska address"
+  new RegExp(String.raw`\b${OWNER}\s+(?:\w+\s+)?${NOUN}\b`, 'i'),
+  // a request word next to a private noun: "give me the number", "number batao", "send whatsapp"
+  new RegExp(String.raw`\b${ASK}\b.{0,25}\b(?:phone|mobile|whats\s?app|telephone|fone?|number|address|cnic|password)\b`, 'i'),
+  new RegExp(String.raw`\b(?:phone|mobile|whats\s?app|telephone|fone?|number|address|cnic)\b.{0,15}\b${ASK}\b`, 'i'),
+  // Roman Urdu "number do" (give the number) only at the end of the question: a bare "do" is also English ("Do you ...")
+  /\b(?:phone|mobile|whats\s?app|telephone|fone?|number|address|cnic)\s+do\s*(?:na|ji|please|plz|pls)?\s*[.!?]*\s*$/i,
+  // Urdu script: the phrase itself, or an owner word + noun, or the noun + a request word
+  /(?:فون|موبائل|واٹس\s?ایپ|ٹیلیفون)\s?(?:نمبر|نمبرز)|گھر کا پتہ?|گھر کا ایڈریس|شناختی\s?کارڈ|پاس\s?ورڈ|سی\s?این\s?آئی\s?سی|ذاتی\s?(?:معلومات|تفصیلات|نمبر)/,
+  /(?:آپ|ان|اُن|عمر)\s?(?:کا|کی|کے)\s+(?:فون|موبائل|واٹس\s?ایپ|نمبر|پتہ|ایڈریس)/,
+  /(?:فون|موبائل|واٹس\s?ایپ|نمبر|ایڈریس|پتہ)\s+(?:بتا|بھیج|دیں|دو|دیجئے|دیجیے|شیئر)/,
+];
 
 /** 'injection' | 'private' | null for one piece of visitor text. */
 export function screenInput(text) {

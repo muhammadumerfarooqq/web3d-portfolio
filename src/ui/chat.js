@@ -8,8 +8,12 @@
 //   live region; status messages (typing, errors) in a role=status line.
 // - Explore: the sheriff thinks / talks / nods through a "chatstate" window event, and source chips ask
 //   Explore (cancelable "chatsource" event) to switch to Classic at the cited anchor.
+// - P6 voice: a microphone button records up to 30 s (MediaRecorder), POST /api/transcribe returns text that
+//   is PUT IN THE INPUT for the visitor to check and send (never auto-sent); each answer has a Listen button
+//   (browser speechSynthesis). The microphone is released when the panel leaves the screen or the tab hides.
 import { chatRequestSchema, CHAT_LIMITS, looksUrdu } from '../shared/chat-schema.js';
 import { SITE_KEY, loadTurnstile, turnstileTheme } from './turnstile.js';
+import { createRecorder, createSpeaker, speechLang, speechSupported, transcribeOutcome, VOICE_MESSAGES } from './voice.js';
 
 export const CHAT_MESSAGES = {
   thinking: 'Checking the case files…',
@@ -69,6 +73,11 @@ export function initChat(box) {
   const sendLabel = $('[data-chat-send-label]');
   const error = $('[data-chat-error]');
   const holder = $('[data-chat-turnstile]');
+  const mic = $('[data-chat-mic]');
+  const micTime = $('[data-chat-mic-time]');
+  const review = $('[data-chat-voice-review]');
+  const reviewSend = $('[data-chat-voice-send]');
+  const reviewDiscard = $('[data-chat-voice-discard]');
   const how = $('[data-chat-how]');
   if (!panel || !form || !input || !log) return;
 
@@ -203,7 +212,7 @@ export function initChat(box) {
   }
 
   // ── rendering (DOM nodes only) ──
-  function message(role, text, { sources = [], refused = false } = {}) {
+  function message(role, text, { sources = [], refused = false, askLang = lang } = {}) {
     const li = document.createElement('li');
     li.className = `chat__msg chat__msg--${role}${refused ? ' is-refused' : ''}`;
     const who = document.createElement('p');
@@ -253,6 +262,16 @@ export function initChat(box) {
       });
       li.append(label, ul);
     }
+    if (role === 'assistant' && speaker) {
+      const listen = document.createElement('button');
+      listen.type = 'button';
+      listen.className = 'chip chat__listen';
+      listen.setAttribute('aria-pressed', 'false');
+      listen.setAttribute('aria-label', 'Listen to this answer');
+      listen.textContent = 'Listen';
+      listen.addEventListener('click', () => toggleListen(listen, text, speechLang(text, askLang)));
+      li.append(listen);
+    }
     log.append(li);
     li.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
     return li;
@@ -289,6 +308,9 @@ export function initChat(box) {
       return;
     }
     showError('');
+    recorder.cancel();
+    hideReview();
+    stopListening();
     setSending(true);
     setStatus(CHAT_MESSAGES.thinking);
     emit('thinking');
@@ -329,9 +351,11 @@ export function initChat(box) {
     const o = chatOutcome(res.status, body, res.headers.get('Retry-After'));
     if (o.kind === 'answer') {
       setStatus('');
-      message('assistant', o.answer, { sources: o.sources, refused: o.refused });
-      remember('user', text);
-      remember('assistant', o.answer);
+      message('assistant', o.answer, { sources: o.sources, refused: o.refused, askLang });
+      if (!o.refused) {
+        remember('user', text); // a refusal (injection, private data, not in the files) is not carried into the next question
+        remember('assistant', o.answer);
+      }
       emit('answer', { chars: o.answer.length });
     } else {
       emit('idle');
@@ -339,6 +363,187 @@ export function initChat(box) {
       else if (o.kind === 'field') showError(o.text);
       else setStatus(o.kind === 'session' ? CHAT_MESSAGES.verifyFailed : o.text, 'error');
     }
+  }
+
+  // ── P6 voice: Listen (speechSynthesis) ──
+  const speaker = speechSupported()
+    ? createSpeaker({
+        onState: (e) => {
+          if (e.state === 'speaking') emit('speaking', { chars: e.chars });
+          else {
+            resetListen();
+            emit(e.state === 'ended' ? 'speakend' : 'idle');
+          }
+        },
+      })
+    : null;
+  let listenBtn = null;
+  let listenToken = 0;
+  function resetListen() {
+    if (!listenBtn) return;
+    listenBtn.setAttribute('aria-pressed', 'false');
+    listenBtn.setAttribute('aria-label', 'Listen to this answer');
+    listenBtn.textContent = 'Listen';
+    listenBtn = null;
+  }
+  function stopListening() {
+    listenToken += 1;
+    speaker?.stop();
+    resetListen();
+  }
+  async function toggleListen(btn, text, speakLang) {
+    if (!speaker) return;
+    if (listenBtn === btn) return stopListening(); // pressed again: Stop
+    stopListening();
+    const token = listenToken;
+    listenBtn = btn;
+    btn.setAttribute('aria-pressed', 'true');
+    btn.setAttribute('aria-label', 'Stop listening');
+    btn.textContent = 'Stop';
+    const out = await speaker.speak(text, speakLang);
+    if (token !== listenToken || !out) return;
+    if (out.result === 'novoice') {
+      resetListen();
+      emit('idle');
+      setStatus(VOICE_MESSAGES.noVoice(out.name), 'error');
+    } else if (out.result === 'error') {
+      resetListen();
+      emit('idle');
+      setStatus(VOICE_MESSAGES.speakFailed, 'error');
+    }
+  }
+
+  // ── P6 voice: microphone → /api/transcribe → text in the input (the visitor sends it) ──
+  async function transcribeBlob(blob) {
+    const call = (value) =>
+      fetch('/api/transcribe', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': blob.type, 'X-Chat-Session': value, 'X-Chat-Lang': lang },
+        body: blob,
+      });
+    let value = await getSession();
+    if (!value) return { kind: 'error', key: unavailable ? 'unavailable' : 'verifyFailed' };
+    let res = await call(value);
+    if (res.status === 401) {
+      session = '';
+      value = await getSession();
+      if (!value) return { kind: 'error', key: 'verifyFailed' };
+      res = await call(value);
+    }
+    const body = await res.json().catch(() => ({}));
+    return transcribeOutcome(res.status, body, res.headers.get('Retry-After'));
+  }
+  const clock = (s) => `0:${String(Math.max(0, s)).padStart(2, '0')}`;
+  function hideReview() {
+    if (review) review.hidden = true;
+  }
+  function resetMic() {
+    if (!mic) return;
+    mic.setAttribute('aria-pressed', 'false');
+    mic.setAttribute('aria-label', 'Record your question with the microphone');
+    mic.removeAttribute('aria-busy');
+    mic.disabled = false;
+    micTime.textContent = '';
+  }
+  let wasRecording = false;
+  const recorder = createRecorder({
+    transcribe: transcribeBlob,
+    onState: (e) => {
+      if (!mic) return;
+      switch (e.state) {
+        case 'requesting':
+          mic.setAttribute('aria-busy', 'true');
+          setStatus(VOICE_MESSAGES.requesting);
+          break;
+        case 'recording':
+          mic.removeAttribute('aria-busy');
+          mic.setAttribute('aria-pressed', 'true');
+          mic.setAttribute('aria-label', 'Stop recording');
+          micTime.textContent = clock(e.secondsLeft);
+          if (!wasRecording) {
+            wasRecording = true;
+            setStatus(VOICE_MESSAGES.recording(e.secondsLeft));
+            emit('recording');
+          } else if (e.secondsLeft === 10 || e.secondsLeft === 5) setStatus(VOICE_MESSAGES.almost(e.secondsLeft));
+          break;
+        case 'transcribing':
+          wasRecording = false;
+          mic.setAttribute('aria-pressed', 'false');
+          mic.setAttribute('aria-label', 'Turning your voice into text');
+          mic.setAttribute('aria-busy', 'true');
+          mic.disabled = true;
+          micTime.textContent = '';
+          setStatus(VOICE_MESSAGES.transcribing);
+          emit('transcribing');
+          break;
+        case 'text': {
+          const room = CHAT_LIMITS.message[1];
+          input.value = (input.value.trim() ? `${input.value.trim()} ${e.text}` : e.text).slice(0, room);
+          if (review) review.hidden = false;
+          showError('');
+          setStatus(VOICE_MESSAGES.ready);
+          input.focus();
+          break;
+        }
+        case 'refused':
+          setStatus(e.reply);
+          break;
+        case 'empty':
+          setStatus(VOICE_MESSAGES.empty, 'error');
+          break;
+        case 'rate':
+          setStatus(VOICE_MESSAGES.rateLimited(e.seconds), 'error');
+          break;
+        case 'session':
+          setStatus(VOICE_MESSAGES.verifyFailed, 'error');
+          break;
+        case 'error': {
+          const text = VOICE_MESSAGES[e.key];
+          setStatus(typeof text === 'string' ? text : VOICE_MESSAGES.server, 'error');
+          break;
+        }
+        case 'idle':
+          wasRecording = false;
+          resetMic();
+          emit('idle');
+          break;
+        default:
+      }
+    },
+  });
+  if (mic) {
+    mic.hidden = false; // the click explains what is missing when the browser has no microphone support
+    mic.addEventListener('click', () => {
+      if (recorder.state === 'recording') recorder.stop();
+      else if (recorder.state === 'idle' && !sending) {
+        stopListening();
+        hideReview();
+        recorder.start();
+      }
+    });
+    reviewSend?.addEventListener('click', () => {
+      hideReview();
+      ask(input.value);
+    });
+    reviewDiscard?.addEventListener('click', () => {
+      hideReview();
+      input.value = '';
+      setStatus('');
+      mic.focus();
+    });
+    input.addEventListener('input', hideReview);
+    // The microphone and the speech never outlive the panel: closing the Saloon case file, scrolling the
+    // chat away or hiding the tab cancels both.
+    const away = (why) => {
+      const recording = recorder.state !== 'idle';
+      recorder.cancel();
+      stopListening();
+      if (recording && why) setStatus(why);
+    };
+    if ('IntersectionObserver' in window) new IntersectionObserver((entries) => entries.some((e) => !e.isIntersecting) && away(VOICE_MESSAGES.cancelled)).observe(panel);
+    document.addEventListener('visibilitychange', () => document.hidden && away(VOICE_MESSAGES.cancelled));
+    window.addEventListener('pagehide', () => away(''));
   }
 
   form.addEventListener('submit', (event) => {

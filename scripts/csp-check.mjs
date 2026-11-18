@@ -1,7 +1,7 @@
 // P4: verify the production CSP locally. Serves dist/ with `vite preview` (which sends the vercel.json
 // headers, see scripts/dev-api.mjs) and drives the installed Google Chrome (playwright-core, channel
 // "chrome"; nothing is downloaded) through: Classic with the first-visit opening, sound on, a project
-// video playing, the contact form with Turnstile, then Explore on WebGPU and on WebGL2 (Draco/WASM in a
+// video playing, the contact form with Turnstile, the chat panel with the microphone (P6), then Explore on WebGPU and on WebGL2 (Draco/WASM in a
 // Blob worker, audio). Every `securitypolicyviolation` and CSP console error is collected.
 //   npm run build   then   node scripts/csp-check.mjs
 import { chromium } from 'playwright-core';
@@ -9,11 +9,11 @@ import { preview } from 'vite';
 
 const server = await preview({ preview: { port: 4179, strictPort: true }, logLevel: 'error' });
 const base = 'http://localhost:4179';
-const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--enable-unsafe-webgpu', '--ignore-gpu-blocklist', '--mute-audio', '--autoplay-policy=no-user-gesture-required'] });
+const browser = await chromium.launch({ channel: 'chrome', headless: true, args: ['--enable-unsafe-webgpu', '--ignore-gpu-blocklist', '--mute-audio', '--autoplay-policy=no-user-gesture-required', '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] });
 const results = [];
 
 async function session(name, { storage = {}, session: sess = {} } = {}, run) {
-  const context = await browser.newContext({ viewport: { width: 1366, height: 800 } });
+  const context = await browser.newContext({ viewport: { width: 1366, height: 800 }, permissions: ['microphone'] });
   await context.addInitScript(
     ({ storage, sess }) => {
       window.__csp = [];
@@ -94,6 +94,14 @@ await session('classic: opening + sound + video + contact form', {}, async (page
   await page.waitForTimeout(4000);
   notes.chatPanelVisible = await page.locator('[data-chat-panel]').isVisible();
   notes.chatEndpoint = await page.evaluate(async () => (await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"message":"hi there","session":""}' })).status);
+  // P6: the microphone (fake device) records with a countdown and stops; /api/transcribe refuses without a session
+  const mic = page.locator('[data-chat-mic]');
+  await mic.evaluate((el) => el.click());
+  await page.waitForSelector('[data-chat-mic][aria-pressed="true"]', { timeout: 8000 });
+  notes.micRecording = await page.locator('[data-chat-mic-time]').textContent();
+  await page.waitForTimeout(1500);
+  await mic.evaluate((el) => el.click()); // stop; the upload waits for the anti-spam check, which is not needed for the CSP result
+  notes.transcribeEndpoint = await page.evaluate(async () => (await fetch('/api/transcribe', { method: 'POST', headers: { 'Content-Type': 'audio/webm' }, body: new Blob([new Uint8Array(32)]) })).status);
 });
 
 for (const backend of process.argv.includes('--classic-only') ? [] : ['webgpu', 'webgl']) {

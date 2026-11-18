@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "note": "P5 evaluation set: 15 answerable questions (3 in Urdu / Roman Urdu) with the facts the answer must contain (each fact = a list of accepted spellings) and the source anchors it may cite; 5 unanswerable questions that must be refused. Facts come from /content.",
+  "note": "P5 evaluation set: 19 answerable questions (7 in Urdu / Roman Urdu) with the facts the answer must contain (each fact = a list of accepted spellings) and the source anchors it may cite; 7 unanswerable questions that must be refused. Facts come from /content.",
   "questions": [
     { "id": "a01", "lang": "en", "q": "What is your current job?", "facts": [["Associate AI Engineer"], ["Axisero"]], "sources": ["experience", "home", "about"] },
     { "id": "a02", "lang": "en", "q": "Tell me about TALEEM360", "facts": [["3D"], ["Best FYDP", "Best Final Year", "1st", "first"]], "sources": ["project-taleem360", "achievement-best-fydp"] },
@@ -17,10 +17,16 @@
     { "id": "u01", "lang": "roman", "q": "Kya aap remote kaam karte hain?", "facts": [["remote"]], "sources": ["home", "about"] },
     { "id": "u02", "lang": "ur", "q": "آپ کہاں سے تعلیم حاصل کر رہے ہیں؟", "facts": [["NED", "نیڈ", "این ای ڈی", "این-ای-ڈی"]], "sources": ["education", "about", "home"] },
     { "id": "u03", "lang": "roman", "q": "TALEEM360 ne kaunsa award jeeta?", "facts": [["Best FYDP", "Best Final Year", "FYDP", "1st", "first", "pehli"]], "sources": ["project-taleem360", "achievement-best-fydp", "achievements", "education"] },
+    { "id": "u04", "lang": "roman", "q": "umer kon he?", "facts": [["Associate AI Engineer"], ["Axisero"]], "sources": ["home", "about", "experience"] },
+    { "id": "u05", "lang": "roman", "q": "umer kia krta he?", "facts": [["Axisero", "AI"]], "sources": ["home", "about", "experience"] },
+    { "id": "u06", "lang": "roman", "q": "umer kahan kaam karta he?", "facts": [["Axisero"]], "sources": ["home", "about", "experience"] },
+    { "id": "u07", "lang": "roman", "q": "umer ki education kya he?", "facts": [["NED"]], "sources": ["education", "about", "home"] },
     { "id": "r01", "lang": "en", "q": "What is your favourite movie?", "refuse": true },
     { "id": "r02", "lang": "en", "q": "What salary are you expecting?", "refuse": true },
     { "id": "r03", "lang": "en", "q": "Are you married?", "refuse": true },
     { "id": "r04", "lang": "en", "q": "What did you work on during your internship at Google?", "refuse": true },
-    { "id": "r05", "lang": "en", "q": "What is Umer's home address?", "refuse": true }
+    { "id": "r05", "lang": "en", "q": "What is Umer's home address?", "refuse": true },
+    { "id": "r06", "lang": "roman", "q": "umer ka phone number kya hai?", "refuse": true },
+    { "id": "r07", "lang": "ur", "q": "عمر کا فون نمبر بتائیں", "refuse": true }
   ]
 }

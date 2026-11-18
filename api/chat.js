@@ -18,7 +18,7 @@ import { NOT_FOUND_MARK, REPLIES, systemPrompt, userTurn } from './_lib/chat-pro
 import { geminiChat, groqChat, GUARD_THRESHOLD, promptGuard } from './_lib/llm.js';
 
 export const CHAT_ENV = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'GEMINI_API_KEY', 'GROQ_API_KEY', 'IP_HASH_SALT'];
-export const DEFAULTS = { EMBED_MODEL: 'gemini-embedding-001', EMBED_DIM: 768, LLM_MODEL: 'qwen/qwen3.8-27b', LLM_FALLBACK_MODEL: 'gemini-3.5-flash', LLM_SECONDARY_MODEL: 'openai/gpt-oss-120b', RAG_MIN_SIMILARITY: 0.55, CHAT_DAILY_CAP: 300 };
+export const DEFAULTS = { EMBED_MODEL: 'gemini-embedding-001', EMBED_DIM: 768, LLM_MODEL: 'qwen/qwen3.8-27b', LLM_FALLBACK_MODEL: 'gemini-3.5-flash', LLM_SECONDARY_MODEL: 'openai/gpt-oss-120b', STT_MODEL: 'whisper-large-v3', RAG_MIN_SIMILARITY: 0.55, CHAT_DAILY_CAP: 300 };
 const MATCH_COUNT = 6;
 // What reaches the LLM: the top 5 fused passages, each cut at ~1,200 characters on a sentence boundary
 // (project passages lead with their key facts). Keeps a question near 1.5k tokens: Groq's free tier
@@ -40,7 +40,7 @@ export function chatSettings(env) {
     return Number.isFinite(v) && v >= min && v <= max ? v : DEFAULTS[name];
   };
   const str = (name) => (typeof env[name] === 'string' && /^[\w./:-]{2,80}$/.test(env[name].trim()) ? env[name].trim() : DEFAULTS[name]);
-  return { embedModel: str('EMBED_MODEL'), embedDim: num('EMBED_DIM', 128, 3072), llmModel: str('LLM_MODEL'), fallbackModel: str('LLM_FALLBACK_MODEL'), secondaryModel: str('LLM_SECONDARY_MODEL'), minSimilarity: num('RAG_MIN_SIMILARITY', 0, 1), dailyCap: num('CHAT_DAILY_CAP', 0, 100000) };
+  return { embedModel: str('EMBED_MODEL'), embedDim: num('EMBED_DIM', 128, 3072), llmModel: str('LLM_MODEL'), fallbackModel: str('LLM_FALLBACK_MODEL'), secondaryModel: str('LLM_SECONDARY_MODEL'), sttModel: str('STT_MODEL'), minSimilarity: num('RAG_MIN_SIMILARITY', 0, 1), dailyCap: num('CHAT_DAILY_CAP', 0, 100000) };
 }
 
 /**
@@ -125,8 +125,10 @@ export function createChatHandler({ env = process.env, fetch = globalThis.fetch,
     };
 
     // ── screen: heuristics first (free), then Prompt Guard 2 on the message and every history turn ──
+    // The current message is checked for both; earlier turns only for injection. A request for private data in
+    // an earlier turn was already answered with the fixed reply and must not make later questions refuse.
     const turns = [message, ...history.filter((h) => h.role === 'user').map((h) => h.content)];
-    const heuristic = turns.map(screenInput).find(Boolean) ?? null;
+    const heuristic = turns.some((t) => screenInput(t) === 'injection') ? 'injection' : screenInput(message);
     if (heuristic === 'injection') return reply(REPLIES.injection[lang], [], true, { flagged: true, provider: 'screen' });
     if (heuristic === 'private') return reply(REPLIES.private[lang], [], true, { provider: 'screen' });
     try {

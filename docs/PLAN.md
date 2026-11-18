@@ -282,8 +282,8 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 |---|---|---|---|---|
 | E1 | Interactive 3D objects that respond to mouse movement | Particle parallax, skill nodes react on hover (raycast), avatar head/eyes follow cursor, drag to rotate | P3, P8 | 🟨 (P3.1: drag/touch orbit, zone prompts, Wave on approach; cursor-follow head in P8) |
 | E2 | Dark and light themes | Token-based themes, system default + remembered choice, View Transition on switch, **3D scene lights/fog/background change with the theme** | P2, P3 | ✅ (P3.1: sky, fog, sun/moon, lanterns, windows and grade follow day/night and the theme switch) |
-| E3 | Voice interaction with the chatbot | Push-to-talk → Groq Whisper → chat; answers read aloud with `speechSynthesis`; mute toggle; fallback message where unsupported | P6 | ⬜ |
-| E4 | Multilingual chatbot support | English, Urdu (RTL) and Roman Urdu: answers in the user's language, chat UI strings EN/UR, voice input in Urdu | P5, P6 | 🟡 text chat in EN / UR (RTL) / Roman Urdu built; voice in P6 |
+| E3 | Voice interaction with the chatbot | Push-to-talk → Groq Whisper → chat; answers read aloud with `speechSynthesis`; mute toggle; fallback message where unsupported | P6 | 🟡 built (push-to-talk, Whisper, Listen, sheriff), live evidence pending |
+| E4 | Multilingual chatbot support | English, Urdu (RTL) and Roman Urdu: answers in the user's language, chat UI strings EN/UR, voice input in Urdu | P5, P6 | 🟡 text chat and voice input (language hint en / ur / none for Roman Urdu) built; Urdu speech not tested with a real speaker |
 | E5 | Animated 3D avatar expressions or gestures | Blink, Smile, Wave, Think, Nod. Event-driven: wave on load/click, think while the bot answers, nod on answer, smile on contact success | P8 | ⬜ |
 | E6 | Project filtering and search | Category chips + tech-stack filter + live search, URL-shareable state | P2 | ✅ |
 | E7 | Website analytics | Vercel Web Analytics (views, referrers, devices) + first-party events (chat, voice, video, project views, CV downloads, contact) charted in admin; no cookies, respects Do-Not-Track | P10 | ⬜ |
@@ -421,7 +421,8 @@ Visual layer only (structure, content pipeline, filters/URL state, modal, lightb
 - **Knowledge base:** `supabase/migrations/0002_rag.sql` (documents, chunks with 768-d embeddings + generated tsvector, HNSW + GIN, hybrid `match_chunks` with RRF, `chat_logs`, `chat_hits` + `chat_submit`; RLS forced, service role only). `npm run rag:ingest` builds it from `/content` (15 documents, 20 chunks, PII guard, change-only re-embedding); `npm run rag:verify` checks the embeddings and that the anon key is refused.
 - **API:** `GET /api/chat-token` (Turnstile once → 1-hour HMAC session) and `POST /api/chat` (zod, session, atomic rate limit + daily cap, injection and private-data screens with Prompt Guard 2, retrieval, relevance gate, grounded prompt, Groq → Gemini → Groq fallback, output filter, PII-free logs).
 - **UI:** one lazy component for Classic `#chat` and the Explore Saloon (suggestions, EN / اردو RTL / Roman Urdu, source chips, "How this works", error states, no-JS note); the sheriff thinks, talks (mouth morph) and nods.
-- **Evaluation:** `tests/rag/eval.json` (20 questions) and `npm run rag:eval` → `docs/reports/rag-eval.md`; `npm run rag:similarity` for the gate analysis. **Result (exit targets met):** `qwen/qwen3.8-27b` 15/15 answerable (100%, target ≥ 90%), 5/5 refusals, citations valid, p95 2.1 s (target < 4 s); injection tests fail safely (6 prompts incl. Roman Urdu and Urdu script + Prompt Guard). Models: LLM_MODEL qwen/qwen3.8-27b, LLM_SECONDARY_MODEL openai/gpt-oss-120b, LLM_FALLBACK_MODEL gemini-3.5-flash; RAG_MIN_SIMILARITY 0.55 (similarity alone cannot separate the unanswerable questions; documented).
+- **Evaluation:** `tests/rag/eval.json` (20 questions) and `npm run rag:eval` → `docs/reports/rag-eval.md`; `npm run rag:similarity` for the gate analysis.
+  - P6 update (19-Nov-2026): the set grew to 26 questions (19 answerable incl. 7 Urdu / Roman Urdu, 7 unanswerable incl. a Roman Urdu and an Urdu phone request); `qwen/qwen3.8-27b` 19/19, 7/7, p95 1.9 s. **Result (exit targets met):** `qwen/qwen3.8-27b` 15/15 answerable (100%, target ≥ 90%), 5/5 refusals, citations valid, p95 2.1 s (target < 4 s); injection tests fail safely (6 prompts incl. Roman Urdu and Urdu script + Prompt Guard). Models: LLM_MODEL qwen/qwen3.8-27b, LLM_SECONDARY_MODEL openai/gpt-oss-120b, LLM_FALLBACK_MODEL gemini-3.5-flash; RAG_MIN_SIMILARITY 0.55 (similarity alone cannot separate the unanswerable questions; documented).
 - **Not done by Claude:** the live checks (Vercel env vars, a real answer on the deployed site, the 21st-question 429, anon refusal on production) and the CV in the index (no phone-free CV yet).
 
 ### P6 — Voice chat · 4% · E3, E4 (voice)
@@ -430,6 +431,12 @@ Visual layer only (structure, content pipeline, filters/URL state, modal, lightb
 - Mic-permission denied / unsupported browser → clear message, text chat still works.
 
 **Exit:** English and Urdu voice questions answered on Chrome desktop + Android; denied permission handled.
+
+#### P6 — Voice chat · 🟡 built (19-Nov-2026), live evidence pending
+- **Fixes first:** (1) the private-data screen refused harmless Roman Urdu questions ("umer kon he?"): the word list was too broad (a bare "mobile" or "phone") and the server re-screened every earlier turn, so one refused phone request made the next six answers refuse; now it needs a real request (a private-data phrase, or a possessive / request word next to the noun) and earlier turns are screened for injection only; 35 harmless and 23 attack prompts are regression tests. `npm run rag:eval` after the fix: **19/19 answerable (7 Urdu / Roman Urdu), 7/7 refusals, p95 1.9 s** (`qwen/qwen3.8-27b`). (2) Portrait covers (TALEEM360) now FILL the card, the modal and the bounty poster (`object-fit: cover`, top centre), no letterbox backdrop.
+- **Speech to text:** `POST /api/transcribe` (same-origin, audio/webm | ogg | mp4 | wav, ≤ 2 MB, container signature checked, ≤ 30 s, chat session in `X-Chat-Session`, `stt_submit()` 10 per 10 minutes per IP hash + the shared daily cap, Groq `whisper-large-v3` from `STT_MODEL`, language hint en / ur / none for Roman Urdu, transcript through the same injection + private-data screens, audio never stored, metadata-only logs). Needs `supabase/migrations/0003_voice.sql`.
+- **Client:** microphone button (press / press again, 30 s countdown, MediaRecorder with a feature check), the text goes into the input with Send / Discard (never auto-sent); a **Listen / Stop** button on every answer (`speechSynthesis`, voice matched to en / ur / Roman Urdu); the microphone and the speech stop when the panel leaves the screen or the tab hides; Explore sheriff thinks while recording, talks while the answer is read, then nods.
+- **Not done by Claude:** run `0003_voice.sql`, Android / phone test, a real Urdu or Roman Urdu speaker, a global mute toggle (each answer has Stop instead).
 
 ### P7 — Admin dashboard & secure login · 7% · E10 (admin + tasks), E7 (charts), security
 - `/admin`: Supabase Auth login (Turnstile), email confirmation, signups disabled, TOTP MFA enrollment + challenge, password reset.
@@ -517,7 +524,7 @@ Overall  [██░░░░░░░░░░░░░░░░░░]  8%
 | P3 Explore mode (world engine + character + effects) | 15% | ⬜ |
 | P4 Supabase + contact & email | 9% | 🟡 contact system built; live checks pending |
 | P5 RAG chatbot | 13% | 🟡 built and evaluated; live checks pending |
-| P6 Voice chat | 4% | ⬜ |
+| P6 Voice chat | 4% | 🟡 built and tested; live checks pending |
 | P7 Admin dashboard & secure login | 7% | ⬜ |
 | P8 Blender avatar (AI twin) + world art | 14% | ⬜ |
 | P9 AE intro sting + promo video | 8% | 🟡 P9.5 part A done; render pending |

@@ -1,5 +1,5 @@
 // P4/P5: local API without the Vercel CLI. `npm run dev` (and `vite preview`) route /api/contact,
-// /api/contact-token, /api/chat and /api/chat-token to the SAME handlers Vercel runs, with .env loaded into a private object that is
+// /api/contact-token, /api/chat, /api/chat-token and /api/transcribe (P6) to the SAME handlers Vercel runs, with .env loaded into a private object that is
 // handed to the handlers only (never to process.env, never to the browser: Vite exposes VITE_* only).
 // `vite preview` also sends the vercel.json headers (CSP and all), so the production policy can be
 // verified locally.
@@ -20,16 +20,19 @@ async function routes(root, mode) {
   const { createTokenHandler } = await import('../api/contact-token.js');
   const { createChatHandler } = await import('../api/chat.js');
   const { createChatTokenHandler } = await import('../api/chat-token.js');
+  const { createTranscribeHandler } = await import('../api/transcribe.js');
   const contact = createContactHandler({ env });
   const token = createTokenHandler({ env });
   const chat = createChatHandler({ env });
   const chatToken = createChatTokenHandler({ env });
+  const transcribe = createTranscribeHandler({ env });
   return (req, res, next) => {
     const path = (req.url ?? '').split('?')[0];
     if (path === '/api/contact') return void contact(req, res);
     if (path === '/api/contact-token') return void token(req, res);
     if (path === '/api/chat') return void chat(req, res); // P5
     if (path === '/api/chat-token') return void chatToken(req, res); // P5
+    if (path === '/api/transcribe') return void transcribe(req, res); // P6
     next();
   };
 }

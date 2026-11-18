@@ -76,4 +76,24 @@ export async function readBody(req, limit) {
   return Buffer.concat(chunks).toString('utf8');
 }
 
+/** P6: the raw body as bytes (audio), refusing more than `limit` bytes (413) before and while reading. */
+export async function readBytes(req, limit) {
+  const declared = Number(header(req, 'content-length'));
+  if (Number.isFinite(declared) && declared > limit) throw new HttpError(413, 'payload_too_large');
+  if (typeof req.body === 'string' || Buffer.isBuffer(req.body)) {
+    const buf = Buffer.from(req.body);
+    if (buf.length > limit) throw new HttpError(413, 'payload_too_large');
+    return buf;
+  }
+  if (req.body && typeof req.body === 'object' && !Buffer.isBuffer(req.body)) throw new HttpError(400, 'bad_request'); // a parsed object is not audio
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > limit) throw new HttpError(413, 'payload_too_large');
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
 export { header as getHeader };

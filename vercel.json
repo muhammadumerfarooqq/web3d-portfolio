@@ -3,7 +3,8 @@
   "regions": ["bom1"],
   "functions": {
     "api/chat.js": { "maxDuration": 15 },
-    "api/chat-token.js": { "maxDuration": 10 }
+    "api/chat-token.js": { "maxDuration": 10 },
+    "api/transcribe.js": { "maxDuration": 15 }
   },
   "headers": [
     {

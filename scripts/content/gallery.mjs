@@ -91,11 +91,10 @@ function cover(project, root) {
   const image = project.images[0];
   if (image && existsSync(join(root, 'public', image))) {
     const img = responsiveImage(image, root);
-    const tag = html`<img class="project-card__img" src="${img.src}"${img.srcset ? html` srcset="${img.srcset}" sizes="(min-width: 64rem) 34vw, (min-width: 40rem) 50vw, 100vw"` : ''} width="${img.size.width}" height="${img.size.height}" alt="${project.image_alt ?? ''}" loading="lazy" decoding="async" />`;
-    // P5: a portrait image (a phone screenshot) is shown whole, centred on a parchment backdrop with the
-    // site's paper grain (CSS only; the modal clones this wrapper as the cover's first element).
-    if (orientationOf(image, root) === 'portrait') return html`<span class="cover-fit cover-fit--portrait">${tag}</span>`;
-    return tag;
+    // P6: a portrait image (a phone screenshot) FILLS the card, the modal hero and the poster like every other
+    // cover (object-fit: cover), anchored to its top centre so the header of the screenshot stays visible.
+    const portrait = orientationOf(image, root) === 'portrait';
+    return html`<img class="project-card__img${portrait ? ' project-card__img--portrait' : ''}" src="${img.src}"${img.srcset ? html` srcset="${img.srcset}" sizes="(min-width: 64rem) 34vw, (min-width: 40rem) 50vw, 100vw"` : ''} width="${img.size.width}" height="${img.size.height}" alt="${project.image_alt ?? ''}" loading="lazy" decoding="async" />`;
   }
   return renderCover(project);
 }

@@ -92,21 +92,11 @@ function photo(ctx, img, box) {
   const sw = box.w / scale;
   const sh = box.h / scale;
   ctx.save();
-  if (ih > iw) {
-    // P5: a portrait image (phone screenshot) is shown whole, centred on a blurred sepia copy of itself
-    if ('filter' in ctx) ctx.filter = 'blur(5px) sepia(0.6) saturate(0.7)';
-    ctx.globalAlpha = 0.6;
-    ctx.drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, box.x, box.y, box.w, box.h);
-    ctx.globalAlpha = 1;
-    if ('filter' in ctx) ctx.filter = 'sepia(0.4) contrast(1.05) saturate(0.85)';
-    const s = Math.min(box.w / iw, box.h / ih);
-    const dw = iw * s;
-    const dh = ih * s;
-    ctx.drawImage(img, box.x + (box.w - dw) / 2, box.y + (box.h - dh) / 2, dw, dh);
-  } else {
-    if ('filter' in ctx) ctx.filter = 'sepia(0.4) contrast(1.05) saturate(0.85)';
-    ctx.drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, box.x, box.y, box.w, box.h);
-  }
+  if ('filter' in ctx) ctx.filter = 'sepia(0.4) contrast(1.05) saturate(0.85)';
+  // P6: cover-fit like every other cover; a portrait image (a phone screenshot) is anchored to its top
+  // centre so its header stays in the print, a landscape image to its centre.
+  const sy = ih > iw ? 0 : (ih - sh) / 2;
+  ctx.drawImage(img, (iw - sw) / 2, sy, sw, sh, box.x, box.y, box.w, box.h);
   if ('filter' in ctx) ctx.filter = 'none';
   ctx.strokeStyle = INK;
   ctx.lineWidth = 1.5;

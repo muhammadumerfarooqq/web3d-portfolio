@@ -142,6 +142,10 @@ export function createPlayer({ avatarData, bvh, depthAt, spawn }) {
       play('Talk', 0.25);
       return seconds;
     },
+    /** P6: the spoken answer ended: finish Talk now, then the usual Nod and Idle. */
+    endTalk() {
+      if (talkLeft > 0) talkLeft = Math.min(talkLeft, 0.05);
+    },
     /** P5: drop any chat pose (the case file closed). */
     release() {
       if (talkLeft > 0 || waving > 0) {

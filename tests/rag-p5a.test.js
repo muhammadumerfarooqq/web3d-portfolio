@@ -1,6 +1,6 @@
 // P5 part A: the RAG migration (RLS, functions, indexes), the knowledge-base chunker (sources, anchors,
 // sizes, overlap, PII guard), the Gemini embeddings client (key in a header, normalised vectors) and the
-// portrait-cover fix (manifest + card markup + poster).
+// portrait-cover fix (P6: cover-fit, top centre).
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
@@ -170,30 +170,36 @@ describe('P5 Gemini embeddings client (api/_lib/embed.js)', () => {
   });
 });
 
-describe('P5 fix: portrait covers are shown whole', () => {
+describe('P6 fix: portrait covers fill the frame (cover, top centre)', () => {
   let html;
   beforeAll(async () => {
     ({ indexHtml: html } = await buildSite());
   }, 180_000);
   const card = (slug) => html.slice(html.indexOf(`data-project="${slug}"`), html.indexOf('</li>', html.indexOf(`data-project="${slug}"`)));
 
-  it('images.mjs records each image’s size and orientation (manifest)', () => {
+  it('images.mjs records each image’s size and orientation (manifest); orientation = height > width', () => {
     const m = JSON.parse(read('scripts/content/images.json'));
     expect(m['/images/projects/taleem360-1600.webp']).toMatchObject({ orientation: 'portrait' });
     expect(m['/images/projects/taleem360-1600.webp'].height).toBeGreaterThan(m['/images/projects/taleem360-1600.webp'].width);
     expect(m['/images/projects/tiny-village-1600.webp'].orientation).toBe('landscape');
+    for (const [file, v] of Object.entries(m)) expect(v.orientation, file).toBe(v.height > v.width ? 'portrait' : 'landscape');
   });
 
-  it('a portrait cover gets the contain frame on a parchment backdrop; landscape covers are unchanged', () => {
-    expect(card('taleem360')).toMatch(/<span class="cover-fit cover-fit--portrait"><img class="project-card__img" src="\/images\/projects\/taleem360-800\.webp"/);
-    expect(card('tiny-village')).not.toContain('cover-fit');
+  it('a portrait cover is a plain image with the portrait class (no letterbox wrapper); landscape covers are unchanged', () => {
+    expect(card('taleem360')).toMatch(/<img class="project-card__img project-card__img--portrait" src="\/images\/projects\/taleem360-800\.webp"/);
+    expect(card('taleem360')).not.toContain('cover-fit');
+    expect(card('tiny-village')).toMatch(/<img class="project-card__img" src=/);
+    expect(card('tiny-village')).not.toContain('--portrait');
+    expect(html).not.toContain('cover-fit');
     const css = read('src/styles/main.css');
-    expect(css).toMatch(/\.cover-fit--portrait \.project-card__img,[\s\S]*?object-fit: contain;/);
-    expect(css).toMatch(/\.modal__hero > \.cover-fit/); // the modal hero clones the wrapper
+    expect(css).toMatch(/\.project-card__img--portrait,[\s\S]*?\.modal__hero > img\.project-card__img--portrait \{[\s\S]*?object-fit: cover;\s*object-position: 50% 0;/);
+    expect(css).not.toMatch(/cover-fit/);
   });
 
-  it('the bounty poster contains portrait photos on a blurred copy instead of cropping', () => {
+  it('the bounty poster covers its photo box and anchors a portrait photo to the top (no blurred backdrop)', () => {
     const src = read('src/explore/bounty-posters.js');
-    expect(src).toMatch(/if \(ih > iw\) \{[\s\S]*?blur\(5px\)[\s\S]*?Math\.min\(box\.w \/ iw, box\.h \/ ih\)/);
+    expect(src).toMatch(/const scale = Math\.max\(box\.w \/ iw, box\.h \/ ih\)/);
+    expect(src).toMatch(/const sy = ih > iw \? 0 : \(ih - sh\) \/ 2;/);
+    expect(src).not.toMatch(/blur\(/);
   });
 });

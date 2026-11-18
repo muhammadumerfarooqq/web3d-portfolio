@@ -4576,35 +4576,16 @@
   }
 }
 
-/* P5: portrait covers (phone screenshots) shown whole (object-fit: contain), centred on a parchment
-   backdrop: the poster colour, a faint rule hatching and the site's paper grain tile. Landscape covers
-   are unchanged. */
+/* P6: a portrait cover (a phone screenshot) fills the card and the modal hero like any other cover
+   (object-fit: cover, no letterbox backdrop), anchored to its top centre so the screenshot's header stays
+   visible. Landscape covers keep their centred crop. */
 @layer components {
-  .project-card__cover > .cover-fit,
-  .modal__hero > .cover-fit {
-    position: relative;
-    display: block;
-    inline-size: 100%;
-    block-size: 100%;
-    overflow: hidden;
-    background-color: color-mix(in srgb, var(--surface) 82%, var(--brass));
-    background-image: url('/textures/grain.svg'), repeating-linear-gradient(135deg, transparent 0 14px, color-mix(in srgb, var(--ink) 7%, transparent) 14px 15px);
-    background-size: 240px 240px, auto;
-  }
-
-  .cover-fit--portrait .project-card__img,
-  .project-card__cover > .cover-fit .project-card__img,
-  .modal__hero > .cover-fit .project-card__img {
-    position: relative;
-    display: block;
-    inline-size: 100%;
-    block-size: 100%;
-    padding-block: 6px;
-    object-fit: contain;
-  }
-
-  .project-card:hover .project-card__cover > .cover-fit .project-card__img {
-    transform: scale(1.02);
+  .project-card__img--portrait,
+  .project-card__cover > img.project-card__img--portrait,
+  .modal__hero > img.project-card__img--portrait {
+    object-fit: cover;
+    object-position: 50% 0;
+    transform-origin: 50% 0;
   }
 }
 
@@ -4873,9 +4854,64 @@
 
   .chat__compose {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: end;
     gap: var(--space-2);
+  }
+
+  /* P6 voice: microphone toggle (press to record, press again to stop), countdown, review row, Listen. */
+  .chat__mic {
+    min-inline-size: 48px;
+    padding-inline: var(--space-3);
+    gap: var(--space-1);
+  }
+
+  .chat__mic svg {
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+  }
+
+  .chat__mic[aria-pressed='true'] {
+    color: var(--stamp-ink);
+    background: var(--stamp-bg);
+  }
+
+  .chat__mic:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+
+  .chat__mic-time {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+  }
+
+  .chat__mic-time:empty {
+    display: none;
+  }
+
+  .chat__voice-review {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    padding-block-start: var(--space-2);
+  }
+
+  .chat__voice-note {
+    flex: 1 1 14rem;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+  }
+
+  .chat__listen {
+    justify-self: start;
+    cursor: pointer;
+  }
+
+  .chat__listen[aria-pressed='true'] {
+    color: var(--stamp-ink);
+    background: var(--stamp-bg);
   }
 
   .chat__input {

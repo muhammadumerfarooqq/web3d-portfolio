@@ -4,9 +4,10 @@
 //   node scripts/content/images.mjs <source file> <output base, e.g. public/images/projects/tiny-village>
 // writes <base>-1600.webp and <base>-800.webp. The raw sources stay in content-inbox/ (git-ignored).
 //   node scripts/content/images.mjs --manifest   rebuilds scripts/content/images.json for every WebP
-// P5: each written image's width, height, aspect ratio and orientation are recorded in
-// scripts/content/images.json; portrait images (h > w) are shown whole (object-fit: contain) on a
-// parchment backdrop in the cards, the modal and the Explore bounty posters.
+// P5/P6: each written image's width, height, aspect ratio and orientation are recorded in
+// scripts/content/images.json. Every cover FILLS its frame (object-fit: cover): landscape images are cropped
+// at the centre, portrait images (h > w, e.g. a phone screenshot) at the top centre (object-position
+// 50% 0), in the project cards, the modal hero and the Explore bounty posters. Never distorted, no backdrop.
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

@@ -291,10 +291,19 @@
                 <label class="field__label" for="chat-input">Your question</label>
                 <div class="chat__compose">
                   <textarea class="field__input chat__input" id="chat-input" name="message" rows="2" maxlength="500" dir="auto" aria-describedby="chat-input-hint chat-input-error" autocomplete="off"></textarea>
+                  <button class="btn chat__mic" type="button" data-chat-mic aria-pressed="false" aria-label="Record your question with the microphone" title="Speak your question" hidden>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="3" width="6" height="11" rx="3" /><path d="M5 11a7 7 0 0 0 14 0M12 18v3" /></svg>
+                    <span class="chat__mic-time" data-chat-mic-time aria-hidden="true"></span>
+                  </button>
                   <button class="btn btn--ink chat__send" type="submit" data-chat-send data-cursor><span class="contact__spinner" aria-hidden="true"></span><span data-chat-send-label>Ask</span></button>
                 </div>
-                <p class="field__hint" id="chat-input-hint">Enter sends, Shift + Enter adds a line. Up to 500 characters.</p>
+                <p class="field__hint" id="chat-input-hint">Enter sends, Shift + Enter adds a line. Up to 500 characters. The microphone turns up to 30 seconds of speech into text for you to check first.</p>
                 <p class="field__error" id="chat-input-error" data-chat-error hidden></p>
+                <div class="chat__voice-review" data-chat-voice-review hidden role="group" aria-label="Voice question">
+                  <p class="chat__voice-note">Check the text above. Nothing is sent until you press Send.</p>
+                  <button class="btn btn--ink btn--sm" type="button" data-chat-voice-send>Send</button>
+                  <button class="btn btn--sm" type="button" data-chat-voice-discard>Discard</button>
+                </div>
               </form>
             </div>
           </div>

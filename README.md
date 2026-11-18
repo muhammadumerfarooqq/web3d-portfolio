@@ -16,7 +16,7 @@ Overall  [██░░░░░░░░░░░░░░░░░░]  8%
 | P3 3D scene & interactions | 11% | ⬜ |
 | P4 Supabase + contact & email | 10% | 🟡 built, live checks pending |
 | P5 RAG chatbot | 13% | 🟡 built and evaluated, live checks pending |
-| P6 Voice chat | 4% | ⬜ |
+| P6 Voice chat | 4% | 🟡 built and tested, live checks pending |
 | P7 Admin dashboard & secure login | 8% | ⬜ |
 | P8 Blender avatar | 12% | ⬜ |
 | P9 After Effects video | 9% | ✅ |
@@ -63,6 +63,13 @@ Copy `.env.example` to `.env` and fill in the values. **Never commit `.env`**: i
 3. **Vercel env vars** (Production and Preview), in addition to the P4 ones: `GEMINI_API_KEY`, `GROQ_API_KEY`, `EMBED_MODEL`, `EMBED_DIM`, `LLM_MODEL`, `LLM_FALLBACK_MODEL`, `LLM_SECONDARY_MODEL`, `RAG_MIN_SIMILARITY`, `CHAT_DAILY_CAP`.
 4. **Turnstile:** the same widget and hostnames as the contact form (the chat uses the action name `chat`).
 5. **Local test:** `npm run dev`, open http://localhost:5173/#chat and ask a question. **Evaluation:** `npm run rag:eval` (about 5 minutes per model: it waits 12 s between questions for Groq's free-tier token limit).
+
+## Voice setup (P6)
+
+1. **Database:** run `supabase/migrations/0003_voice.sql` in the Supabase SQL editor once, after `0002_rag.sql` (idempotent). Until you do, the microphone answers "Voice input hit a problem on my side" and typing keeps working.
+2. **Vercel env var** (Production and Preview), in addition to the P4 and P5 ones: `STT_MODEL` (use `whisper-large-v3`; `whisper-large-v3-turbo` is faster and a little less accurate for Urdu). It is not a secret; the Groq key is the same `GROQ_API_KEY` as the chat's.
+3. **Headers:** nothing to do: `vercel.json` already allows the microphone for this site only (`Permissions-Policy: microphone=(self)`); the CSP is unchanged.
+4. **Local test:** `npm run dev`, open http://localhost:5173/#chat, press the microphone (Chrome asks once), speak, press it again, check the text, press Send. Listen needs a voice installed on the device (Urdu voices are rare; the chat then says so).
 
 ## Security
 
@@ -180,3 +187,4 @@ Every known limitation and issue since P0, with its impact, a plain-English defe
   - **Content images (P4 step D):** `node scripts/content/images.mjs <source> <public/images/…/name>` writes optimised WebP at 1600 and 800 px (metadata stripped; PDFs rasterised with PyMuPDF). All 8 public projects now have a cover with alt text (TALEEM360 and Tiny Village screenshots; original case-file illustrations for KnoDesk RAG, the KnoDesk voice agent, the sales pipeline, face-recognition attendance and the NED assistant, made by `scripts/content/illustrated-covers.py`; APEX keeps its poster), used by the cards (`srcset`), the modal and the Explore bounty posters; the three certificates show their scans in the vault (lightbox). `content-inbox/` is git-ignored. No CV was published: the supplied file is a screenshot that shows a phone number.
   - **Tests:** 546 passing (23 files). They cover the cue-sheet schema and generator, the shot schema against the real island ground and building bounds, the recorded determinism, the audio length and sample-exact cue alignment, and no capture code in dist/.
 - **P5: RAG chatbot "Ask my AI" (Module 4).** The Classic Ask my AI section and the Explore Saloon share one chat that answers only from the site's own content: `npm run rag:ingest` turns `/content` into 20 embedded chunks in Supabase (pgvector + full-text, hybrid RRF search); `/api/chat` verifies a Turnstile-backed session, rate-limits, screens prompt injection (heuristics + Llama Prompt Guard 2) and private-data requests, retrieves, applies a relevance gate, answers with Groq (fallback Gemini, then a second Groq model) from a grounded prompt, filters the output and cites its sources, which link to the cited section or project. English, Urdu (RTL) and Roman Urdu. **Evaluation** (`npm run rag:eval`, `docs/reports/rag-eval.md`, 20 questions: 15 answerable incl. 3 Urdu / Roman Urdu, 5 unanswerable): the chosen model `qwen/qwen3.8-27b` answers 15/15 correctly, refuses 5/5, cites only real sources, and has p50 1.5 s / p95 2.1 s (gpt-oss-120b also 15/15 at p95 3.5 s; gpt-oss-20b 14/15). Setup steps are below; the Saloon sheriff thinks, talks and nods.
+- **P6: voice chat (Module E3) + 2 fixes.** A microphone button in the chat records up to 30 seconds (press, press again), `POST /api/transcribe` turns it into text with Groq Whisper (`STT_MODEL`, language hint from the EN / اردو / Roman Urdu selector), the text lands in the input for you to check and **Send** (never auto-sent), and every answer has a **Listen** button that reads it aloud with the browser's own voices (no network, no cost). The server checks the origin, the audio type and signature, 2 MB, 30 s, the chat session, a limit of 10 recordings per 10 minutes plus the shared daily cap, and runs the transcript through the same injection and private-data screens as typed questions; audio is never stored and logs hold no text. In Explore the sheriff thinks while you speak and talks while an answer is read. Fixes: harmless Roman Urdu questions were refused as phone-number requests (now only real requests are; evaluation after the fix 19/19 answerable, 7/7 refusals, p95 1.9 s) and portrait covers now fill their frame (top centre). Setup below.

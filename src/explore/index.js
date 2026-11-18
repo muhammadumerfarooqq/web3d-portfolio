@@ -420,8 +420,13 @@ export async function startExplore(options = {}) {
     listen(window, 'chatstate', (event) => {
       if (horse?.riding || cinematic || ceremony || reducedMotion) return;
       const state = event.detail?.state;
+      // P6 voice: Think while the microphone listens / the audio is transcribed, Talk while an answer is read
+      // aloud (until the speech ends), then Nod and Idle.
       if (state === 'thinking') player.pose('Think', 20);
+      else if (state === 'recording' || state === 'transcribing') player.pose('Think', 40);
       else if (state === 'answer') player.talk(Math.min(6, Math.max(1.5, (Number(event.detail?.chars) || 120) / 28)));
+      else if (state === 'speaking') player.talk(90);
+      else if (state === 'speakend') player.endTalk();
       else player.release();
     });
 
