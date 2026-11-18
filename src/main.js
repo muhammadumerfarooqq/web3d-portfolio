@@ -12,6 +12,7 @@ import { initStart } from './ui/start.js';
 import { initTheme } from './ui/theme.js';
 import { initTimeline } from './ui/timeline.js';
 import { initPlayer } from './ui/video.js';
+import { initContactLoader } from './ui/contact-loader.js';
 
 const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const root = document.documentElement;
@@ -46,6 +47,7 @@ const DEFERRED = [
   // Players in the #video section; project players are enhanced when their modal opens.
   ['video', () => document.querySelectorAll('#video [data-player]').forEach(initPlayer)],
   ['cursor', initCursor],
+  ['contact', initContactLoader], // P4: the form chunk loads when the Telegraph section nears the viewport
 ];
 
 for (const el of document.querySelectorAll('[data-year]')) el.textContent = String(new Date().getFullYear());

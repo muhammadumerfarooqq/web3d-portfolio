@@ -15,7 +15,8 @@ links:
   live: https://taleem360.vercel.app
   repo: ""
   video: ""
-images: []
+images: [/images/projects/taleem360-1600.webp]
+image_alt: "TALEEM360 on a phone: the Class 9 Physics electricity generator as an interactive 3D model with the coil selected, an English/Urdu switch, and Ask Chirag and Take quiz buttons"
 highlights:
   - Best FYDP award, TechFest '26 — 1st of 70+ teams
   - Scoped to 500+ diagrams across Classes 6–10 and 4 STEM subjects

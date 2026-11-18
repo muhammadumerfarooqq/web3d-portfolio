@@ -2,6 +2,7 @@
 // escaped by escapeHtml() (through the html`` template); markdown goes through the safe markdown-it.
 import { ContentError } from './load.mjs';
 import { renderAchievements, renderIntroStage, renderProjects, renderVideoSection } from './gallery.mjs';
+import { SUBJECTS } from '../../src/shared/contact-schema.js';
 import {
   ICONS,
   SOCIAL,
@@ -319,6 +320,8 @@ export function renderSections(content, { photoSize, cvHref, root }) {
     'social-menu': renderSocial(content),
     'social-contact': renderSocial(content, { email: true }),
     'social-footer': renderSocial(content, { email: true }),
+    // P4: the contact form's subject list comes from the same allow-list the server validates against.
+    'contact-subjects': html`${SUBJECTS.map((subject) => html`<option value="${subject}">${subject}</option>`)}`,
   };
 }
 

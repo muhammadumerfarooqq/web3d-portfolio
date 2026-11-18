@@ -87,3 +87,15 @@ Every step adds its rows here. Save each screenshot under `docs/screenshots/<mod
 | P9-4 | Promo / Determinism | `verify F2: 24/24 frames identical` in the terminal next to `docs/promo/determinism.json` | `node scripts/capture/capture.mjs --verify F2 --frames 24` | ⬜ |
 | P9-5 | Promo / Audio loudness | `docs/promo/audio-report.json` showing the mix at about −14 LUFS and ≤ −1 dBTP, plus a waveform of `mix.wav` | `node scripts/promo/render-audio.mjs`; open the WAV in any audio editor | ⬜ |
 | P9-6 | Promo / Cue sheet | `docs/promo/cues.json` open on the shots and the SFX cues, and the passing test | `npx vitest run tests/promo-p93.test.js` | ⬜ |
+| P4-1 | Contact / Form (Classic) | The Telegraph section with the form, Turnstile widget and the email link (day and night theme) | Scroll to #contact on the live site | ⬜ |
+| P4-2 | Contact / Validation errors | Submit empty: the focused error summary and the inline errors under each field | Press Send telegram with empty fields | ⬜ |
+| P4-3 | Contact / Success | "Telegram sent. Umer will reply to your email." after a real send | Send a real telegram on the live site | ⬜ |
+| P4-4 | Contact / Inbox | The email in Gmail: "[Portfolio] <subject> from <name>", plain text, Reply-To = visitor | Gmail inbox of CONTACT_TO | ⬜ |
+| P4-5 | Contact / Stored row | The row in contact_messages (status new, ip_hash, no raw IP) in the Supabase table editor | Supabase → Table editor → contact_messages | ⬜ |
+| P4-6 | Contact / Rate limit | The 6th telegram within an hour: the 429 message with the wait time | Send 6 valid telegrams from one connection | ⬜ |
+| P4-7 | Contact / Explore Telegraph | The same form inside the Telegraph case file, pre-filled by Schedule an interview | Explore → close all cases → certificate → Schedule an interview | ⬜ |
+| P4-8 | Security / CSP | DevTools → Network → response headers with the CSP and COOP, and `node scripts/csp-check.mjs` printing "zero CSP violations" | Live site + terminal | ⬜ |
+| P4-9 | Security / Anon key blocked | A REST call with the anon key to contact_messages returning an empty list or a permission error | curl with the anon key (see docs/security.md) | ⬜ |
+| P4-10 | Content / Project covers | The projects gallery with the new covers (screenshots + illustrations) and a modal showing one | Scroll to #projects; open TALEEM360 | ⬜ |
+| P4-11 | Content / Certificates | The credentials row with the three certificate scans, one open in the lightbox | Scroll to #achievements; click a certificate | ⬜ |
+| P4-12 | Explore / Bounty posters with photos | The bounty board at night with photo strips on the posters | Explore → walk to the Bounty Board | ⬜ |

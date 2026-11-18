@@ -15,7 +15,8 @@ links:
   live: ""
   repo: ""
   video: ""
-images: []
+images: [/images/projects/sales-pipeline-1600.webp]
+image_alt: "Illustration: a smiling gold funnel turns lead cards into a rising bar chart, beside a linked chain with a check mark"
 highlights:
   - Used daily by 25+ Axisero employees
   - CEO-approved; deployed with zero merge conflicts

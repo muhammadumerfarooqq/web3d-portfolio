@@ -15,7 +15,8 @@ links:
   live: ""
   repo: ""
   video: ""
-images: []
+images: [/images/projects/knodesk-voice-agent-1600.webp]
+image_alt: "Illustration: a smiling character in a call-centre headset between golden sound waves, with a speech bubble showing a voice waveform"
 highlights:
   - Deployed after a 100% pass rate across real-world call scenarios
   - Extends KnoDesk to voice for the same 10+ businesses

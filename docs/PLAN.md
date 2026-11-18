@@ -217,7 +217,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 | 1.5 | Skills and technologies section | Categorized HTML skills list + 3D constellation with hover tooltips | P2, P3 | Screenshot | 🟨 (3D in P3) |
 | 1.6 | Projects and achievements gallery | Projects grid (images, stack chips, links, detail modal) + **achievements gallery** (award/certificate images, lightbox) | P2 | Screenshots | 🟨 (real screenshots pending) |
 | 1.7 | Education and experience section | Animated timeline (NED, Axisero, FYP) | P2 | Screenshot | ✅ |
-| 1.8 | Contact section | Contact form + social links | P2, P4 | Screenshot | ⬜ |
+| 1.8 | Contact section | Contact form + social links | P2, P4 | Screenshot | 🟡 form built (P4), screenshot pending |
 | 1.9 | Smooth animations, navigation, and transitions | Lenis smooth scroll, sticky nav + active section, GSAP reveals, View Transitions for modals/theme, camera moves | P2, P3 | Screen recording | ✅ (Classic; Explore camera moves in P3) |
 | 1.10 | Responsive design for desktop, tablet, and mobile | 360/768/1024/1440 layouts, touch interactions, lighter 3D on mobile | P2, P11 | Device screenshots | ✅ (P2.4: 320–1440 px, both themes, no horizontal scroll) |
 
@@ -262,14 +262,14 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 ### Module 5 — Email and Contact System
 | # | Brief line | How we meet it | Phase | Evidence | Status |
 |---|---|---|---|---|---|
-| 5.1 | Functional contact system for visitors | `/api/contact` + form | P4 | — | ⬜ |
-| 5.2 | Form with name, email address, subject, and message | Exactly these 4 fields (+ hidden honeypot) | P4 | Screenshot | ⬜ |
-| 5.3 | Input validation on frontend and backend | Same zod schema both sides; inline errors | P4 | Error screenshots + tests | ⬜ |
-| 5.4 | Send messages to the designated email | Gmail SMTP → `xmuhammadumerfarooq2003@gmail.com`, reply-to = visitor | P4 | Inbox screenshot | ⬜ |
-| 5.5 | Display success and error messages | Loading / success / validation / rate-limit / server-error states, `aria-live` | P4 | Screenshots of each | ⬜ |
-| 5.6 | Protect credentials and API keys with env vars | `.env` local, Vercel env in prod, `.env.example` names only, gitleaks | P4, P11 | gitleaks output | ⬜ |
-| 5.7 | Basic spam protection and secure input handling | Turnstile + honeypot + time-trap + rate limit + header-injection guard + plain-text body | P4 | Rejected-bot screenshot / test output | ⬜ |
-| 5.8 | Working form + evidence of successful delivery | Inbox screenshot + stored row in Supabase | P4 | Screenshots | ⬜ |
+| 5.1 | Functional contact system for visitors | `/api/contact` + form | P4 | — | 🟡 built, live evidence pending |
+| 5.2 | Form with name, email address, subject, and message | Exactly these 4 fields (+ hidden honeypot) | P4 | Screenshot | 🟡 built, live evidence pending |
+| 5.3 | Input validation on frontend and backend | Same zod schema both sides; inline errors | P4 | Error screenshots + tests | 🟡 built, live evidence pending |
+| 5.4 | Send messages to the designated email | Gmail SMTP → `xmuhammadumerfarooq2003@gmail.com`, reply-to = visitor | P4 | Inbox screenshot | 🟡 built, live evidence pending |
+| 5.5 | Display success and error messages | Loading / success / validation / rate-limit / server-error states, `aria-live` | P4 | Screenshots of each | 🟡 built, live evidence pending |
+| 5.6 | Protect credentials and API keys with env vars | `.env` local, Vercel env in prod, `.env.example` names only, gitleaks | P4, P11 | gitleaks output | 🟡 built, live evidence pending |
+| 5.7 | Basic spam protection and secure input handling | Turnstile + honeypot + time-trap + rate limit + header-injection guard + plain-text body | P4 | Rejected-bot screenshot / test output | 🟡 built, live evidence pending |
+| 5.8 | Working form + evidence of successful delivery | Inbox screenshot + stored row in Supabase | P4 | Screenshots | 🟡 built, live evidence pending |
 
 ### Module 6 — Deployment and Documentation
 | # | Brief line | How we meet it | Phase | Evidence | Status |
@@ -298,7 +298,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 | S2 | Blender source file + exported avatar | P8, P12 | ⬜ |
 | S3 | After Effects project file + final promo video | P9, P12 | ⬜ |
 | S4 | Working RAG chatbot | P5 | ⬜ |
-| S5 | Functional email/contact system | P4 | ⬜ |
+| S5 | Functional email/contact system | P4 | 🟡 built; live delivery pending |
 | S6 | Project report (PDF) | P12 | ⬜ |
 | S7 | README with setup and installation | P12 | ⬜ |
 | S8 | Screenshots of the major modules | every phase → P12 | ⬜ |
@@ -400,6 +400,14 @@ Visual layer only (structure, content pipeline, filters/URL state, modal, lightb
 
 **Exit:** real email arrives; invalid/oversized/bot submissions rejected both sides; 6th message/hour → 429; anon key cannot read `contact_messages` (tested).
 
+#### P4 — Contact system · 🟡 built (18-Nov-2026), live evidence pending
+- **Server:** `api/contact.js` (POST, JSON, ≤ 8 KB, same-origin) and `api/contact-token.js` (signed time-trap stamp); helpers in `api/_lib/`; one zod schema shared with the form (`src/shared/contact-schema.js`); Turnstile verified server-side (success + hostname + action); honeypot; ≥ 3 s time trap; rate limit 5/h + 20/day per salted IP hash, atomic in SQL (`contact_submit`); Gmail SMTP via nodemailer 10.3.1, plain text, reply-to = visitor, no auto-reply; email failure → stored as `email_failed`, visitor still sees success.
+- **Database:** `supabase/migrations/0001_contact_messages.sql` (RLS on, no policies, service role only).
+- **Client:** one accessible form for Classic and the Explore Telegraph case file (lazy chunk; Turnstile only when on screen); the Deputy's Commission pre-fills an interview request; no JS / 503 → email link.
+- **Headers:** strict CSP (one third-party origin) + COOP in `vercel.json`; `scripts/csp-check.mjs` verified zero violations across Classic, the opening, Explore WebGPU + WebGL2, video, audio and the form.
+- **Content images:** WebP covers (1600/800, alt text) for all 8 public projects and scans for the 3 certificates; cards, modal, bounty posters and the vault use them; the CV was not published (phone number in the supplied file).
+- **Not done by Claude (by rule):** pasting the SQL, Vercel env vars, live email / 429 / anon-read checks. The keep-alive cron and the `admins` table move to P7.
+
 ### P5 — RAG chatbot · 13% · 4.1–4.10, E4 (text), E9
 - Migrations: `documents`, `chunks (vector(768) + tsvector)`, HNSW + GIN indexes, `match_chunks` hybrid function.
 - `ingest.mjs`: markdown + CV PDF → redact phone → chunk → embed → upsert by hash; seeds `project_order`.
@@ -500,7 +508,7 @@ Overall  [██░░░░░░░░░░░░░░░░░░]  8%
 | P1 MCP setup & spikes | 4% | ✅ |
 | P2 Classic mode (UI layer + sections) | 9% | ⬜ |
 | P3 Explore mode (world engine + character + effects) | 15% | ⬜ |
-| P4 Supabase + contact & email | 9% | ⬜ |
+| P4 Supabase + contact & email | 9% | 🟡 contact system built; live checks pending |
 | P5 RAG chatbot | 13% | ⬜ |
 | P6 Voice chat | 4% | ⬜ |
 | P7 Admin dashboard & secure login | 7% | ⬜ |

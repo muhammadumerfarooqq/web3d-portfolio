@@ -15,7 +15,8 @@ links:
   live: ""
   repo: ""
   dashboard: ""
-images: []
+images: [/images/projects/ned-rag-assistant-1600.webp]
+image_alt: "Illustration: an owl in a graduation cap reads an open rulebook, with a speech bubble showing a check mark and 1.0"
 highlights:
   - Recall@5 = 1.000 with clause-aware chunking
   - Faithfulness 21/21 on answered questions; 2/23 safe abstentions

@@ -145,9 +145,18 @@ export function splitStat(value) {
   return m ? { prefix: m[1], number: m[2], suffix: m[3] } : { prefix: String(value), number: null, suffix: '' };
 }
 
-/** Pixel size of a JPEG or PNG (no dependencies). */
+/** Pixel size of a JPEG, PNG or WebP (no dependencies). */
 export function imageSize(path) {
   const buf = readFileSync(path);
+  if (buf.toString('latin1', 0, 4) === 'RIFF' && buf.toString('latin1', 8, 12) === 'WEBP') {
+    const chunk = buf.toString('latin1', 12, 16);
+    if (chunk === 'VP8 ') return { width: buf.readUInt16LE(26) & 0x3fff, height: buf.readUInt16LE(28) & 0x3fff };
+    if (chunk === 'VP8L') {
+      const b = buf.readUInt32LE(21);
+      return { width: (b & 0x3fff) + 1, height: ((b >>> 14) & 0x3fff) + 1 };
+    }
+    if (chunk === 'VP8X') return { width: buf.readUIntLE(24, 3) + 1, height: buf.readUIntLE(27, 3) + 1 };
+  }
   if (buf.readUInt32BE(0) === 0x89504e47) return { width: buf.readUInt32BE(16), height: buf.readUInt32BE(20) };
   if (buf[0] === 0xff && buf[1] === 0xd8) {
     let offset = 2;

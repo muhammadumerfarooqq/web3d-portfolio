@@ -15,7 +15,8 @@ links:
   live: ""
   repo: https://github.com/muhammadumerfarooqq/attendance-system
   video: ""
-images: []
+images: [/images/projects/face-recognition-attendance-1600.webp]
+image_alt: "Illustration: a face inside camera scan brackets with landmark points, a 0.8 match score and a green check mark"
 highlights:
   - 160× separation between genuine (~0.8) and impostor (~0.005) match scores
   - Blink-liveness anti-spoofing and multi-face rejection

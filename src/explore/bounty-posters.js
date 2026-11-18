@@ -63,6 +63,8 @@ export function readProjects(root = document, limit = BOUNTY_POSTERS.slots.lengt
       kind: textOf(li, '.project-card__bounty').replace(/^Bounty\s*·\s*/i, ''),
       reward: textOf(li, '.project-card__reward [data-searchable]'),
       tagline: textOf(li, '.project-card__tagline'),
+      // P4: the card's own cover photo (same-origin /images/… only; generated SVG covers have none)
+      image: /^\/images\/[\w./-]+\.(?:webp|jpe?g|png)$/.test(li.querySelector('.project-card__img')?.getAttribute('src') ?? '') ? li.querySelector('.project-card__img').getAttribute('src') : '',
     }))
     .filter((p) => p.title && Number.isFinite(p.order))
     .sort((a, b) => a.order - b.order)
@@ -78,7 +80,38 @@ export function posterCopy(project) {
     sub: rest.join(' · ').toUpperCase(),
     reward: project.reward || project.tagline,
     stamp: 'CASE CLOSED',
+    image: project.image ?? '',
   };
+}
+
+/** A photo print on the poster: cover-cropped into the box, aged a little, with an ink border. */
+function photo(ctx, img, box) {
+  const iw = img.naturalWidth || img.width;
+  const ih = img.naturalHeight || img.height;
+  const scale = Math.max(box.w / iw, box.h / ih);
+  const sw = box.w / scale;
+  const sh = box.h / scale;
+  ctx.save();
+  if ('filter' in ctx) ctx.filter = 'sepia(0.4) contrast(1.05) saturate(0.85)';
+  // portrait screenshots (phone UIs): focus on the upper part, where the content is, not the buttons
+  const focusY = ih > iw ? 0.36 : 0.5;
+  const sy = Math.min(ih - sh, Math.max(0, ih * focusY - sh / 2));
+  ctx.drawImage(img, (iw - sw) / 2, sy, sw, sh, box.x, box.y, box.w, box.h);
+  if ('filter' in ctx) ctx.filter = 'none';
+  ctx.strokeStyle = INK;
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(box.x + 0.75, box.y + 0.75, box.w - 1.5, box.h - 1.5);
+  ctx.restore();
+}
+
+/** Load a same-origin cover image for a poster (bounded wait; null on failure or outside a browser). */
+function defaultImage(src) {
+  if (!src || typeof Image === 'undefined') return Promise.resolve(null);
+  const img = new Image();
+  img.decoding = 'async';
+  img.src = src;
+  const done = img.decode().then(() => img, () => null);
+  return Promise.race([done, new Promise((r) => setTimeout(() => r(null), 4000))]);
 }
 
 /**
@@ -231,14 +264,22 @@ export function drawPoster(ctx, w, h, copy, seed, createCanvas) {
   ctx.stroke();
 
   let y = 82;
-  ctx.fillStyle = '#5B3A20';
-  ctx.font = FACE.mono(11);
-  setSpacing(ctx, 1);
-  if (copy.kicker) text(`— ${copy.kicker} —`, w / 2, y);
+  const withPhoto = Boolean(copy.photo);
+  if (withPhoto) {
+    // the project's photo (P4) takes the kicker's place, between the rules and the title
+    const box = { x: 30, y: 73, w: w - 60, h: 62 };
+    photo(ctx, copy.photo, box);
+    y = box.y + box.h + 1;
+  } else {
+    ctx.fillStyle = '#5B3A20';
+    ctx.font = FACE.mono(11);
+    setSpacing(ctx, 1);
+    if (copy.kicker) text(`— ${copy.kicker} —`, w / 2, y);
+  }
 
   ctx.fillStyle = INK;
   setSpacing(ctx, 0.5);
-  const head = fit(ctx, FACE.head, copy.headline, w - 44, 2, 30, 16);
+  const head = withPhoto ? fit(ctx, FACE.head, copy.headline, w - 44, 1, 24, 14) : fit(ctx, FACE.head, copy.headline, w - 44, 2, 30, 16);
   ctx.font = FACE.head(head.size);
   y += 4;
   for (const line of head.lines) {
@@ -246,13 +287,13 @@ export function drawPoster(ctx, w, h, copy, seed, createCanvas) {
     text(line, w / 2, y);
   }
   if (copy.sub) {
-    ctx.font = FACE.mono(12);
+    ctx.font = FACE.mono(withPhoto ? 11 : 12);
     setSpacing(ctx, 1);
-    y += 15;
+    y += withPhoto ? 13 : 15;
     text(copy.sub, w / 2, y);
   }
 
-  y += 20;
+  y += withPhoto ? 17 : 20;
   ctx.fillStyle = RUST;
   ctx.font = FACE.label(13);
   setSpacing(ctx, 3);
@@ -271,7 +312,8 @@ export function drawPoster(ctx, w, h, copy, seed, createCanvas) {
   if (copy.stamp) {
     const stamp = stampCanvas(createCanvas, copy.stamp, rnd);
     ctx.save();
-    ctx.translate(w * 0.66 + (rnd() - 0.5) * 8, h - 40 + (rnd() - 0.5) * 4);
+    // with a photo, the stamp goes across the photo's corner (the text below stays readable)
+    ctx.translate(w * 0.66 + (rnd() - 0.5) * 8, (withPhoto ? 122 : h - 40) + (rnd() - 0.5) * 4);
     ctx.rotate(-0.17 + (rnd() - 0.5) * 0.06);
     ctx.globalAlpha = 0.86;
     ctx.globalCompositeOperation = 'multiply';
@@ -300,7 +342,7 @@ async function defaultFonts() {
  * Build the posters. `center` is the board's town.json centre ([x, y, z]); `projects` come from
  * readProjects(). Fewer projects than panels: one OPEN_CASE poster, then blank panels.
  */
-export async function createBountyPosters({ projects, center, createCanvas = defaultCanvas, loadFonts = defaultFonts, anisotropy = 8 }) {
+export async function createBountyPosters({ projects, center, createCanvas = defaultCanvas, loadFonts = defaultFonts, loadImage = defaultImage, anisotropy = 8 }) {
   await loadFonts?.();
   const { size, front, lift, texture, slots } = BOUNTY_POSTERS;
   const [tw, th] = texture;
@@ -311,7 +353,11 @@ export async function createBountyPosters({ projects, center, createCanvas = def
   const materials = [];
   const lines = [];
   const copies = projects.slice(0, slots.length).map(posterCopy);
-  if (copies.length < slots.length) copies.push(OPEN_CASE);
+  if (copies.length < slots.length) copies.push({ ...OPEN_CASE });
+  // cover photos (P4), loaded before painting so the canvas is drawn once
+  await Promise.all(copies.map(async (copy) => {
+    copy.photo = copy.image ? await loadImage(copy.image) : null;
+  }));
   copies.forEach((copy, i) => {
     const [dx, y, rz] = slots[i];
     const canvas = createCanvas(tw, th);

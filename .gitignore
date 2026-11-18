@@ -44,3 +44,6 @@ desktop.ini
 .idea/
 *.swp
 aftereffects/promo-4k.mp4
+
+# P4: raw images and the CV dropped in by Umer, processed into public/ (never committed)
+content-inbox/

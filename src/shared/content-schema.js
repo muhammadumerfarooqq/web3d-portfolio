@@ -147,6 +147,7 @@ export const projectSchema = z
       .object({ live: linkValue.optional(), repo: linkValue.optional(), video: linkValue.optional(), dashboard: linkValue.optional() })
       .strict(),
     images: z.array(localImage),
+    image_alt: text.optional(), // P4: alt text for images[0] (the cover)
     highlights: z.array(text).min(1).max(4),
     draft: z.boolean().optional(),
   })

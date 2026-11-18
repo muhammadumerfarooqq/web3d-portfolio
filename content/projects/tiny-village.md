@@ -15,7 +15,8 @@ links:
   live: ""
   repo: ""
   video: ""
-images: []
+images: [/images/projects/tiny-village-1600.webp]
+image_alt: "Tiny Village start screen: the game's wooden logo over a sunny 3D village with a tower, a cottage and a flower-lined path, and Start Game and Quit buttons"
 highlights:
   - Built for a game development competition with 20 competing teams
   - Story intro cinematic with a skip option before the title screen

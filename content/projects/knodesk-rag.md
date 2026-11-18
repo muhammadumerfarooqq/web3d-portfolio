@@ -15,7 +15,8 @@ links:
   live: ""
   repo: ""
   video: ""
-images: []
+images: [/images/projects/knodesk-rag-1600.webp]
+image_alt: "Illustration: a friendly robot reads a stack of documents through a magnifying glass, beside a chat bubble with numbered source citations"
 highlights:
   - Live in production, serving 10+ businesses
   - Shipped with zero disruption to the existing chatbot

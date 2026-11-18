@@ -4333,3 +4333,245 @@
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: none; }
 }
+
+/* ─────────────────── P4 contact form (Telegraph office) ─────────────────── */
+@layer components {
+  .contact {
+    display: grid;
+    gap: var(--space-8);
+    padding: clamp(var(--space-6), 4vw, var(--space-10));
+    border-radius: var(--radius-lg);
+  }
+
+  @media (min-width: 60rem) {
+    .contact {
+      grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+      align-items: start;
+    }
+  }
+
+  .contact__intro {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-3);
+  }
+
+  .contact__title {
+    font-family: var(--font-display);
+    font-size: clamp(1.5rem, 1.8vw + 0.8rem, 2.25rem);
+    font-weight: 700;
+    line-height: 1.1;
+  }
+
+  .contact__text,
+  .contact__hint,
+  .field__hint {
+    max-inline-size: 52ch;
+    color: var(--text-muted);
+  }
+
+  .contact__notice {
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    color: var(--text);
+  }
+
+  .contact__form {
+    display: grid;
+    gap: var(--space-4);
+  }
+
+  .contact__form[hidden],
+  .contact__success[hidden],
+  .contact__summary[hidden],
+  .field__error[hidden] {
+    display: none;
+  }
+
+  .contact__form-title {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 700;
+  }
+
+  .field {
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .field__label {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .field__input {
+    inline-size: 100%;
+    min-block-size: 2.75rem;
+    padding: var(--space-2) var(--space-3);
+    border: 2px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--surface) 70%, var(--bg));
+    color: var(--text);
+    font: inherit;
+  }
+
+  .field__textarea {
+    min-block-size: 9rem;
+    resize: vertical;
+  }
+
+  .field__input:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .field__input[aria-invalid='true'] {
+    border-color: var(--rust-text);
+    box-shadow: inset 4px 0 0 var(--rust-text);
+  }
+
+  .field__error,
+  .contact__status[data-tone='error'] {
+    color: var(--rust-text);
+    font-weight: 600;
+  }
+
+  .field__error::before {
+    content: '✕ ';
+  }
+
+  /* Honeypot: off screen for people, still in the DOM for bots. */
+  .field--trap {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .contact__summary {
+    padding: var(--space-3) var(--space-4);
+    border: 2px solid var(--rust-text);
+    border-radius: var(--radius-md);
+  }
+
+  .contact__summary:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+
+  .contact__summary-title {
+    font-weight: 700;
+  }
+
+  .contact__summary-list {
+    display: grid;
+    gap: var(--space-1);
+    margin-block-start: var(--space-2);
+    padding-inline-start: 1.2em;
+    list-style: square;
+  }
+
+  .contact__summary-list a {
+    color: var(--rust-text);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .contact__turnstile {
+    min-block-size: 65px;
+  }
+
+  .contact__status:empty {
+    display: none;
+  }
+
+  .contact__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .contact__spinner {
+    display: none;
+    inline-size: 1em;
+    block-size: 1em;
+    border: 2px solid currentColor;
+    border-inline-end-color: transparent;
+    border-radius: 50%;
+  }
+
+  .contact__form.is-sending .contact__spinner {
+    display: inline-block;
+    animation: contact-spin 0.8s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .contact__form.is-sending .contact__spinner {
+      animation: none;
+    }
+  }
+
+  .contact__send:disabled {
+    cursor: progress;
+    opacity: 0.75;
+  }
+
+  .contact__success {
+    display: grid;
+    justify-items: start;
+    gap: var(--space-4);
+    align-content: center;
+  }
+
+  .contact__success:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 4px;
+  }
+
+  .contact__stamp {
+    padding: var(--space-1) var(--space-4);
+    border: 3px double var(--stamp-bg);
+    color: var(--rust-text);
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    rotate: -6deg;
+  }
+}
+
+@keyframes contact-spin {
+  to {
+    rotate: 1turn;
+  }
+}
+
+/* P4: certificate scans in the credentials row (open in the lightbox). */
+@layer components {
+  .cred__media {
+    display: block;
+    margin-block-end: var(--space-2);
+    overflow: hidden;
+    border: var(--rule) solid var(--border-strong);
+    border-radius: var(--radius-sm);
+  }
+
+  .cred__media img {
+    display: block;
+    inline-size: 100%;
+    block-size: auto;
+    aspect-ratio: auto;
+  }
+
+  .cred__media:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: 3px;
+  }
+}

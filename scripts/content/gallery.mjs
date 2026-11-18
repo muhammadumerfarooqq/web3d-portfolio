@@ -58,11 +58,22 @@ export function renderPlayer({ src, poster = null, size = null, title, noAudio =
           </figure>`;
 }
 
+/**
+ * P4: an image with its optimised 800 px sibling (scripts/content/images.mjs writes <name>-1600.webp and
+ * <name>-800.webp): src = the 800, srcset offers both. Other images are used as they are.
+ */
+export function responsiveImage(image, root) {
+  const size = imageSize(join(root, 'public', image));
+  const small = image.replace(/-1600\.webp$/, '-800.webp');
+  if (small !== image && existsSync(join(root, 'public', small))) return { src: small, srcset: `${small} 800w, ${image} 1600w`, size };
+  return { src: image, srcset: null, size };
+}
+
 function cover(project, root) {
   const image = project.images[0];
   if (image && existsSync(join(root, 'public', image))) {
-    const size = imageSize(join(root, 'public', image));
-    return html`<img class="project-card__img" src="${image}" width="${size.width}" height="${size.height}" alt="" loading="lazy" decoding="async" />`;
+    const img = responsiveImage(image, root);
+    return html`<img class="project-card__img" src="${img.src}"${img.srcset ? html` srcset="${img.srcset}" sizes="(min-width: 64rem) 34vw, (min-width: 40rem) 50vw, 100vw"` : ''} width="${img.size.width}" height="${img.size.height}" alt="${project.image_alt ?? ''}" loading="lazy" decoding="async" />`;
   }
   return renderCover(project);
 }
@@ -187,8 +198,9 @@ const ORDINAL = /^(\d+(?:st|nd|rd|th)?)\s+(.+)$/i;
 
 export function renderAchievements({ achievements }, { root }) {
   const items = achievements.items;
-  const features = items.filter((i) => i.image);
-  const creds = items.filter((i) => !i.image && i.type === 'certification');
+  // Certificates stay credentials even when they have a scan (P4); only awards become photo features.
+  const features = items.filter((i) => i.image && i.type !== 'certification');
+  const creds = items.filter((i) => i.type === 'certification');
   const stats = items.filter((i) => !i.image && i.type !== 'certification');
 
   const feature = (item) => {
@@ -219,8 +231,15 @@ export function renderAchievements({ achievements }, { root }) {
   };
 
   // Credentials: issuer, year and type only; no "verified" claim without a verification link.
+  const credMedia = (item) => {
+    if (!item.image || !existsSync(join(root, 'public', item.image))) return html`<span class="cred__icon" aria-hidden="true">${ICONS.badge}</span>`;
+    const img = responsiveImage(item.image, root);
+    return html`<a class="cred__media" href="${item.image}" data-lightbox data-caption="${item.image_alt}" aria-label="View certificate larger: ${item.title}" data-cursor>
+                  <img src="${img.src}"${img.srcset ? html` srcset="${img.srcset}" sizes="(min-width: 64rem) 22vw, 90vw"` : ''} width="${img.size.width}" height="${img.size.height}" alt="${item.image_alt}" loading="lazy" decoding="async" />
+                </a>`;
+  };
   const cred = (item) => html`<li class="cred paper" id="${item.anchor}">
-                <span class="cred__icon" aria-hidden="true">${ICONS.badge}</span>
+                ${credMedia(item)}
                 <h3 class="cred__title">${item.title}</h3>
                 <p class="cred__issuer">${item.event}</p>
                 <p class="cred__meta">${item.date ? html`${timeEl(item.date)} · ` : ''}Certification</p>

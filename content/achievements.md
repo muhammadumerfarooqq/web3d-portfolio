@@ -18,15 +18,21 @@ items:
     event: Anthropic Education
     date: 2026
     type: certification
+    image: /images/achievements/cert-ai-fluency-1600.webp
+    image_alt: "Anthropic certificate of completion: Muhammad Umer Farooq has completed AI Fluency: Framework & Foundations"
     anchor: cert-ai-fluency
   - title: Python
     event: Kaggle
     type: certification
+    image: /images/achievements/cert-kaggle-python-1600.webp
+    image_alt: "Kaggle certificate of completion for the Python course, awarded to Muhammad Umer Farooq on March 18, 2026"
     anchor: cert-kaggle-python
   - title: "Foundations: Data, Data, Everywhere"
     event: Google / Coursera
     date: 2025
     type: certification
+    image: /images/achievements/cert-google-data-1600.webp
+    image_alt: "Google course certificate through Coursera: Muhammad Farooq completed Foundations: Data, Data, Everywhere on August 14, 2025"
     anchor: cert-google-data
 ---
 ## Best Final Year Design Project (FYDP) Award — TALEEM360

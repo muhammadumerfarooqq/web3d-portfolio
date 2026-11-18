@@ -12,6 +12,8 @@ export const ENGAGE_MS = 3000;
 
 export const CERTIFICATE_TEXT = "Every case on Byte Island is closed, deputy. Umer's ready to ride with your team.";
 export const BARKEEP_TEXT = 'The barkeep will answer in P5.';
+/** Must be one of SUBJECTS in src/shared/contact-schema.js (tested); not imported, to keep zod out of this chunk. */
+export const INTERVIEW_SUBJECT = 'Job / interview';
 export const INTERVIEW_DRAFT = 'Hi Umer, I closed every case on Byte Island and would like to schedule an interview with you about a role on our team. When would suit you?';
 
 /** Optional links from the page: a booking URL and a phone-free CV (none yet), the public email (P3.3). */
@@ -158,8 +160,8 @@ export function createCaseFiles({ host, canvasHost, starButton, zones, sound, an
     engaged = false;
     eyebrow.textContent = `Case file · ${zone.title}`;
     if (zone.zone === 'about') body.append(el('p', { class: 'xp-case__wanted', 'aria-hidden': 'true', text: 'Wanted' }));
-    if (interview && zone.zone === 'contact') body.append(interviewDraft());
     mounted = mountSection(zone.zone);
+    if (interview && zone.zone === 'contact') prefillInterview(mounted?.container);
     if (zone.zone === 'chat') foot.append(el('p', { class: 'xp-case__note', text: BARKEEP_TEXT }));
     foot.append(classicLink(zone.zone));
     show('zone', mounted?.title?.id);
@@ -167,26 +169,22 @@ export function createCaseFiles({ host, canvasHost, starButton, zones, sound, an
     engageTimer = setTimeout(engage, ENGAGE_MS);
   }
 
-  function interviewDraft() {
-    const id = 'xp-interview-draft';
-    const text = el('textarea', { id, class: 'xp-case__draft', rows: '4', readonly: true });
-    text.value = INTERVIEW_DRAFT;
-    const copy = el('button', { type: 'button', class: 'xp-btn' }, [el('span', { text: 'Copy the draft' })]);
-    copy.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(INTERVIEW_DRAFT);
-        announce?.('Interview request copied. Send it through one of the links below.');
-        copy.firstChild.textContent = 'Copied';
-      } catch {
-        text.select();
-      }
-    });
-    return el('div', { class: 'xp-case__interview paper case-frame' }, [
-      el('p', { class: 'hud-label', text: 'Telegram draft · interview request' }),
-      el('label', { class: 'xp-case__label', for: id, text: 'Your message, ready to send' }),
-      text,
-      copy,
-    ]);
+  /**
+   * The Deputy's Commission "Schedule an interview": the Telegraph case file opens with the shared
+   * contact form pre-filled (subject "Job / interview" + a short draft). A message the visitor already
+   * typed is never overwritten.
+   */
+  function prefillInterview(container) {
+    const form = container?.querySelector('[data-contact-form]');
+    if (!form) return;
+    const subject = form.elements.namedItem('subject');
+    const message = form.elements.namedItem('message');
+    if (subject && [...subject.options].some((o) => o.value === INTERVIEW_SUBJECT)) subject.value = INTERVIEW_SUBJECT;
+    if (message && !message.value.trim()) {
+      message.value = INTERVIEW_DRAFT;
+      message.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+    announce?.('The telegram form is filled in with an interview request. Add your name and email, then send it.');
   }
 
   // ── case board (below 8/8): progress, travel and reset ──
