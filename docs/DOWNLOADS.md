@@ -2,6 +2,23 @@
 
 GitHub rejects any file over 100 MB, so the large renders are attached to a **GitHub Release** (a release asset can be up to **2 GB per file**). Everything the site needs to run, every source file, the avatar, the After Effects project and the 1080p web film are in the repository itself (see "Repository contents vs assignment" in the README).
 
+## Google Drive folder (view only)
+
+**Folder:** https://drive.google.com/drive/folders/185n2-ZxJU7ran22IJLQIOOG1C3t_3nVd?usp=drive_link
+
+Convenience copy of the large files for the teacher. The GitHub repository is still the complete submission.
+
+| Subfolder | Contents |
+|---|---|
+| `Avatar_Blender` | the avatar `.blend` and the exported GLB |
+| `Report` | the final report PDF (added by 27 Nov 2026) |
+| `Screenshots` | the screenshots of the major modules |
+| `Video_AfterEffects` | `promo-4k.mp4` (244 MB), `promo-1080.mp4`, `promo.aep` |
+
+**Sharing:** the folder must be **Anyone with the link, role Viewer** (Drive → right-click the folder → Share → General access → Anyone with the link → Viewer). Nobody can edit or delete anything.
+
+**Check it (incognito):** open a private window (Ctrl+Shift+N), paste the folder link, and make sure you see all four subfolders without signing in; open `promo-4k.mp4` and `promo-1080.mp4` once to confirm they play or download.
+
 | File | Size | Why it is not in git | Where it is |
 |---|---|---|---|
 | `aftereffects/promo-4k.mp4` | 244 MB (255,907,533 bytes) | Over GitHub's 100 MB limit (listed in `.gitignore`) | Your computer: `D:\PROJECTS\web3d-portfolio\aftereffects\promo-4k.mp4` |

@@ -4,11 +4,29 @@
 
 - **Live site:** https://umerfarooq-ai.vercel.app
 - **Code:** https://github.com/muhammadumerfarooqq/web3d-portfolio
-- **4K promo video (Release page):** https://github.com/muhammadumerfarooqq/web3d-portfolio/releases/tag/v1.0-submission (attached at submission; steps in [docs/DOWNLOADS.md](docs/DOWNLOADS.md))
+- **4K promo video (Release page):** https://github.com/muhammadumerfarooqq/web3d-portfolio/releases/tag/v1.0-submission (created at submission; steps in [docs/DOWNLOADS.md](docs/DOWNLOADS.md))
+- **Google Drive folder (view only):** https://drive.google.com/drive/folders/185n2-ZxJU7ran22IJLQIOOG1C3t_3nVd?usp=drive_link
 - **Student:** Muhammad Umer Farooq, BS CS&IT, NED University of Engineering and Technology (CTGA-021)
 - **Course:** Web 3D Programming · **Teacher:** Saadia Arshad
 
 ---
+
+## Submission
+
+- **The GitHub repository is the complete submission.** The Google Drive folder and the Release page are convenience copies for large files.
+
+| Item | In the GitHub repo | Also on Google Drive | Release |
+|---|---|---|---|
+| Source code (frontend + backend) | `src/`, `api/`, `scripts/`, `supabase/`, `content/` | repo only | – |
+| Blender `.blend` + GLB | `blender/avatar.blend`, `blender/export/avatar.glb`, `public/models/avatar.glb` | `Avatar_Blender` | – |
+| After Effects `.aep` + 1080p MP4 | `aftereffects/promo.aep`, `aftereffects/promo.jsx`, `public/media/promo-1080.mp4` | `Video_AfterEffects` | yes |
+| 4K MP4 (244 MB) | not in git (GitHub's 100 MB file limit) | `Video_AfterEffects` | yes |
+| Report PDF | `docs/report/` (added by 27 Nov 2026) | `Report` | yes (added by 27 Nov 2026) |
+| Screenshots | `docs/screenshots/` | `Screenshots` | – |
+| README | `README.md` (this file) | repo only | – |
+| Live site | https://umerfarooq-ai.vercel.app | – | – |
+
+**Links:** [live site](https://umerfarooq-ai.vercel.app) · [GitHub repository](https://github.com/muhammadumerfarooqq/web3d-portfolio) · [Release v1.0-submission](https://github.com/muhammadumerfarooqq/web3d-portfolio/releases/tag/v1.0-submission) · [Google Drive folder, view only](https://drive.google.com/drive/folders/185n2-ZxJU7ran22IJLQIOOG1C3t_3nVd?usp=drive_link)
 
 ## 1. What this project is
 
@@ -234,17 +252,17 @@ npm run live:check        # black-box checks of the live site's headers and API
 
 **Required submission materials**
 
-| Material | Where |
-|---|---|
-| Complete source code (frontend + backend) | this repository: `src/`, `api/`, `scripts/`, `supabase/` |
-| Blender file + exported avatar | `blender/avatar.blend`, `blender/export/avatar.glb` |
-| After Effects project + final video | `aftereffects/promo.aep`, `public/media/promo-1080.mp4`; 4K on the Release page |
-| Working RAG chatbot | live site `#chat` |
-| Working contact system | live site `#contact` |
-| Project report (PDF) | added at submission in `docs/report/` |
-| README with setup | this file |
-| Screenshots | `docs/screenshots/` (list in [SHOTLIST.md](docs/screenshots/SHOTLIST.md)) |
-| Live URL / repository | links at the top |
+| Material | Where (repo) | Also |
+|---|---|---|
+| Complete source code (frontend + backend) | this repository: `src/`, `api/`, `scripts/`, `supabase/` | repo only |
+| Blender file + exported avatar | `blender/avatar.blend`, `blender/export/avatar.glb` | Drive: `Avatar_Blender` |
+| After Effects project + final video | `aftereffects/promo.aep`, `public/media/promo-1080.mp4` | Drive: `Video_AfterEffects`; 4K on the [Release page](https://github.com/muhammadumerfarooqq/web3d-portfolio/releases/tag/v1.0-submission) |
+| Working RAG chatbot | live site `#chat` | – |
+| Working contact system | live site `#contact` | – |
+| Project report (PDF) | `docs/report/` (added by 27 Nov 2026) | Drive: `Report`; [Release page](https://github.com/muhammadumerfarooqq/web3d-portfolio/releases/tag/v1.0-submission) |
+| README with setup | this file | – |
+| Screenshots | `docs/screenshots/` (list in [SHOTLIST.md](docs/screenshots/SHOTLIST.md)) | Drive: `Screenshots` |
+| Live URL / repository | links at the top | [Google Drive folder](https://drive.google.com/drive/folders/185n2-ZxJU7ran22IJLQIOOG1C3t_3nVd?usp=drive_link) |
 
 ## 8. How the RAG chatbot works
 

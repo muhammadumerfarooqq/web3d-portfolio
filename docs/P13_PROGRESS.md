@@ -9,3 +9,9 @@
 | 5 | Tests and build | ✅ | See the final summary. No code, config, test logic, asset, migration or CSP changed. |
 
 Not in the README on purpose: the admin screenshots (none exist yet; the SHOTLIST rows stay open) and the 4K Release link target (created at submission). The delivery-evidence screenshot `docs/screenshots/p4/p4-4-inbox.png` shows the student's private Gmail address; it is linked, not embedded.
+
+# P14 progress: Submission section (docs only)
+
+- README: a "Submission" section after the title block (repo = complete submission; table repo / Drive / Release; four links); the Drive link is also in the top links and the "Required submission materials" table.
+- `docs/DOWNLOADS.md`: the Drive folder link, its four subfolders, the "Anyone with the link, Viewer" setting and the incognito check; the Release steps are unchanged.
+- No code, config or asset changed; no private screenshot is mentioned; no new limitation.
