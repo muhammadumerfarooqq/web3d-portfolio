@@ -5,7 +5,7 @@
 - **Live site:** https://umerfarooq-ai.vercel.app
 - **Code:** https://github.com/muhammadumerfarooqq/web3d-portfolio
 - **4K promo video (Release page):** https://github.com/muhammadumerfarooqq/web3d-portfolio/releases/tag/v1.0-submission (created at submission; steps in [docs/DOWNLOADS.md](docs/DOWNLOADS.md))
-- **Google Drive folder (view only):** https://drive.google.com/drive/folders/185n2-ZxJU7ran22IJLQIOOG1C3t_3nVd?usp=drive_link
+- **Google Drive folder :** https://drive.google.com/drive/folders/185n2-ZxJU7ran22IJLQIOOG1C3t_3nVd?usp=drive_link
 - **Student:** Muhammad Umer Farooq, BS CS&IT, NED University of Engineering and Technology (CTGA-021)
 - **Course:** Web 3D Programming · **Teacher:** Saadia Arshad
 
