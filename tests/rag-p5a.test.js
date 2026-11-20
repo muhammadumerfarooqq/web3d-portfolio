@@ -76,14 +76,15 @@ describe('P5 knowledge base (scripts/rag/chunk.mjs)', () => {
     ({ indexHtml: html } = await buildSite());
   }, 180_000);
 
-  it('indexes the rendered content only: no README / OPEN_QUESTIONS, no drafts, no CV yet', () => {
+  it('indexes the rendered content only: no README / OPEN_QUESTIONS, no drafts; the CV text is indexed (P12-CV)', () => {
     const paths = kb.docs.map((d) => d.source_path);
     expect(paths).not.toContain('content/README.md');
     expect(paths).not.toContain('content/OPEN_QUESTIONS.md');
     expect(paths.some((p) => p.includes('overdrive'))).toBe(false); // draft: true
     expect(kb.docs.filter((d) => d.slug.startsWith('project-'))).toHaveLength(8);
     for (const slug of ['profile', 'about', 'skills', 'experience', 'education', 'achievements', 'faq']) expect(kb.docs.map((d) => d.slug)).toContain(slug);
-    expect(kb.cvFiles).toEqual([]);
+    expect(kb.cvFiles).toEqual(['cv.md']); // P12-CV: the redacted CV text (the PDF itself is never indexed)
+    expect(kb.docs.map((d) => d.slug)).toContain('cv');
   });
 
   it('every chunk cites an anchor that exists on the Classic page', () => {

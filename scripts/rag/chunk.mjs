@@ -1,7 +1,8 @@
 // P5 knowledge base: /content → documents and chunks for the RAG index (pure, no network; used by
 // scripts/rag/ingest.mjs and the tests). Sources: every content/*.md and content/projects/*.md that the
 // site itself renders (loadContent: UPPERCASE files such as README.md / OPEN_QUESTIONS.md are skipped,
-// drafts are dropped). content/cv/ is empty, so no CV text is indexed yet (LIMITATIONS L118).
+// drafts are dropped), plus content/cv/cv.md: the CV text with the phone number, ID numbers and address lines removed
+// (scripts/rag/cv-redact.mjs; redacted again here, and the PII guard below still refuses any phone).
 //
 // Each document becomes "sections": its front matter as readable key facts, then each markdown heading
 // section. Sections are packed into chunks of ~350–600 tokens (never across a citation-anchor change),
@@ -9,10 +10,11 @@
 // "Muhammad Umer Farooq — <title> — <heading>" so the model always knows who "I" is (content/README.md).
 // The PII guard aborts if any chunk holds a phone number or an email other than the public one.
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { loadContent } from '../content/load.mjs';
 import { scanText } from '../content/guard.mjs';
+import { redactCv } from './cv-redact.mjs';
 
 export const PUBLIC_EMAIL = 'mumerfarooq.ned@gmail.com';
 export const CHARS_PER_TOKEN = 4;
@@ -155,6 +157,9 @@ export function buildDocuments(root) {
     const data = key === 'achievements' ? { items: items.map(({ title: t, event, date, detail, type }) => ({ title: t, event, date, detail, type })) } : d;
     add(key, key === 'profile' ? title : (d.title ?? title), anchor, path, data, d.body, anchorFor);
   }
+  // P12-CV: the CV (redacted text, no phone; the public PDF itself is never indexed). It cites the About section.
+  const cvPath = join(root, 'content', 'cv', 'cv.md');
+  if (existsSync(cvPath)) add('cv', 'Curriculum vitae (CV)', 'about', 'content/cv/cv.md', {}, redactCv(readFileSync(cvPath, 'utf8')).text);
   for (const p of content.projects.filter((x) => !x.draft)) {
     add(`project-${p.slug}`, p.title, p.anchor, `content/projects/${p.slug}.md`, p, p.body);
   }

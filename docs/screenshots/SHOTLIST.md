@@ -178,3 +178,5 @@ Every step adds its rows here. Save each screenshot under `docs/screenshots/<mod
 | P12-7 | Voice / Roman Urdu | Speak "umer kaun hai": the chat input shows Roman text, not Devanagari | Chat → microphone | ⬜ |
 | P12-8 | QA / Responsive check | `npm run qa:responsive` summary: all checks passed, and `docs/reports/responsive.md` | Terminal | ⬜ |
 | P12-9 | GitHub / Public repo and Release | The repository page logged out (public) and the Release with promo-4k.mp4 attached | Browser (private window) | ⬜ |
+| P12-10 | Site / Download CV | The profile card with the Download CV button (English and اردو) and the downloaded PDF opened | Classic hero → profile card | ⬜ |
+| P12-11 | Chat / CV answers | "What is Umer's phone number?" (refusal pointing to email and the contact form) and "What did Umer study?" (answer with a citation) | Ask my AI | ⬜ |

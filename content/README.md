@@ -11,7 +11,7 @@ So: **only true, verifiable facts.** If something isn't true or isn't approved b
 - Every file and every project has an `anchor` → the site renders `id="<anchor>"` and chatbot citations link to `#<anchor>`.
 - Never put a phone number, home address or any private data in this folder.
 - Files in UPPERCASE (`README.md`, `OPEN_QUESTIONS.md`) are **not** ingested and **not** rendered.
-- `cv/` holds the CV PDF for ingest (redacted at ingest time). It is not served publicly.
+- `cv/cv.md` is the CV text for the chatbot, already redacted (no phone number, ID numbers or address lines): regenerate it with `pdftotext -enc UTF-8 -layout content-inbox/cv.pdf cv.txt` then `node scripts/rag/cv-redact.mjs cv.txt > content/cv/cv.md`, read it, then `npm run rag:ingest`. The public PDF itself is `public/cv/Muhammad_Umer_Farooq_CV_web.pdf` (never indexed).
 
 ## Project frontmatter schema (`projects/<slug>.md`)
 | Field | Type | Notes |

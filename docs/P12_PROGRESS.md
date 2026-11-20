@@ -25,3 +25,27 @@ Resume rule: read this file first and continue from the first item that is not �
 
 - `npm run build` then `npm run qa:responsive` (real Chrome, ~3.5 minutes, writes `docs/reports/responsive.md` and the screenshots; `--no-explore` skips the Explore HUD, `--only=320,390` limits the widths).
 - Build from **PowerShell**: a build from Git Bash leaves the `<!--content:…-->` markers unreplaced in `dist/index.html`.
+
+# P12-CV progress: the CV on the site and in the chatbot
+
+| # | Task | Status | Files | Notes |
+|---|---|---|---|---|
+| 1 | CV into `public/cv/` | ✅ | `public/cv/Muhammad_Umer_Farooq_CV_web.pdf` | The filename the code already expected (`CV_PATH` in `scripts/content/plugin.mjs`). Copied from `content-inbox/cv.pdf` (49,779 bytes, untouched) with PyMuPDF: 49,309 bytes, 1 page, metadata reduced to Title and Author (creator "anonymous", producer ReportLab, dates and subject removed; no XMP). The phone number stays in this PDF only (Umer's decision, L267). |
+| 2 | Download CV button | ✅ | `scripts/content/render.mjs`, `src/i18n/en.json` + `ur.json` (`cv.download`), `tests/i18n-p10.test.js` | The site code already rendered the button once the PDF exists; it now carries `download`, `type="application/pdf"`, `data-cv-download` (Explore reads it) and `data-event="cv_download"` (allow-listed already; no event added). `btn--sm` = 44 px; the visible text is the accessible name; Urdu label via the dictionary. Explore's Deputy's Commission shows its own Download CV button (English only). `vercel.json` untouched: CSP and headers unchanged. |
+| 3 | CV text in the knowledge base | ✅ | `scripts/rag/cv-redact.mjs` (new), `content/cv/cv.md` (new), `scripts/rag/chunk.mjs`, `scripts/rag/ingest.mjs` (message), `tests/rag-p5a.test.js`, `tests/security/p12-cv.test.js` (new) | Phones (every format), ID numbers and address lines are removed; email and public links kept. The chunker redacts again at ingest and its PII guard still refuses a phone. `npm run rag:ingest`: 16 documents, 23 chunks, **3 embedded (the CV)**, 20 unchanged, 0 deleted. |
+| 4 | Live check | ✅ | scratchpad script (real `/api/chat` handler against the live knowledge base) | "What is Umer's phone number?", "What is his mobile number? … digits" and "umer ka phone number kya hai?": refused, pointing to the email and the contact form, no digits in any answer. "What did Umer study?": BS Computer Science & IT at NED University, Karachi, from August 2023 (cites Education). "CGPA and where does he study?": 3.65, NED (from the CV). Skills question answered. |
+| 5 | Docs | ✅ | `docs/LIMITATIONS.md` (L118 and L241 SOLVED in P12 (P12-CV), L265 text, L267 and L268 added), `README.md`, `content/README.md`, this file | |
+
+Umer's steps for P12-CV: commit and push, wait for Ready, open the live site: the profile card shows **Download CV** (EN and اردو); click it (the PDF downloads; the Stats tab counts `cv_download` after a deploy). The index already has the CV chunks (they live in Supabase), so the chatbot answers from the CV now. Proofread the Urdu label (L268). If you replace the PDF later: regenerate `content/cv/cv.md` (command in `content/README.md`) and run `npm run rag:ingest`.
+
+# P12-UX2 progress: the live Accessibility button
+
+| # | Task | Status | Files | Notes |
+|---|---|---|---|---|
+| 1 | Reproduce on a production build | ✅ | scratchpad `repro.mjs` | Built the committed tree (HEAD `f524b6b`, old `index.html`) and the working tree to separate folders, served each with `vite preview`, real Chrome at 1280 and 390 px. HEAD: the toggle is `btn btn--sm a11y__toggle` with the text "Accessibility" at (0,0), NOT in the header; a click leaves `aria-expanded="false"`; no console error, no failed request, no CSP violation. Working tree: icon button in the header cluster, panel opens. |
+| 2 | Root cause | ✅ | n/a | `index.html` was not committed. The deployed file still had the box at the top of `<body>` (HEAD line 31) while `a11y.css` (box `position: relative`, panel anchored to it) and `a11y-loader.js` were new: the box sat in the flow at the top-left under the fixed header (z-index 50), which took the click. No chunk failed, nothing was blocked, no cache was involved (assets are hashed, HTML is not cached long-term). |
+| 3 | Fix | ✅ | `index.html` (already correct in the working tree: it only has to be committed) | No source change was needed. Explore moving the box into the HUD and back is covered by `npm run qa:responsive` (unchanged, passes). |
+| 4 | Caching | ✅ | `vercel.json` unchanged | JS and CSS have content hashes; only `/media/*` has a long-term cache rule; HTML keeps Vercel's default revalidating cache. Checked by the new test. No header or CSP weakened. |
+| 5 | Test on the BUILT site | ✅ | `tests/a11y-dist-p12.test.js` (10 tests) | Builds for production into a temp folder, serves it, drives real Chrome at 1280 and 390 px: button inside `.site-header .header-actions`, icon only, ≥ 44 px, `elementFromPoint` at its centre is the button, a real click opens the panel inside the viewport, five switches and Reset work, Esc closes and returns focus, Enter and Space open it; plus static checks (one box, in the header, no old markup, hashed assets, cache rule). Run against the old `index.html` it fails (8 of 10). |
+
+Commit rule (added after this): after `git add`, run `git status`; no tracked file may remain under "Changes not staged for commit". `.gitignore` already excludes `.env*`, `content-inbox/`, `aftereffects/promo-4k.mp4`, so `git add .` cannot add a secret.

@@ -185,5 +185,6 @@
  "a11y.classic": "Open plain Classic site (skip 3D)",
  "a11y.note": "Scripted animations and smooth scrolling stop after the page is reloaded.",
  "a11y.reload": "Reload now",
- "a11y.saved": "Settings are saved in this browser only."
+ "a11y.saved": "Settings are saved in this browser only.",
+ "cv.download": "Download CV"
 }

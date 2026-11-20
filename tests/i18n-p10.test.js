@@ -46,7 +46,7 @@ describe('P10 dictionaries', () => {
 });
 
 describe('P10 every English string is a real string of the page or of the JS messages', () => {
-  const sources = ['index.html', 'src/ui/chat.js', 'src/ui/voice.js', 'src/ui/contact.js', 'src/shared/contact-schema.js', 'src/shared/chat-schema.js'].map(read).join('\n');
+  const sources = ['index.html', 'src/ui/chat.js', 'src/ui/voice.js', 'src/ui/contact.js', 'src/shared/contact-schema.js', 'src/shared/chat-schema.js', 'scripts/content/render.mjs'].map(read).join('\n');
   const flat = sources.replace(/\s+/g, ' ');
   // Templates and messages the JS builds from pieces: the longest literal piece (or, for the few built with a conditional, its first words).
   const BUILT = new Set(['contact.summary1', 'contact.summaryN', 'chat.rate1', 'chat.rateN', 'voice.rate1', 'voice.rateN', 'contact.rate1', 'contact.rateN', 'contact.rateH', 'voice.recording1', 'voice.recordingN']);

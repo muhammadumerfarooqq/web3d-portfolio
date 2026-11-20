@@ -119,7 +119,7 @@ export function renderProfileCard({ profile }, { photoSize, cvHref }) {
                 <div class="profile-card__actions">
                   <a class="icon-btn" href="${profile.links.linkedin}"${externalAttrs(profile.links.linkedin)} aria-label="LinkedIn (opens in a new tab)" data-cursor>${ICONS.linkedin}</a>
                   <a class="icon-btn" href="${profile.links.github}"${externalAttrs(profile.links.github)} aria-label="GitHub (opens in a new tab)" data-cursor>${ICONS.github}</a>
-                  ${cvHref ? html`<a class="btn btn--sm btn--ink" href="${cvHref}" download data-cursor>${ICONS.download}<span>Download CV</span></a>` : ''}
+                  ${cvHref ? html`<a class="btn btn--sm btn--ink" href="${cvHref}" type="application/pdf" download data-cv-download data-event="cv_download" data-cursor>${ICONS.download}<span>Download CV</span></a>` : ''}
                 </div>
               </article>
             </div>`;

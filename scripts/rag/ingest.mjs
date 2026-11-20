@@ -18,7 +18,7 @@ const MODEL = process.env.EMBED_MODEL?.trim() || 'gemini-embedding-001';
 const DIM = Number(process.env.EMBED_DIM) || 768;
 
 const kb = buildKnowledgeBase(ROOT, { model: MODEL, dim: DIM });
-if (!kb.cvFiles.length) console.log('content/cv/ is empty: no CV in the index yet (LIMITATIONS L118).');
+if (!kb.cvFiles.length) console.log('content/cv/ has no CV text: the CV is not in the index (LIMITATIONS L118).');
 
 if (dryRun) {
   for (const c of kb.chunks) {
