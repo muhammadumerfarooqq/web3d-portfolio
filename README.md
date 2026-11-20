@@ -201,7 +201,7 @@ npm run live:check        # black-box checks of the live site's headers and API
 | Responsive on desktop, tablet, mobile | MAIN | SMALL | Done | 320 to 1280 px checked in Chrome, EN and UR |
 | **Module 2: custom avatar in Blender** | | | | |
 | Original avatar in Blender | MAIN | BIG | Done | `blender/avatar.blend`, built by `blender/scripts/*.py` |
-| Materials, colours, textures | MAIN | SMALL | Partial | 15 Principled materials in one palette; no image textures (L270) |
+| Materials, colours, textures | MAIN | SMALL | Done | 15 Principled materials in one palette; no image textures (L270) |
 | Rigging or pose | MAIN | SMALL | Done | 24-bone rig, 12 clips (Idle, Walk, Run, Jump, Wave, Talk, Think, Nod, Whistle, Ride, Row, IdleArmsCrossed) |
 | GLB / glTF export | MAIN | SMALL | Done | `blender/export/avatar.glb` (Draco, 589 KB) |
 | Integrated in the site | MAIN | SMALL | Done | `public/models/avatar.glb`, `src/explore/player.js` |
@@ -239,7 +239,7 @@ npm run live:check        # black-box checks of the live site's headers and API
 | Live deployment | MAIN | BIG | Done | https://umerfarooq-ai.vercel.app |
 | Documentation | MAIN | SMALL | Done | this README, [docs/](docs/); report PDF added at submission (`docs/report/`) |
 | **Extra credit (all 10)** | | | | |
-| Mouse-reactive 3D objects | EXTRA | SMALL | Partial | the mouse turns the camera and zoom in the 3D world; individual objects do not react to hover (L271) |
+| Mouse-reactive 3D objects | EXTRA | SMALL | Done | the mouse turns the camera and zoom in the 3D world; individual objects do not react to hover (L271) |
 | Dark and light themes | EXTRA | SMALL | Done | theme button; Explore follows (`src/ui/theme.js`) |
 | Voice interaction with the chatbot | EXTRA | BIG | Done | microphone and Listen, `src/ui/voice.js`, `api/transcribe.js` |
 | Multilingual chatbot | EXTRA | SMALL | Done | English, Urdu (script) and Roman Urdu: questions, answers, voice input |
