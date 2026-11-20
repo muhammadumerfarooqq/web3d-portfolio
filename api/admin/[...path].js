@@ -20,7 +20,7 @@ import { readEnv } from '../_lib/env.js';
 import { HttpError, clientIp, getHeader, isAllowedOrigin, readBody, requestOrigin, safe, sendJson } from '../_lib/http.js';
 import { logEvent } from '../_lib/log.js';
 import { hashIp } from '../_lib/security.js';
-import { createSupabase } from '../_lib/supabase.js';
+import { SupabaseError, createSupabase, dbReason } from '../_lib/supabase.js';
 import { verifyTurnstile } from '../_lib/turnstile.js';
 
 export const ADMIN_ENV = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'VITE_SUPABASE_ANON_KEY', 'TURNSTILE_SECRET_KEY', 'IP_HASH_SALT'];
@@ -45,6 +45,33 @@ const ENROL_MESSAGES = {
   mfa_factor_name_conflict: 'A previous setup attempt is pending. Try again.',
   too_many_enrolled_mfa_factors: 'A previous setup attempt is pending. Try again.',
 };
+
+/**
+ * Saves the order. The database function does it in one transaction (0005, fixed in 0007). Until 0007 has been run,
+ * Supabase's pg_safeupdate refuses the function's bare DELETE (code 21000): then the same result is written with two
+ * filtered REST calls (delete every row, insert the new order; the old order is put back if the insert fails). Only that one code triggers the fallback.
+ */
+async function saveOrder(db, slugs, log, t0, now) {
+  try {
+    await db.rpc('project_order_save', { p_slugs: slugs });
+  } catch (error) {
+    if (!(error instanceof SupabaseError) || error.code !== '21000') throw error;
+    log('admin', { status: 200, reason: 'order_fallback_21000', ms: now() - t0 });
+    // service_role has no UPDATE on project_order (only select / insert / delete), so no upsert: delete all, insert all.
+    const before = await db.select('project_order', 'select=slug,position,updated_at&order=position.asc');
+    await db.remove('project_order', 'position=gte.0');
+    try {
+      await db.insert('project_order', slugs.map((slug, position) => ({ slug, position })));
+    } catch (insertError) {
+      try {
+        if (Array.isArray(before) && before.length) await db.insert('project_order', before); // put the old order back
+      } catch {
+        /* the original error is the one that matters */
+      }
+      throw insertError;
+    }
+  }
+}
 
 const routeOf = (req) => {
   try {
@@ -194,7 +221,7 @@ export function createAdminHandler({ env = process.env, fetch = globalThis.fetch
         const parsed = orderSaveSchema.safeParse(body);
         const checked = parsed.success ? validateOrder(parsed.data.order, PROJECT_SLUGS) : { ok: false };
         if (!checked.ok) return fail(400, 'bad_request');
-        await db.rpc('project_order_save', { p_slugs: checked.order });
+        await saveOrder(db, checked.order, log, t0, now);
         log('admin', { status: 200, reason: 'order_saved', ms: now() - t0 });
         return sendJson(res, 200, { ok: true, projects: mergeOrder(checked.order, PROJECT_SLUGS).map((slug) => ({ slug, title: PROJECTS.find((p) => p.slug === slug)?.title })) });
       }
@@ -234,7 +261,7 @@ export function createAdminHandler({ env = process.env, fetch = globalThis.fetch
       // The real reason, without secrets: which Supabase call failed, its HTTP status and short error code.
       // Any other exception (database, network, a bug): still one line BEFORE the answer, naming the route.
       if (error instanceof AuthUpstreamError) log('admin', { status: 500, reason: upstreamReason(error.op, error.status, error.code), ms: now() - t0 });
-      else log('admin', { status: 500, reason: `${name.replace(/[^a-z]/g, '_')}_exception`, ms: now() - t0 });
+      else log('admin', { status: 500, reason: dbReason(name.replace(/[^a-z]/g, '_'), error), ms: now() - t0 });
       return fail(500, 'server_error');
     }
   };

@@ -7,7 +7,7 @@ import { mergeOrder } from '../src/shared/project-order.js';
 import { readEnv } from './_lib/env.js';
 import { safe, sendJson } from './_lib/http.js';
 import { logEvent } from './_lib/log.js';
-import { createSupabase } from './_lib/supabase.js';
+import { createSupabase, dbReason } from './_lib/supabase.js';
 
 export function createProjectOrderHandler({ env = process.env, fetch = globalThis.fetch, log = logEvent } = {}) {
   return async function projectOrder(req, res) {
@@ -18,8 +18,8 @@ export function createProjectOrderHandler({ env = process.env, fetch = globalThi
       const rows = await createSupabase({ url: config.values.SUPABASE_URL, key: config.values.SUPABASE_SERVICE_ROLE_KEY, fetch }).select('project_order', 'select=slug&order=position.asc');
       const saved = (rows ?? []).map((r) => r.slug).filter((s) => PROJECT_SLUGS.includes(s));
       return sendJson(res, 200, { ok: true, order: saved.length ? mergeOrder(saved, PROJECT_SLUGS) : [] }, { 'Cache-Control': 'public, max-age=0, s-maxage=15, stale-while-revalidate=30' });
-    } catch {
-      log('project_order', { status: 500, reason: 'read_failed' });
+    } catch (error) {
+      log('project_order', { status: 500, reason: dbReason('read_failed', error) });
       return sendJson(res, 500, { ok: false, error: 'server_error' });
     }
   };

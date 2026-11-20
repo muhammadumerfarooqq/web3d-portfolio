@@ -11,7 +11,7 @@ import { ANALYTICS_BODY_MAX, ANALYTICS_DAILY_CAP, ANALYTICS_EVENTS } from '../sr
 import { readEnv } from './_lib/env.js';
 import { HttpError, getHeader, isAllowedOrigin, readBody, requestOrigin, safe, sendJson } from './_lib/http.js';
 import { logEvent } from './_lib/log.js';
-import { createSupabase } from './_lib/supabase.js';
+import { createSupabase, dbReason } from './_lib/supabase.js';
 
 const noContent = (res) => {
   res.statusCode = 204;
@@ -50,8 +50,8 @@ export function createCollectHandler({ env = process.env, fetch = globalThis.fet
     if (event && config.ok) {
       try {
         await createSupabase({ url: config.values.SUPABASE_URL, key: config.values.SUPABASE_SERVICE_ROLE_KEY, fetch }).rpc('analytics_bump', { p_event: event, p_cap: ANALYTICS_DAILY_CAP });
-      } catch {
-        log('collect', { status: 204, reason: 'bump_failed' });
+      } catch (error) {
+        log('collect', { status: 204, reason: dbReason('bump_failed', error) });
       }
     } else log('collect', { status: 204, reason: event ? 'not_configured' : 'ignored' });
     return noContent(res);

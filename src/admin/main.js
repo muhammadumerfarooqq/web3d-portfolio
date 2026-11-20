@@ -46,6 +46,9 @@ async function api(path, { method = 'GET', body, auth = false } = {}) {
   }
 }
 
+/** A short reason tag made only of OUR words and the HTTP status: save_500, load_404, status_0 (network). */
+const tagOf = (what, status) => `${what}_${Number(status) || 0}`;
+
 // ───────────── session ─────────────
 function resetIdle() {
   window.clearTimeout(idleTimer);
@@ -304,7 +307,7 @@ async function loadOrder() {
   orderPanel.replaceChildren(h('p', { class: 'admin-note' }, 'Loading the case order…'));
   const res = await guarded('projects-order');
   if (!res) return;
-  if (res.status !== 200 || !res.data.ok) return orderPanel.replaceChildren(h('p', { class: 'admin-note' }, 'Could not load the order. Try again.'));
+  if (res.status !== 200 || !res.data.ok) return orderPanel.replaceChildren(h('p', { class: 'admin-note' }, `Could not load the order. Try again. (${tagOf('load', res.status)})`));
   renderOrder(res.data.projects.map((p) => ({ slug: p.slug, title: p.title ?? p.slug })));
 }
 
@@ -351,7 +354,7 @@ function renderOrder(items) {
     if (res.status === 200 && res.data.ok) say('Saved. The live site shows this order within a refresh.', 'ok');
     else {
       save.disabled = false;
-      say('Could not save the order. Nothing changed.', 'error');
+      say(`Could not save the order. Nothing changed. (${tagOf('save', res.status)})`, 'error');
     }
   });
   save.disabled = true;
@@ -368,7 +371,7 @@ async function loadMessages() {
   messagesPanel.replaceChildren(h('p', { class: 'admin-note' }, 'Loading the telegrams…'));
   const res = await guarded('messages');
   if (!res) return;
-  if (res.status !== 200 || !res.data.ok) return messagesPanel.replaceChildren(h('p', { class: 'admin-note' }, 'Could not load the messages. Try again.'));
+  if (res.status !== 200 || !res.data.ok) return messagesPanel.replaceChildren(h('p', { class: 'admin-note' }, `Could not load the messages. Try again. (${tagOf('load', res.status)})`));
   renderMessages(res.data.messages);
 }
 
@@ -403,7 +406,7 @@ function renderMessages(messages) {
       } else {
         sel.disabled = false;
         sel.value = m.status;
-        say('Could not change the status. Nothing changed.', 'error');
+        say(`Could not change the status. Nothing changed. (${tagOf('status', res.status)})`, 'error');
       }
     });
     const when = new Date(m.createdAt);
@@ -428,7 +431,7 @@ async function loadStats() {
   statsPanel.replaceChildren(h('p', { class: 'admin-note' }, 'Loading the counters…'));
   const res = await guarded('stats');
   if (!res) return;
-  if (res.status !== 200 || !res.data.ok) return statsPanel.replaceChildren(h('p', { class: 'admin-note' }, 'Could not load the counters. Try again.'));
+  if (res.status !== 200 || !res.data.ok) return statsPanel.replaceChildren(h('p', { class: 'admin-note' }, `Could not load the counters. Try again. (${tagOf('load', res.status)})`));
   const { days, events, stats } = res.data;
   const count = new Map(stats.map((r) => [`${r.day}|${r.event}`, r.count]));
   const head = h('tr', {}, h('th', { scope: 'col' }, 'Event'), ...days.map((d) => h('th', { scope: 'col' }, d.slice(5))));

@@ -43,3 +43,22 @@ select a.user_id, u.email from public.admins a join auth.users u on u.id = a.use
 - **Fix:** routes renamed `mfa-enroll` / `mfa-verify` (single segment; the nested spelling is still understood), client uses them, every MFA failure logs `<enroll|verify>_<reason>` BEFORE the answer (plus `<route>_exception` for any other error), the page appends our own tag `(setup_<status>)` / `(setup_network)`, raw 320 KB SVG QR accepted (sanitised, base64), the live check demands exactly 401 / 403 for the admin routes (it had accepted 404).
 - **End-to-end test against the real Supabase** (temporary confirmed user on `@e2e.invalid`, admins row, real handler code, only Turnstile mocked): login 200 (mfa=enroll) → enrol 200 (secret, uri, QR) → wrong code 401 → right code 200 (token aal2) → data route with aal2 200, with aal1 403 → login again (mfa=verify) → enrol 409 → verify with a code only 200. Temporary user and admins row deleted and confirmed gone (user lookup 404, 0 rows). The real admin user was only read: 0 factors (0 verified, 0 unverified), nothing deleted.
 - **Umer:** deploy; wait for the 10-minute login window; log in ONCE; enrol; then `npm run live:check` (the admin routes must now answer 401, never 404).
+
+## P7 final admin fix (20-Nov-2026): every route run against the real Supabase
+
+| Route | Before (real) | After (real) |
+|---|---|---|
+| GET /api/admin/projects-order | 200 | 200 |
+| POST /api/admin/projects-order (Save order) | **500** | 200 (fallback; the function path after 0007) |
+| GET projects-order shows the saved order | wrong (nothing saved) | 200, identical |
+| GET /api/project-order (public) | wrong (nothing saved) | 200, identical |
+| GET /api/admin/messages | 200 | 200 |
+| PATCH messages new → reading → new | 200 / 200 | 200 / 200 |
+| GET /api/admin/stats | 200 | 200 |
+| POST /api/collect | 204 | 204 |
+| GET stats shows the new count | 200 (count +1) | 200 (count +1) |
+
+- **Root cause:** Postgres 21000 "DELETE requires a WHERE clause" (`pg_safeupdate`) in `project_order_save()`; the handler had discarded the code (L256). Nothing else was broken (no missing grants for the other routes).
+- **Fix:** `supabase/migrations/0007_admin_fixes.sql` (function with a WHERE, grants re-stated; run it in the SQL editor); handler fallback for code 21000 only (filtered delete + insert, old order restored if the insert fails); `createSupabase` throws `SupabaseError` with status + code only; logs `<route>_db_<status>_<code>` before the 500; page tags save_/load_/status_<HTTP status>.
+- **Tool:** `node --env-file=.env scripts/qa/admin-e2e.mjs` (optional `REAL_ADMIN_ID` to confirm that user was not touched) repeats the whole real run: temporary user, real handlers, then restores `project_order`, the message status and the analytics counter and deletes the temporary user, its admins row and its rate-limit rows. Statuses and codes only.
+- **Umer:** (1) run 0007 in the Supabase SQL editor; (2) commit, push, wait for Ready; (3) test Save order, change a Telegram status, open Stats; (4) optional: re-run the tool, `order_saved` without `order_fallback_21000` proves the function path.

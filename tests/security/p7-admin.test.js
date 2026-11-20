@@ -11,6 +11,7 @@ import { createAdminHandler, ADMIN_ENV, FAIL_DELAY_MS } from '../../api/admin/[.
 import { createKeepaliveHandler } from '../../api/cron/keepalive.js';
 import { createProjectOrderHandler } from '../../api/project-order.js';
 import { bearerToken, jwtClaims } from '../../api/_lib/auth.js';
+import { SupabaseError, createSupabase, dbReason } from '../../api/_lib/supabase.js';
 import { publicProjects } from '../../scripts/content/slugs.mjs';
 import { PROJECTS, PROJECT_SLUGS } from '../../src/shared/project-slugs.js';
 import { buildSite } from '../helpers/build-site.js';
@@ -36,11 +37,11 @@ const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 const makeJwt = (claims) => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64(claims)}.c2lnbmF0dXJlLXRlc3Q`;
 
 /** A stateful stand-in for Supabase Auth + PostgREST + Turnstile. */
-function upstream({ factors = {}, admins = [UID_ADMIN], turnstile = { success: true, hostname: 'umerfarooq-ai.vercel.app', action: 'admin' }, authDown = false, dbDown = false, enrolErrors = [], deleteStatus = 200, qr = 'data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg"/>' } = {}) {
+function upstream({ factors = {}, admins = [UID_ADMIN], turnstile = { success: true, hostname: 'umerfarooq-ai.vercel.app', action: 'admin' }, authDown = false, dbDown = false, enrolErrors = [], deleteStatus = 200, orderRpc = null, insertFailures = 0, qr = 'data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg"/>' } = {}) {
   const users = { 'admin@example.com': { password: 'correct horse battery', id: UID_ADMIN }, 'other@example.com': { password: 'other password 1', id: UID_OTHER } };
   const f = { [UID_ADMIN]: [], [UID_OTHER]: [], ...factors };
   const tokens = new Map(); // access token → { id, aal }
-  const state = { calls: [], logins: 0, rpc: [], patches: [], saved: [], revoked: [], removed: [], enrolBodies: [], hits: { login: 0, mfa: 0 }, selects: [], messages: [
+  const state = { calls: [], logins: 0, rpc: [], patches: [], saved: [], revoked: [], removed: [], enrolBodies: [], restDeletes: [], inserts: [], hits: { login: 0, mfa: 0 }, selects: [], messages: [
     { id: MSG_ID, created_at: '2026-11-19T10:00:00Z', name: 'Ada Lovelace', email: 'ada@example.com', subject: 'General', message: 'Hello <b>there</b>\nsecond line', status: 'new', ip_hash: 'a'.repeat(64), user_agent: 'Mozilla/5.0 secret-agent' },
     { id: '44444444-4444-4444-8444-444444444444', created_at: '2026-11-18T10:00:00Z', name: 'Bob', email: 'bob@example.com', subject: 'Other', message: 'Email failed one for the mailbox test', status: 'email_failed', ip_hash: 'b'.repeat(64), user_agent: 'x' },
     { id: '55555555-5555-4555-8555-555555555555', created_at: '2026-11-17T10:00:00Z', name: 'Cy', email: 'cy@example.com', subject: 'Other', message: 'A legacy read message for the board', status: 'read', ip_hash: 'c'.repeat(64), user_agent: 'x' },
@@ -56,7 +57,7 @@ function upstream({ factors = {}, admins = [UID_ADMIN], turnstile = { success: t
     const u = String(url);
     const method = init.method ?? 'GET';
     state.calls.push(`${method} ${u.replace(S, '')}`);
-    const body = init.body && typeof init.body === 'string' && init.body.startsWith('{') ? JSON.parse(init.body) : init.body instanceof URLSearchParams ? Object.fromEntries(init.body) : {};
+    const body = init.body && typeof init.body === 'string' && /^[{[]/.test(init.body) ? JSON.parse(init.body) : init.body instanceof URLSearchParams ? Object.fromEntries(init.body) : {};
     if (u.includes('siteverify')) {
       state.siteverify = body;
       return json(turnstile);
@@ -118,14 +119,29 @@ function upstream({ factors = {}, admins = [UID_ADMIN], turnstile = { success: t
       }
       if (path === '/rpc/project_order_save') {
         state.rpc.push(['project_order_save', body]);
+        if (orderRpc) return json(orderRpc.body, orderRpc.status);
         state.saved = body.p_slugs;
         return json(body.p_slugs.length);
+      }
+      if (path.startsWith('/project_order?') && method === 'DELETE') {
+        state.restDeletes.push(path);
+        state.saved = [];
+        return new Response(null, { status: 204 });
+      }
+      if (path === '/project_order' && method === 'POST') {
+        if (insertFailures > 0) {
+          insertFailures -= 1;
+          return json({ code: '42501', message: 'permission denied for table project_order SECRET-DETAIL' }, 403);
+        }
+        state.inserts.push(body);
+        state.saved = [...body].sort((a, b) => (a.position ?? 0) - (b.position ?? 0)).map((r) => r.slug);
+        return new Response(null, { status: 201 });
       }
       if (path.startsWith('/admins?')) {
         const id = /user_id=eq\.([^&]+)/.exec(path)[1];
         return json(admins.includes(decodeURIComponent(id)) ? [{ user_id: id }] : []);
       }
-      if (path.startsWith('/project_order?')) return json(state.saved.map((slug) => ({ slug })));
+      if (path.startsWith('/project_order?')) return json(state.saved.map((slug, position) => ({ slug, position, updated_at: '2026-01-01T00:00:00Z' })));
       if (path.startsWith('/documents?')) return json([{ id: 1 }]);
       if (path.startsWith('/contact_messages?') && method === 'GET') {
         state.selects.push(path);
@@ -506,8 +522,8 @@ describe('C14 P7-fix2: the real root cause (a NESTED path never reached the func
     const down = upstream({ dbDown: true });
     const { res, logs } = await run('mfa-enroll', { body: {}, headers: auth(down.mint(UID_ADMIN, 'aal1')) }, down);
     expect(res.statusCode).toBe(500);
-    expect(logs.map((l) => l.reason)).toContain('mfa_enroll_exception');
-    expect(order.findIndex((o) => o === 'log:500:mfa_enroll_exception')).toBeLessThan(order.findIndex((o) => o === 'end:500'));
+    expect(logs.map((l) => l.reason)).toContain('mfa_enroll_db_500_none');
+    expect(order.findIndex((o) => o === 'log:500:mfa_enroll_db_500_none')).toBeLessThan(order.findIndex((o) => o === 'end:500'));
     // the rate limit
     const limited = upstream({ factors: { [UID_ADMIN]: [unverified] } });
     limited.state.hits.mfa = 10;
@@ -534,6 +550,149 @@ describe('C14 P7-fix2: the real root cause (a NESTED path never reached the func
     expect(live).toMatch(/none\.res\.status === 401/);
     expect(live).toMatch(/forged\.res\.status === 401/);
     expect(live).toMatch(/evil\.res\.status === 403/);
+  });
+});
+
+describe('C14 P7-final: every admin route on the real database (pg_safeupdate, error codes in the log, page tags)', () => {
+  const SLUGS = PROJECT_SLUGS;
+  const aal2 = (up) => auth(up.mint(UID_ADMIN, 'aal2'));
+  const save = (up, order = SLUGS) => call('projects-order', { body: { order }, headers: aal2(up) }, up);
+
+  it('REGRESSION: project_order_save() failed on the real Supabase with Postgres 21000 "DELETE requires a WHERE clause" (pg_safeupdate): the save falls back to a FILTERED delete + insert and succeeds', async () => {
+    const up = upstream({ orderRpc: { status: 400, body: { code: '21000', message: 'DELETE requires a WHERE clause' } } });
+    const rotated = [...SLUGS.slice(1), SLUGS[0]];
+    const r = await save(up, rotated);
+    expect(r.res.statusCode).toBe(200);
+    expect(r.res.json().projects.map((p) => p.slug)).toEqual(rotated);
+    expect(up.state.saved).toEqual(rotated);
+    expect(up.state.restDeletes).toEqual(['/project_order?position=gte.0']); // never a bare DELETE
+    expect(up.state.inserts[0].map((x) => x.slug)).toEqual(rotated);
+    expect(up.state.inserts[0].map((x) => x.position)).toEqual(rotated.map((_, i) => i));
+    expect(r.logs.join('\n')).toContain('order_fallback_21000');
+    // a second save over existing rows works too (there is no UPDATE grant, so it is delete + insert, never an upsert)
+    const again = await save(up, SLUGS);
+    expect(again.res.statusCode).toBe(200);
+    expect(up.state.saved).toEqual(SLUGS);
+    expect(up.state.calls.filter((c) => c.startsWith('PATCH /rest/v1/project_order'))).toEqual([]);
+    expect(up.state.calls.filter((c) => /project_order\?on_conflict/.test(c))).toEqual([]);
+  });
+
+  it('the fallback is ONLY for code 21000: any other database error is a 500 with its code in the log, and nothing is deleted', async () => {
+    for (const code of ['P0001', '42501', 'PGRST202']) {
+      const up = upstream({ orderRpc: { status: 400, body: { code, message: 'RAW data message with SECRET-DETAIL' } } });
+      const r = await save(up);
+      expect(r.res.statusCode, code).toBe(500);
+      expect(r.res.json(), code).toEqual({ ok: false, error: 'server_error' });
+      expect(up.state.restDeletes, code).toEqual([]);
+      expect(r.logs.join('\n'), code).toContain(`projects_order_db_400_${code}`);
+      expect(r.logs.join('\n') + r.res.body, code).not.toMatch(/SECRET-DETAIL|RAW data/);
+    }
+  });
+
+  it('if the insert of the fallback fails, the OLD order is put back and the answer is a 500 with the code in the log', async () => {
+    const up = upstream({ orderRpc: { status: 400, body: { code: '21000' } }, insertFailures: 1 });
+    up.state.saved = [SLUGS[2], SLUGS[0], SLUGS[1], ...SLUGS.slice(3)];
+    const old = [...up.state.saved];
+    const r = await save(up, SLUGS);
+    expect(r.res.statusCode).toBe(500);
+    expect(up.state.saved).toEqual(old);
+    expect(r.logs.join('\n')).toContain('projects_order_db_403_42501');
+    expect(r.logs.join('\n') + r.res.body).not.toMatch(/SECRET-DETAIL|permission denied/);
+  });
+
+  it('LOG BEFORE RESPOND on the data routes: a database error logs <route>_db_<status>_<code> (code only: no message, no slug, no data) before the 500', async () => {
+    const up = upstream({ dbDown: true });
+    const order = [];
+    const res = response();
+    const original = res.end;
+    res.end = (b) => {
+      order.push('end');
+      original(b);
+    };
+    const logs = [];
+    await createAdminHandler({ env: ENV, fetch: up.fetch, now: () => 1_800_000_000_000, sleep: async () => {}, log: (e, f) => { order.push(`log:${f.reason}`); logs.push(f); } })(request('messages', { method: 'GET', headers: aal2(up) }), res);
+    expect(res.statusCode).toBe(500);
+    const at = order.findIndex((o) => /^log:messages_db_500_/.test(o));
+    expect(at).toBeGreaterThanOrEqual(0);
+    expect(at).toBeLessThan(order.indexOf('end'));
+    expect(JSON.stringify(logs)).not.toMatch(/@|ada|Hello/);
+  });
+
+  it('createSupabase keeps only the HTTP status and a short code from a failed call, never the message; an odd code becomes "none"', async () => {
+    const mk = (body, status = 400) => createSupabase({ url: S, key: 'k', fetch: async () => new Response(typeof body === 'string' ? body : JSON.stringify(body), { status }) });
+    const err = await mk({ code: '21000', message: 'DELETE requires a WHERE clause: secret row data' }).rpc('x', {}).catch((e) => e);
+    expect(err).toBeInstanceOf(SupabaseError);
+    expect([err.status, err.code]).toEqual([400, '21000']);
+    expect(err.message).not.toMatch(/secret|WHERE/);
+    expect((await mk({ code: 'bad code!; drop' }).rpc('x', {}).catch((e) => e)).code).toBe('none');
+    expect((await mk('not json', 502).rpc('x', {}).catch((e) => e)).code).toBe('none');
+    expect((await mk({ code: 'PGRST202' }, 404).rpc('x', {}).catch((e) => e)).code).toBe('PGRST202');
+    expect(dbReason('save', err)).toBe('save_db_400_21000');
+    expect(dbReason('save', new Error('x'))).toBe('save_exception');
+  });
+
+  it('migration 0007 redefines project_order_save() with a WHERE on the DELETE, keeps the same checks, and keeps the lock-down (RLS forced, no anon / authenticated, service role only)', () => {
+    const sql = strip(read('supabase/migrations/0007_admin_fixes.sql').replace(/^\s*--.*$/gm, ''));
+    expect(sql).toMatch(/create or replace function public\.project_order_save\(p_slugs text\[\]\)/);
+    expect(sql).toMatch(/delete from public\.project_order where position >= 0;/);
+    expect(sql).not.toMatch(/delete from public\.project_order\s*;/);
+    for (const check of ['bad order', 'bad slug', 'duplicate slug', "set search_path = ''", 'security invoker']) expect(sql, check).toContain(check);
+    expect(sql).toMatch(/force row level security/);
+    expect(sql).toMatch(/revoke all on function public\.project_order_save\(text\[\]\) from public, anon, authenticated/);
+    expect(sql).toMatch(/grant execute on function public\.project_order_save\(text\[\]\) to service_role/);
+    expect(sql).not.toMatch(/\bgrant\b[^;]*\bto\s+(anon|authenticated|public)\b/i);
+    expect(sql).not.toMatch(/create policy/i);
+  });
+
+  it('GUARD: no function in the migrations may end up with a DELETE or UPDATE that has no WHERE (pg_safeupdate): 0005\'s bare delete is superseded by 0007', () => {
+    const dir = join(ROOT, 'supabase', 'migrations');
+    const bare = [];
+    for (const f of readdirSync(dir).filter((x) => x.endsWith('.sql')).sort()) {
+      const text = readFileSync(join(dir, f), 'utf8').replace(/^\s*--.*$/gm, '');
+      for (const m of text.matchAll(/\bdelete\s+from\s+([a-z_.]+)\s*;/gi)) bare.push(`${f}:${m[1]}`);
+      for (const m of text.matchAll(/\bupdate\s+([a-z_.]+)\s+set\s+[^;]*?;/gi)) if (!/\bwhere\b/i.test(m[0])) bare.push(`${f}:update ${m[1]}`);
+    }
+    expect(bare).toEqual(['0005_admin.sql:public.project_order']); // the only one, and 0007 replaces that function
+    expect(read('supabase/migrations/0007_admin_fixes.sql')).toContain('create or replace function public.project_order_save');
+  });
+
+  it('the page shows tags made only of our words and the HTTP status: save_500, load_404, status_0', () => {
+    const code = strip(read('src/admin/main.js'));
+    expect(code).toMatch(/const tagOf = \(what, status\) => `\$\{what\}_\$\{Number\(status\) \|\| 0\}`/);
+    for (const what of ['save', 'status']) expect(code).toContain(`tagOf('${what}', res.status)`);
+    expect((code.match(/tagOf\('load', res\.status\)/g) ?? []).length).toBe(3);
+    expect(code).not.toMatch(/innerHTML|insertAdjacentHTML|outerHTML/);
+  });
+
+  it('the public order and the collector log the database code too (and still answer 500 / 204 with nothing from upstream)', async () => {
+    const logs = [];
+    const failing = (status, code) => vi.fn(async () => new Response(JSON.stringify({ code, message: 'SECRET-DETAIL' }), { status }));
+    const res = response();
+    await createProjectOrderHandler({ env: ENV, fetch: failing(403, '42501'), log: (e, f) => logs.push(f.reason) })({ method: 'GET', url: '/api/project-order', headers: {} }, res);
+    expect(res.statusCode).toBe(500);
+    expect(res.body).not.toContain('SECRET');
+    expect(logs).toEqual(['read_failed_db_403_42501']);
+    const { createCollectHandler } = await import('../../api/collect.js');
+    const res2 = response();
+    const req = request('', { method: 'POST', body: { e: 'chat_open' } });
+    req.url = '/api/collect';
+    await createCollectHandler({ env: ENV, fetch: failing(404, 'PGRST202'), log: (e, f) => logs.push(f.reason) })(req, res2);
+    expect(res2.statusCode).toBe(204);
+    expect(logs).toContain('bump_failed_db_404_PGRST202');
+  });
+
+  it('messages: GET returns the fixed columns only; PATCH new -> reading -> new works; stats: GET returns { days, events, stats }', async () => {
+    const up = upstream();
+    const g = await call('messages', { method: 'GET', headers: aal2(up) }, up);
+    expect(g.res.statusCode).toBe(200);
+    expect(g.res.body).not.toMatch(/ip_hash|user_agent/);
+    const id = g.res.json().messages[0].id;
+    for (const status of ['reading', 'new']) {
+      const r = await call('messages', { method: 'PATCH', body: { id, status }, headers: aal2(up) }, up);
+      expect(r.res.statusCode).toBe(200);
+      expect(r.res.json()).toEqual({ ok: true, id, status });
+    }
+    expect(up.state.patches.map((x) => x[1])).toEqual([{ status: 'reading' }, { status: 'new' }]);
   });
 });
 

@@ -161,7 +161,7 @@ describe('C13 database lockdown, statically (C1, C3)', () => {
   });
   it('every function: security invoker, a fixed search_path, EXECUTE revoked from public roles and granted to service_role only', () => {
     const fns = [...sql.matchAll(/create or replace function public\.(\w+)\(([^)]*)\)/gi)];
-    expect(fns.map((m) => m[1]).sort()).toEqual(['admin_login_submit', 'analytics_bump', 'chat_submit', 'chat_submit', 'contact_submit', 'match_chunks', 'project_order_save', 'stt_submit']); // chat_submit is redefined in 0003
+    expect(fns.map((m) => m[1]).sort()).toEqual(['admin_login_submit', 'analytics_bump', 'chat_submit', 'chat_submit', 'contact_submit', 'match_chunks', 'project_order_save', 'project_order_save', 'stt_submit']); // chat_submit is redefined in 0003, project_order_save in 0007
     for (const [, name, args] of fns) {
       const sig = args.replace(/\s+/g, ' ').replace(/\b(?:p_\w+|query_\w+|match_count|min_similarity)\s+/g, '').replace(/ default [^,)]+/g, '').trim();
       expect(sql, name).toMatch(new RegExp(`revoke all on function public\\.${name}\\(`, 'i'));

@@ -1,6 +1,6 @@
 # Viva cheat sheet: every open or accepted limitation
 
-Generated 2026-11-20 by `node scripts/security/viva-cheatsheet.mjs` from `docs/LIMITATIONS.md` (180 rows with status OPEN or ACCEPTED). The defence column is the FIRST sentence of that row's viva defence, copied word for word, nothing added; the full defence and the impact are in LIMITATIONS.md under the same ID. SOLVED rows are not listed. If a defence there is not true any more, fix LIMITATIONS.md and run the script again.
+Generated 2026-11-20 by `node scripts/security/viva-cheatsheet.mjs` from `docs/LIMITATIONS.md` (181 rows with status OPEN or ACCEPTED). The defence column is the FIRST sentence of that row's viva defence, copied word for word, nothing added; the full defence and the impact are in LIMITATIONS.md under the same ID. SOLVED rows are not listed. If a defence there is not true any more, fix LIMITATIONS.md and run the script again.
 
 **How to use it:** when the examiner asks "what does not work, or what is weak?", pick the row, say the limitation, say the defence, say the planned fix. Never claim something this table does not say.
 
@@ -186,3 +186,4 @@ Generated 2026-11-20 by `node scripts/security/viva-cheatsheet.mjs` from `docs/L
 | L252 | ACCEPTED | The admin Stats tab is a table, not a chart | A table is the accessible form of the same data and costs no library; the plan's E7 chart view stays open for the later polish. | P12: a small SVG sparkline per event if time allows |
 | L253 | OPEN | The accessibility menu and the Urdu page were checked by machine and by eye, not with a screen reader | Machine checks cover roles, names, states, contrast, target size and focus order; a screen-reader pass belongs to the manual QA of P12. | Umer (or a tester) runs the menu and the language switch with a screen reader |
 | L254 | ACCEPTED | The promo film has no burned-in captions | Burning captions in means editing `aftereffects/promo.jsx` and re-rendering the 4K master, which the P10 brief put out of scope; the VTT files and the transcript make the web version accessible. | Re-render with a captions layer from `docs/promo/captions.json` if the film is published on its own |
+| L257 | ACCEPTED | `project_order` has no UPDATE privilege for the service role | The saved order is a handful of rows replaced in one go; adding UPDATE would widen a privilege nothing needs. | None |
