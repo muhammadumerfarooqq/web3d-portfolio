@@ -1,8 +1,11 @@
 // /api/admin/* — ONE Vercel Function (catch-all, Node, bom1) for the whole admin API, so the project stays far under
 // the 12-function limit of the free plan. Same-origin only; the browser never talks to Supabase.
 //   POST  /api/admin/login          email + password + Turnstile (action "admin") → an aal1 access token, only for an admin
-//   POST  /api/admin/mfa/enroll     first login only: starts TOTP enrolment (QR, secret, otpauth URI)
-//   POST  /api/admin/mfa/verify     a 6-digit code → an aal2 access token
+//   POST  /api/admin/mfa-enroll     first login only: starts TOTP enrolment (QR, secret, otpauth URI)
+//   POST  /api/admin/mfa-verify     a 6-digit code → an aal2 access token
+// (P7-fix2) These two are ONE path segment on purpose: on Vercel a request for a NESTED path such as
+// /api/admin/mfa/enroll never reached this catch-all function (the platform answered its own 404, so nothing was
+// logged). The nested spelling is still understood here, but the browser uses the single-segment names.
 //   POST  /api/admin/logout         revokes the session on Supabase
 //   GET   /api/admin/projects-order the saved gallery order (+ the titles)     POST saves it
 //   GET   /api/admin/messages       the contact messages (never ip_hash / user_agent)   PATCH changes one status
@@ -27,15 +30,15 @@ const defaultSleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const ROUTES = {
   login: { methods: ['POST'], json: true, max: ADMIN_LIMITS.body },
-  'mfa/enroll': { methods: ['POST'], json: true, max: ADMIN_LIMITS.body },
-  'mfa/verify': { methods: ['POST'], json: true, max: ADMIN_LIMITS.body },
+  'mfa-enroll': { methods: ['POST'], json: true, max: ADMIN_LIMITS.body },
+  'mfa-verify': { methods: ['POST'], json: true, max: ADMIN_LIMITS.body },
   logout: { methods: ['POST'], json: true, max: ADMIN_LIMITS.body },
   'projects-order': { methods: ['GET', 'POST'], json: 'POST', max: ADMIN_LIMITS.orderBody },
   messages: { methods: ['GET', 'PATCH'], json: 'PATCH', max: ADMIN_LIMITS.body },
   stats: { methods: ['GET'], json: false, max: 0 }, // P10: the analytics counters of the last 14 days
 };
 
-// Only because /mfa/enroll is reachable after a valid password AND an `admins` row: a short fixed sentence for the few
+// Only because /mfa-enroll is reachable after a valid password AND an `admins` row: a short fixed sentence for the few
 // upstream codes the owner can act on. Never the upstream text.
 const ENROL_MESSAGES = {
   mfa_totp_enroll_not_enabled: 'Two-step setup is switched off in Supabase.',
@@ -45,7 +48,7 @@ const ENROL_MESSAGES = {
 
 const routeOf = (req) => {
   try {
-    return new URL(req.url ?? '', 'http://x').pathname.replace(/^\/api\/admin\/?/, '').replace(/\/+$/, '');
+    return new URL(req.url ?? '', 'http://x').pathname.replace(/^\/api\/admin\/?/, '').replace(/\/+$/, '').replace(/^mfa\/(enroll|verify)$/, 'mfa-$1');
   } catch {
     return '';
   }
@@ -54,13 +57,16 @@ const routeOf = (req) => {
 export function createAdminHandler({ env = process.env, fetch = globalThis.fetch, now = Date.now, log = logEvent, sleep = defaultSleep } = {}) {
   return async function admin(req, res) {
     const t0 = now();
+    let tag = ''; // 'enroll' | 'verify' on the MFA routes: every failure line then says which route it belongs to
     const fail = (status, error, extra = {}, headers = {}) => {
-      log('admin', { status, reason: error, ms: now() - t0 });
+      log('admin', { status, reason: tag ? `${tag}_${error}` : error, ms: now() - t0 });
       return sendJson(res, status, { ok: false, error, ...extra }, headers);
     };
 
     const name = routeOf(req);
     const route = Object.hasOwn(ROUTES, name) ? ROUTES[name] : null;
+    if (name === 'mfa-enroll') tag = 'enroll';
+    else if (name === 'mfa-verify') tag = 'verify';
     if (!route) return fail(404, 'not_found');
     if (!route.methods.includes(req.method)) return fail(405, 'method_not_allowed', {}, { Allow: route.methods.join(', ') });
     if (!isAllowedOrigin(requestOrigin(req))) return fail(403, 'forbidden');
@@ -137,12 +143,12 @@ export function createAdminHandler({ env = process.env, fetch = globalThis.fetch
       }
 
       // ───────────── MFA: a valid admin session at aal1 (or aal2) ─────────────
-      if (name === 'mfa/enroll' || name === 'mfa/verify') {
+      if (name === 'mfa-enroll' || name === 'mfa-verify') {
         const gate = await requireAdmin({ req, auth, db, requireAal2: false });
         if (!gate.ok) return fail(gate.status, gate.status === 401 ? 'unauthorized' : 'forbidden');
         if (await limited('mfa')) return undefined;
         const totp = gate.factors.filter((f) => f.type === 'totp');
-        if (name === 'mfa/enroll') {
+        if (name === 'mfa-enroll') {
           if (totp.some((f) => f.status === 'verified')) return fail(409, 'already_enrolled');
           // Abandoned, never-verified enrolments would block or clutter a retry: remove them (never a verified one).
           for (const f of totp.filter((x) => x.status !== 'verified')) {
@@ -226,7 +232,9 @@ export function createAdminHandler({ env = process.env, fetch = globalThis.fetch
       return sendJson(res, 200, { ok: true, id, status });
     } catch (error) {
       // The real reason, without secrets: which Supabase call failed, its HTTP status and short error code.
+      // Any other exception (database, network, a bug): still one line BEFORE the answer, naming the route.
       if (error instanceof AuthUpstreamError) log('admin', { status: 500, reason: upstreamReason(error.op, error.status, error.code), ms: now() - t0 });
+      else log('admin', { status: 500, reason: `${name.replace(/[^a-z]/g, '_')}_exception`, ms: now() - t0 });
       return fail(500, 'server_error');
     }
   };

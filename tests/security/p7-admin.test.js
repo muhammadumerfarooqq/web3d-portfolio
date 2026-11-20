@@ -407,7 +407,8 @@ describe('C14 TOTP enrolment: the P7-fix (unique name, stale factors, real reaso
   it('the QR is accepted as an SVG data URI or as raw SVG (converted); a raw SVG with a script is dropped', async () => {
     const raw = upstream({ qr: '<svg xmlns="http://www.w3.org/2000/svg" width="10"><rect width="10" height="10"/></svg>' });
     const r = await call('mfa/enroll', { body: {}, headers: auth(sessions(raw).aal1) }, raw);
-    expect(r.res.json().qr).toMatch(/^data:image\/svg\+xml;utf-8,%3Csvg/);
+    expect(r.res.json().qr).toMatch(/^data:image\/svg\+xml;base64,/);
+    expect(Buffer.from(r.res.json().qr.split(',')[1], 'base64').toString('utf8')).toMatch(/^<svg /);
     const evil = upstream({ qr: '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>' });
     expect((await call('mfa/enroll', { body: {}, headers: auth(sessions(evil).aal1) }, evil)).res.json().qr).toBe('');
   });
@@ -416,6 +417,123 @@ describe('C14 TOTP enrolment: the P7-fix (unique name, stale factors, real reaso
     const code = strip(read('src/admin/main.js'));
     expect(code).toMatch(/data\.message/);
     expect(code).not.toMatch(/innerHTML|insertAdjacentHTML|outerHTML/);
+  });
+});
+
+describe('C14 P7-fix2: the real root cause (a NESTED path never reached the function on Vercel)', () => {
+  const unverified = { id: '66666666-6666-4666-8666-666666666661', factor_type: 'totp', status: 'unverified' };
+
+  it('the browser calls ONLY single-segment admin paths (a nested /api/admin/mfa/enroll got Vercel\'s own 404: nothing reached the function, nothing was logged)', () => {
+    const code = strip(read('src/admin/main.js'));
+    const paths = [...code.matchAll(/\b(?:api|guarded)\(\s*'([^']+)'/g)].map((m) => m[1]);
+    expect(paths.length).toBeGreaterThanOrEqual(5);
+    for (const path of paths) expect(path, path).not.toContain('/');
+    expect(paths).toEqual(expect.arrayContaining(['login', 'mfa-enroll', 'mfa-verify']));
+    expect(code).not.toMatch(/mfa\/(enroll|verify)/);
+    // the plain fetch for logout is single segment too
+    expect(code).toMatch(/\/api\/admin\/logout/);
+  });
+
+  it('mfa-enroll and mfa-verify are served by the catch-all as single segments; the nested spelling and a Vercel-style ?path= query reach the same route', async () => {
+    const up = upstream();
+    const { aal1 } = sessions(up);
+    for (const path of ['mfa-enroll', 'mfa/enroll', 'mfa-enroll?path=mfa-enroll', 'mfa/enroll?path=mfa%2Fenroll']) {
+      const r = await call(path, { body: {}, headers: auth(aal1) }, up);
+      expect(r.res.statusCode, path).toBe(200);
+      expect(r.res.json().factorId, path).toBeTruthy();
+    }
+    for (const path of ['mfa-verify', 'mfa/verify']) {
+      const r = await call(path, { body: { code: '000000' }, headers: auth(aal1) }, up);
+      expect([400, 401], path).toContain(r.res.statusCode); // routed (not 404): refused for the body / code, never "not found"
+    }
+    for (const path of ['mfa', 'mfa/', 'mfa/other', 'mfa-enroll/extra', 'mfa/enroll/extra']) expect((await call(path, { body: {}, headers: auth(aal1) }, up)).res.statusCode, path).toBe(404);
+    // unauthenticated: 401 on the single-segment name (the live check asserts exactly this on the real site)
+    expect((await call('mfa-enroll', { body: {} }, up)).res.statusCode).toBe(401);
+    expect((await call('mfa-verify', { body: { code: '123456' } }, up)).res.statusCode).toBe(401);
+  });
+
+  it('the real Supabase QR is a RAW SVG document of about 320 KB with an XML prolog and a comment: it is accepted (stripped, base64); script-like content is dropped; a huge or non-SVG value is dropped', async () => {
+    const big = `<?xml version="1.0"?>\n<!-- generated -->\n<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10">${'<rect width="1" height="1" x="1" y="1"/>'.repeat(8000)}</svg>`;
+    expect(big.length).toBeGreaterThan(300000);
+    const up = upstream({ qr: big });
+    const r = await call('mfa-enroll', { body: {}, headers: auth(sessions(up).aal1) }, up);
+    const qr = r.res.json().qr;
+    expect(qr).toMatch(/^data:image\/svg\+xml;base64,/);
+    const svg = Buffer.from(qr.split(',')[1], 'base64').toString('utf8');
+    expect(svg.startsWith('<svg ')).toBe(true);
+    expect(svg).not.toMatch(/<\?xml|<!--/);
+    for (const bad of ['<svg><script>alert(1)</script></svg>', '<svg onload="x()"></svg>', '<svg><foreignObject/></svg>', '<svg><a href="javascript:x"/></svg>', '<html><svg/></html>', 'https://evil.example/q.svg', `<svg>${'x'.repeat(700000)}</svg>`]) {
+      const u = upstream({ qr: bad });
+      expect((await call('mfa-enroll', { body: {}, headers: auth(sessions(u).aal1) }, u)).res.json().qr, bad.slice(0, 30)).toBe('');
+    }
+  });
+
+  it('LOG BEFORE RESPOND: every failure of the MFA routes writes one line naming the route and our status before the answer is sent', async () => {
+    const up = upstream({ factors: { [UID_ADMIN]: [{ id: '66666666-6666-4666-8666-666666666669', factor_type: 'totp', status: 'verified' }] } });
+    const { aal1 } = sessions(up);
+    const order = [];
+    const run = async (path, options, upstreamOverride = up) => {
+      const res = response();
+      const logs = [];
+      const original = res.end;
+      res.end = (b) => {
+        order.push(`end:${res.statusCode}`);
+        original(b);
+      };
+      await createAdminHandler({ env: ENV, fetch: upstreamOverride.fetch, now: () => 1_800_000_000_000, sleep: async () => {}, log: (e, f) => { order.push(`log:${f.status}:${f.reason}`); logs.push(f); } })(request(path, options), res);
+      return { res, logs };
+    };
+    // no token, forged token, wrong body, wrong code, enrol when verified, rate limit
+    const cases = [
+      ['mfa-enroll', { body: {} }, 401, 'enroll_unauthorized'],
+      ['mfa-verify', { body: { code: '123456' }, headers: auth('nope.nope.nope-nope-nope') }, 401, 'verify_unauthorized'],
+      ['mfa-verify', { body: { code: '12' }, headers: auth(aal1) }, 400, 'verify_bad_request'],
+      ['mfa-enroll', { body: {}, headers: auth(aal1) }, 409, 'enroll_already_enrolled'],
+      ['mfa-verify', { body: { code: '000000' }, headers: auth(aal1) }, 401, 'verify_invalid_code'],
+    ];
+    for (const [path, options, status, reason] of cases) {
+      order.length = 0;
+      const { res, logs } = await run(path, options);
+      expect(res.statusCode, reason).toBe(status);
+      expect(logs.map((l) => l.reason), reason).toContain(reason);
+      const logAt = order.findIndex((o) => o === `log:${status}:${reason}`);
+      const endAt = order.findIndex((o) => o === `end:${status}`);
+      expect(logAt, `${reason}: logged before the answer`).toBeGreaterThanOrEqual(0);
+      expect(logAt, reason).toBeLessThan(endAt);
+    }
+    // an exception inside the enrol (the database is down) still logs a route-named line before the 500
+    order.length = 0;
+    const down = upstream({ dbDown: true });
+    const { res, logs } = await run('mfa-enroll', { body: {}, headers: auth(down.mint(UID_ADMIN, 'aal1')) }, down);
+    expect(res.statusCode).toBe(500);
+    expect(logs.map((l) => l.reason)).toContain('mfa_enroll_exception');
+    expect(order.findIndex((o) => o === 'log:500:mfa_enroll_exception')).toBeLessThan(order.findIndex((o) => o === 'end:500'));
+    // the rate limit
+    const limited = upstream({ factors: { [UID_ADMIN]: [unverified] } });
+    limited.state.hits.mfa = 10;
+    const r = await run('mfa-enroll', { body: {}, headers: auth(limited.mint(UID_ADMIN, 'aal1')) }, limited);
+    expect(r.res.statusCode).toBe(429);
+    expect(r.logs.map((l) => l.reason)).toContain('enroll_rate_limited');
+    // none of the lines holds a secret
+    expect(JSON.stringify(r.logs)).not.toMatch(/eyJ|anon-test-key|service-role|203\.0\.113/);
+  });
+
+  it('the page names the failure with a tag of OUR own (setup_404, setup_502, setup_network) and nothing from upstream', () => {
+    const code = strip(read('src/admin/main.js'));
+    expect(code).toMatch(/setup_network/);
+    expect(code).toMatch(/`setup_\$\{Number\(status\) \|\| 0\}`/);
+    expect(code).toMatch(/\(\$\{tag\}\)/);
+    expect(code).not.toMatch(/innerHTML|insertAdjacentHTML|outerHTML/);
+  });
+
+  it('the live check demands 401 (not 404) for the admin routes, using the single-segment MFA paths', () => {
+    const live = read('scripts/security/live-check.mjs');
+    expect(live).toContain("'/api/admin/mfa-enroll'");
+    expect(live).toContain("'/api/admin/mfa-verify'");
+    expect(live).not.toMatch(/\/api\/admin\/mfa\/(enroll|verify)/);
+    expect(live).toMatch(/none\.res\.status === 401/);
+    expect(live).toMatch(/forged\.res\.status === 401/);
+    expect(live).toMatch(/evil\.res\.status === 403/);
   });
 });
 

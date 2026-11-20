@@ -199,7 +199,7 @@ function codeForm({ title, intro, extra = [], onSubmit }) {
 }
 
 async function verifyCode(code, factorId) {
-  const { status, retry, data } = await api('mfa/verify', { method: 'POST', auth: true, body: factorId ? { code, factorId } : { code } });
+  const { status, retry, data } = await api('mfa-verify', { method: 'POST', auth: true, body: factorId ? { code, factorId } : { code } });
   if (status === 200 && data.ok && data.accessToken) {
     token = data.accessToken;
     resetIdle();
@@ -220,12 +220,15 @@ function showCode() {
 
 async function showEnroll() {
   mount(h('div', { class: 'admin-card paper case-frame' }, h('p', { class: 'admin-note' }, 'Preparing two-step sign-in…'), live));
-  const { status, retry, data } = await api('mfa/enroll', { method: 'POST', auth: true, body: {} });
+  const { status, retry, data } = await api('mfa-enroll', { method: 'POST', auth: true, body: {} });
   if (status === 409) return showCode();
   if (status !== 200 || !data.ok) {
     if (status === 401) return endSession();
     if (status === 429) return showLogin(WAIT(retry), 'error');
-    return showLogin(typeof data.message === 'string' && data.message.length < 120 ? data.message : 'Could not start the two-step setup. Please try again.', 'error');
+    // The reason tag is our own: the HTTP status (setup_404) or setup_network. Never anything Supabase said.
+    const tag = status === 0 ? 'setup_network' : `setup_${Number(status) || 0}`;
+    const base = typeof data.message === 'string' && data.message.length < 120 ? data.message : 'Could not start the two-step setup. Please try again.';
+    return showLogin(`${base} (${tag})`, 'error');
   }
   const extra = [
     h('ol', { class: 'admin-steps' },

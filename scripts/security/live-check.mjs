@@ -124,17 +124,17 @@ for (const path of ['/api/contact', '/api/chat', '/api/transcribe']) {
 // database read, and none of them attempts a login (a login attempt would use up the owner's own rate limit).
 {
   const FORGED = `eyJhbGciOiJIUzI1NiJ9.${Buffer.from(JSON.stringify({ sub: '00000000-0000-4000-8000-000000000000', aal: 'aal2', exp: 9999999999 })).toString('base64url')}.c2lnbmF0dXJlLXRlc3Q`;
-  const adminRoutes = [['GET', '/api/admin/messages'], ['PATCH', '/api/admin/messages'], ['GET', '/api/admin/projects-order'], ['POST', '/api/admin/projects-order'], ['POST', '/api/admin/mfa/enroll'], ['POST', '/api/admin/mfa/verify']];
+  const adminRoutes = [['GET', '/api/admin/messages'], ['PATCH', '/api/admin/messages'], ['GET', '/api/admin/projects-order'], ['POST', '/api/admin/projects-order'], ['POST', '/api/admin/mfa-enroll'], ['POST', '/api/admin/mfa-verify']];
   for (const [method, path] of adminRoutes) {
     const body = method === 'GET' ? undefined : '{}';
     const type = { 'Content-Type': 'application/json' };
     const none = await call(method, path, { origin: BASE, headers: type, body });
     raw.push([`${method} ${path} (no token)`, none.res.status, pick(none.res, ['cache-control']), none.text.slice(0, 80)]);
-    check(`P7 ${method} ${path} no token`, 'admin API without a token → 401 (404 only before the P7 deploy), nothing returned', [401, 404].includes(none.res.status) && !/messages|projects|email/.test(none.text.replace(/"error":"[a-z_]+"/g, '')), `${none.res.status} ${none.text.slice(0, 80)}`);
+    check(`P7 ${method} ${path} no token`, 'admin API without a token → 401 (a 404 here means the route never reached the function: P7-fix2), nothing returned', none.res.status === 401 && !/messages|projects|email/.test(none.text.replace(/"error":"[a-z_]+"/g, '')), `${none.res.status} ${none.text.slice(0, 80)}`);
     const forged = await call(method, path, { origin: BASE, headers: { ...type, Authorization: `Bearer ${FORGED}` }, body });
-    check(`P7 ${method} ${path} forged token`, 'a token Supabase never issued (even one whose payload claims aal2) → 401', [401, 404].includes(forged.res.status), `${forged.res.status} ${forged.text.slice(0, 80)}`);
+    check(`P7 ${method} ${path} forged token`, 'a token Supabase never issued (even one whose payload claims aal2) → 401', forged.res.status === 401, `${forged.res.status} ${forged.text.slice(0, 80)}`);
     const evil = await call(method, path, { origin: EVIL, headers: { ...type, Authorization: `Bearer ${FORGED}` }, body });
-    check(`P7 ${method} ${path} cross-origin`, 'cross-origin → 403 (404 only before the P7 deploy), no CORS headers', [403, 404].includes(evil.res.status) && !evil.res.headers.get('access-control-allow-origin'), `${evil.res.status}`);
+    check(`P7 ${method} ${path} cross-origin`, 'cross-origin → 403, no CORS headers', evil.res.status === 403 && !evil.res.headers.get('access-control-allow-origin'), `${evil.res.status}`);
   }
   const bad = await call('POST', '/api/admin/login', { origin: BASE, headers: { 'Content-Type': 'application/json' }, body: '{"email":"nobody"}' });
   check('P7 login bad body', 'a login body that fails validation → 400 before the rate limiter, Turnstile or Supabase is touched', [400, 404].includes(bad.res.status), `${bad.res.status} ${bad.text.slice(0, 80)}`);

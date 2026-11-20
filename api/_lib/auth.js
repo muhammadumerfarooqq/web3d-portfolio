@@ -45,12 +45,19 @@ export function jwtClaims(token) {
   }
 }
 
-/** The QR as an SVG data URI: Supabase sends one (`data:image/svg+xml;utf-8,<svg…`) or, in some versions, the raw SVG. */
+/**
+ * The QR as an SVG data URI. Supabase's real answer is a RAW SVG document of about 320 KB (`<?xml …?><!-- … --><svg …>`);
+ * some versions send a `data:image/svg+xml` URI instead. Both are accepted, comments and the XML prolog are stripped,
+ * anything with script-like content is dropped (an <img> never runs scripts, this is belt and braces), and the result
+ * is passed on as base64. Vercel compresses the JSON answer, so the size on the wire is small.
+ */
+const QR_MAX = 600_000;
 function qrDataUri(value) {
-  if (typeof value !== 'string' || value.length >= 30000) return '';
+  if (typeof value !== 'string' || value.length >= QR_MAX) return '';
   if (/^data:image\/svg\+xml/.test(value)) return value;
-  if (/^\s*<svg[\s>]/i.test(value) && !/<script|<foreignObject|\son\w+\s*=/i.test(value)) return `data:image/svg+xml;utf-8,${encodeURIComponent(value.trim())}`;
-  return '';
+  const svg = value.replace(/^\s*<\?xml[^>]*\?>/i, '').replace(/<!--[\s\S]*?-->/g, '').trim();
+  if (!/^<svg[\s>]/i.test(svg) || /<script|<foreignObject|<!ENTITY|<iframe|\son\w+\s*=|javascript:/i.test(svg)) return '';
+  return `data:image/svg+xml;base64,${Buffer.from(svg, 'utf8').toString('base64')}`;
 }
 
 export function createAuth({ url, anonKey, fetch }) {
