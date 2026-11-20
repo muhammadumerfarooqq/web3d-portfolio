@@ -21,6 +21,8 @@ const WHAT = {
   'p5-chat.test.js': 'C11: chat endpoints, sessions, injection and private-data screens, output filter',
   'p6-screen.test.js': 'C11: private-data screen regression set (harmless vs attack prompts)',
   'p6-voice.test.js': 'C12: voice endpoint, audio checks, transcript screens, Permissions-Policy',
+  'p7-admin.test.js': 'C14: admin API (login, TOTP, aal2 gate, messages, order), cron secret, no data in the bundle',
+  'p10-analytics.test.js': 'C15: privacy-friendly analytics (no IP, no cookies, DNT / GPC, allow-list, daily cap) and the admin Stats gate',
   'p11-hardening.test.js': 'C13: secret scanner, supply chain, live-check and DB audit tooling, crash guard, ReDoS, SSRF, front-end hygiene, SEO',
 };
 

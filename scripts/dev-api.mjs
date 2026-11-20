@@ -21,11 +21,19 @@ async function routes(root, mode) {
   const { createChatHandler } = await import('../api/chat.js');
   const { createChatTokenHandler } = await import('../api/chat-token.js');
   const { createTranscribeHandler } = await import('../api/transcribe.js');
+  const { createAdminHandler } = await import('../api/admin/[...path].js');
+  const { createKeepaliveHandler } = await import('../api/cron/keepalive.js');
+  const { createProjectOrderHandler } = await import('../api/project-order.js');
+  const { createCollectHandler } = await import('../api/collect.js');
   const contact = createContactHandler({ env });
   const token = createTokenHandler({ env });
   const chat = createChatHandler({ env });
   const chatToken = createChatTokenHandler({ env });
   const transcribe = createTranscribeHandler({ env });
+  const adminApi = createAdminHandler({ env });
+  const keepalive = createKeepaliveHandler({ env });
+  const projectOrder = createProjectOrderHandler({ env });
+  const collect = createCollectHandler({ env });
   return (req, res, next) => {
     const path = (req.url ?? '').split('?')[0];
     if (path === '/api/contact') return void contact(req, res);
@@ -33,6 +41,10 @@ async function routes(root, mode) {
     if (path === '/api/chat') return void chat(req, res); // P5
     if (path === '/api/chat-token') return void chatToken(req, res); // P5
     if (path === '/api/transcribe') return void transcribe(req, res); // P6
+    if (path === '/api/admin' || path.startsWith('/api/admin/')) return void adminApi(req, res); // P7
+    if (path === '/api/cron/keepalive') return void keepalive(req, res); // P7
+    if (path === '/api/project-order') return void projectOrder(req, res); // P7
+    if (path === '/api/collect') return void collect(req, res); // P10
     next();
   };
 }

@@ -51,7 +51,7 @@ export function renderPlayer({ src, poster = null, size = null, title, noAudio =
   return html`<figure class="player" data-player${noAudio ? raw(' data-no-audio') : ''}${lazy ? raw(' data-lazy') : ''}>
             <div class="player__frame">
               <video class="player__video" src="${src}"${poster ? html` poster="${poster}"` : ''}${size ? html` width="${size.width}" height="${size.height}"` : ''} preload="${preload}" playsinline${noAudio ? raw(' muted') : ''} controls>${tracks.map(
-                (t) => html`<track kind="captions" src="${t.src}" srclang="${t.lang}" label="${t.label}" />`,
+                (t) => html`<track kind="captions" src="${t.src}" srclang="${t.lang}" label="${t.label}"${t.default ? raw(' default') : ''} />`,
               )}</video>
             </div>
             <figcaption class="player__caption">${noAudio ? html`<span class="chip chip--kind" data-hue="brass">No audio</span>` : ''}<span>${title}</span></figcaption>
@@ -280,21 +280,35 @@ export function renderAchievements({ achievements }, { root }) {
 // P9.5: the 1080p web file, poster and captions written by scripts/promo/render.mjs and build-vtt.mjs.
 // Nothing loads until the visitor presses play (preload="none", data-lazy keeps the player from
 // upgrading it to metadata); the 4K master is not public (no download link).
-export const PROMO = { video: '/media/promo-1080.mp4', poster: '/media/promo-poster.jpg', size: { width: 1920, height: 1080 }, tracks: [['en', 'English']] };
+export const PROMO = { video: '/media/promo-1080.mp4', poster: '/media/promo-poster.jpg', size: { width: 1920, height: 1080 }, tracks: [['en', 'English'], ['ur', 'اردو']] };
 
 /** /media is served immutable (vercel.json): a content hash in the query busts it after a re-render. */
 const versioned = (root, url) => `${url}?v=${createHash('sha256').update(readFileSync(join(root, 'public', url))).digest('hex').slice(0, 10)}`;
+
+/** P10: the promo's captions as a plain-text transcript, English and Urdu, from docs/promo/captions.json. */
+function renderTranscript(root) {
+  const file = join(root, 'docs', 'promo', 'captions.json');
+  if (!existsSync(file)) return html`<div class="video-stage__transcript" data-slot="video-transcript"></div>`;
+  const { cues } = JSON.parse(readFileSync(file, 'utf8'));
+  return html`<details class="video-transcript" data-slot="video-transcript">
+              <summary>Transcript (English and اردو)</summary>
+              <div class="video-transcript__cols">
+                <div lang="en" dir="ltr"><h3 class="video-transcript__h">English</h3><ol>${cues.map((c) => html`<li>${c.en}</li>`)}</ol></div>
+                <div lang="ur" dir="rtl"><h3 class="video-transcript__h">اردو</h3><ol>${cues.map((c) => html`<li>${c.ur}</li>`)}</ol></div>
+              </div>
+            </details>`;
+}
 
 export function renderVideoSection({ root }) {
   if (existsSync(join(root, 'public', PROMO.video))) {
     const poster = existsSync(join(root, 'public', PROMO.poster)) ? versioned(root, PROMO.poster) : null;
     const tracks = PROMO.tracks
-      .map(([lang, label]) => ({ src: `/media/promo.${lang}.vtt`, lang, label }))
+      .map(([lang, label]) => ({ src: `/captions/promo.${lang}.vtt`, lang, label, default: lang === 'en' }))
       .filter((t) => existsSync(join(root, 'public', t.src)))
       .map((t) => ({ ...t, src: versioned(root, t.src) }));
     return html`<div class="video-stage">
             ${renderPlayer({ src: versioned(root, PROMO.video), poster, size: PROMO.size, title: 'Promo film: The Case File of Umer (45 s)', tracks, preload: 'none', lazy: true })}
-            <div class="video-stage__transcript" data-slot="video-transcript"></div>
+            ${renderTranscript(root)}
           </div>`;
   }
   return html`<div class="video-stage">

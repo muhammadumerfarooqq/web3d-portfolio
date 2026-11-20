@@ -127,7 +127,7 @@ Every step adds its rows here. Save each screenshot under `docs/screenshots/<mod
 | P6-12 | Eval / Report after fix 1 | `docs/reports/rag-eval.md` latest section: 19/19 answerable (7 Urdu / Roman Urdu), 7/7 refusals | `npm run rag:eval` | ⬜ |
 | P6-13 | Projects / TALEEM360 cover | The TALEEM360 card, modal and bounty poster now filled with the phone screenshot (top centre), no backdrop | Projects section, then the Explore bounty board | ⬜ |
 | P11-1 | Security / Secret scan | `npm run scan:secrets` ending in "RESULT: clean", and (if installed) the gitleaks "no leaks found" line | Terminal in the project folder | ⬜ |
-| P11-2 | Security / Test summary | `npm run test:security` summary: 12 files, 350 tests, "every security test passed" | Terminal | ⬜ |
+| P11-2 | Security / Test summary | `npm run test:security` summary: 13 files, 403 tests, "every security test passed" | Terminal | ⬜ |
 | P11-3 | Security / Observatory | The MDN Observatory result for the live site: A+ (130) | developer.mozilla.org/en-US/observatory/analyze?host=umerfarooq-ai.vercel.app | ⬜ |
 | P11-4 | QA / Lighthouse mobile | The four gauges (Performance, Accessibility, Best practices, SEO), Mobile | Chrome DevTools → Lighthouse on the live site, Incognito | ⬜ |
 | P11-5 | QA / Lighthouse desktop | The four gauges, Desktop | Same, Desktop | ⬜ |
@@ -139,3 +139,28 @@ Every step adds its rows here. Save each screenshot under `docs/screenshots/<mod
 | P11-11 | Security / Headers | DevTools → Network → the document response headers (CSP, HSTS, COOP, Permissions-Policy) | DevTools on the live site | ⬜ |
 | P11-12 | Security / Cross-origin refused | `curl.exe -i -X POST https://umerfarooq-ai.vercel.app/api/chat -H "Origin: https://evil.example"` returning 403 with no CORS headers | Terminal (VIVA_SECURITY_DEMO step 3) | ⬜ |
 | P11-13 | QA / Performance budget | `node scripts/qa/budget.mjs` output: entry +1.8 KB, Explore 349.7 KB, first visit 406 KB | npm run build, then the script | ⬜ |
+| P7-1 | Admin / Login | The sign-in card with email, password and (when asked) the Turnstile check | https://umerfarooq-ai.vercel.app/admin/ | ⬜ |
+| P7-2 | Admin / Two-step setup | The first-login screen with the QR code, the secret and the otpauth link (blur the secret before publishing) | First login | ⬜ |
+| P7-3 | Admin / Two-step code | The "Enter your code" screen of a later login | Log out, log in again | ⬜ |
+| P7-4 | Admin / Case order | The Case order tab with Up / Down buttons and the "Saved. The live site shows this order within a refresh." message | Move a row, press Save | ⬜ |
+| P7-5 | Site / Order live | The Bounties section of Classic in the new order after a refresh | Reload the live site | ⬜ |
+| P7-6 | Admin / Telegrams | The four-column board with a real message moved to Replied | Telegrams tab, change a status | ⬜ |
+| P7-7 | Security / Admin closed | `curl.exe -i https://umerfarooq-ai.vercel.app/api/admin/messages` returning 401 and no data | Terminal (VIVA_SECURITY_DEMO step 9) | ⬜ |
+| P7-8 | Security / Admin tests | `npm run test:security`: the p7-admin.test.js line (53 tests) and the totals | Terminal | ⬜ |
+| P7-9 | Ops / Cron | Vercel → Settings → Cron Jobs listing /api/cron/keepalive and its first successful run | Vercel dashboard | ⬜ |
+| P7-10 | Data / Admins table | Supabase → Table editor → admins with exactly one row (hide the id), RLS badge on the three new tables | Supabase dashboard | ⬜ |
+| P10-1 | Site / Accessibility menu open | The Classic page with the Accessibility panel open (five switches, note, Reset), dark theme | Tab to "Accessibility", press Space | ⬜ |
+| P10-2 | Site / High contrast | The hero or About in High contrast + Larger text, light theme | Menu → High contrast, Larger text; theme light | ⬜ |
+| P10-3 | Site / Readable spacing | A paragraph block with Readable spacing on (system font, wide spacing) | Menu → Readable spacing | ⬜ |
+| P10-4 | Site / Urdu header and hero | EN | اردو switch in the header and the right-to-left Classic hero in Urdu | Click اردو | ⬜ |
+| P10-5 | Site / Urdu chat and contact | The Ask my AI panel and the contact form with Urdu labels and messages | Switch to اردو, scroll to Ask my AI and Send a telegram | ⬜ |
+| P10-6 | Site / Urdu on a phone | The Urdu page at about 390 px wide with the menu open (language switch inside the menu) | Phone or DevTools 390 px | ⬜ |
+| P10-7 | Site / Privacy note | The footer Privacy section open (English, and Urdu if possible) | Footer → Privacy | ⬜ |
+| P10-8 | Video / Captions | The promo video playing with English captions on, and the captions menu showing English and اردو | Promo section → CC | ⬜ |
+| P10-9 | Video / Transcript | The open Transcript details under the video, both languages | Promo section → Transcript | ⬜ |
+| P10-10 | Admin / Stats | The Stats tab: 14-day table with real counts (hide nothing sensitive: there is none) | /admin/ → Stats (after 0006 and a deploy) | ⬜ |
+| P10-11 | Browser / No cookies | DevTools Application → Cookies empty and Network showing one collect request (204) | DevTools on the live site | ⬜ |
+| P10-12 | Security / Collect closed | `curl.exe` showing the 403 for a foreign origin and the empty 204 for an unknown event (VIVA_SECURITY_DEMO step 10) | Terminal | ⬜ |
+| P10-13 | Security / Analytics tests | `npm run test:security`: the p10-analytics.test.js line and the totals (14 files, 435 tests) | Terminal | ⬜ |
+| P10-14 | Data / analytics_daily | Supabase → Table editor → analytics_daily with a few rows and the RLS badge; `npm run rls:verify` all PASS with no warnings | Supabase dashboard and terminal | ⬜ |
+| P10-15 | QA / axe per mode | `node scripts/qa/a11y-check.mjs` summary: 12 runs, 0 violations | Terminal | ⬜ |

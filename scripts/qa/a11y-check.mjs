@@ -19,16 +19,18 @@ const browser = await chromium.launch({ channel: 'chrome', headless: true });
 const TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'];
 const report = [];
 
-async function open({ theme, reduced }) {
+async function open({ theme, reduced, a11y = '', lang = '' }) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, bypassCSP: true, reducedMotion: reduced ? 'reduce' : 'no-preference', colorScheme: theme });
   await context.addInitScript(
-    ({ theme }) => {
+    ({ theme, a11y, lang }) => {
+      if (a11y) localStorage.setItem('a11y', a11y); // P10: the visitor's own display settings
+      if (lang) localStorage.setItem('lang', lang);
       localStorage.setItem('theme', theme);
       localStorage.setItem('mode', 'classic');
       localStorage.setItem('intro', 'seen');
       sessionStorage.setItem('intro', 'seen');
     },
-    { theme },
+    { theme, a11y, lang },
   );
   const page = await context.newPage();
   await page.goto(`${base}/`, { waitUntil: 'load' });
@@ -54,6 +56,8 @@ async function open({ theme, reduced }) {
 }
 
 async function axeRun(page) {
+  await page.evaluate(() => document.activeElement?.blur()); // the skip link is only visible while focused; it is not part of the layout under test
+  await page.waitForTimeout(900); // …and it slides away: measure after the transition, not during it
   await page.evaluate(axeSource);
   return page.evaluate(
     (tags) =>
@@ -68,7 +72,10 @@ async function axeRun(page) {
 
 async function keyboard(page) {
   const list = [];
+  let misses = 0;
   await page.evaluate(() => {
+    // Cloudflare's hidden Turnstile frames are third-party and take focus when they load: out of scope for this pass
+    for (const f of document.querySelectorAll('iframe')) f.setAttribute('tabindex', '-1');
     document.activeElement?.blur();
     window.scrollTo(0, 0);
   });
@@ -84,9 +91,13 @@ async function keyboard(page) {
       return { tag: el.tagName.toLowerCase(), id: el.id, name: name.replace(/\s+/g, ' '), outline, w: Math.round(r.width), h: Math.round(r.height), hidden: r.width === 0 || r.height === 0, section: el.closest('section')?.id ?? (el.closest('header') ? 'header' : el.closest('footer') ? 'footer' : '') };
     });
     if (!d) {
+      // focus may be inside a cross-origin frame (the Turnstile widget) or have left the document: press Tab on a few times
       list.push({ stop: true });
-      break;
+      misses += 1;
+      if (misses > 3) break;
+      continue;
     }
+    misses = 0;
     list.push(d);
     if (list.length > 3 && list[0].id && d.id === list[0].id && d.tag === list[0].tag && d.name === list[0].name) break; // wrapped around
   }
@@ -97,6 +108,16 @@ const runs = [
   { label: 'dark theme', theme: 'dark', reduced: false },
   { label: 'light theme', theme: 'light', reduced: false },
   { label: 'dark theme, reduced motion', theme: 'dark', reduced: true },
+  // P10: every accessibility-menu mode on its own, both contrast palettes, all modes together, and Urdu (right to left)
+  { label: 'menu: reduce motion', theme: 'dark', reduced: false, a11y: 'motion' },
+  { label: 'menu: larger text', theme: 'dark', reduced: false, a11y: 'text' },
+  { label: 'menu: readable spacing', theme: 'dark', reduced: false, a11y: 'spacing' },
+  { label: 'menu: underline links', theme: 'dark', reduced: false, a11y: 'links' },
+  { label: 'menu: high contrast, dark', theme: 'dark', reduced: false, a11y: 'contrast' },
+  { label: 'menu: high contrast, light', theme: 'light', reduced: false, a11y: 'contrast' },
+  { label: 'menu: all modes together, light', theme: 'light', reduced: false, a11y: 'motion,text,contrast,spacing,links' },
+  { label: 'Urdu (right to left), dark', theme: 'dark', reduced: false, lang: 'ur' },
+  { label: 'Urdu (right to left), light, high contrast', theme: 'light', reduced: false, lang: 'ur', a11y: 'contrast' },
 ];
 let totalViolations = 0;
 for (const r of runs) {
@@ -134,10 +155,16 @@ const iChatInput = idx((k) => k.id === 'chat-input');
 const iMic = idx((k) => /microphone/i.test(k.name));
 const iAsk = idx((k) => k.name === 'Ask');
 const iContactName = idx((k) => /^contact-name|name$/i.test(k.id || '') || (k.section === 'contact' && k.tag === 'input'));
-const noOutline = names.filter((k) => !k.outline && !k.hidden);
+// Cloudflare's Turnstile widget puts empty, unnamed <div> hosts in the Tab path while it is loaded (third-party, P4): counted apart.
+const thirdParty = names.filter((k) => k.tag === 'div' && k.name === 'DIV' && !k.id);
+const noOutline = names.filter((k) => !k.outline && !k.hidden && !thirdParty.includes(k));
 console.log(`\nkeyboard (dark theme): ${names.length} stops in one Tab pass${stops ? `, stopped on a non-focusable element ${stops}×` : ''}; chat input #${iChatInput}, microphone #${iMic}, Ask #${iAsk}, first contact field #${iContactName}`);
+console.log(`  first stops: ${names.slice(0, 8).map((k) => `${k.tag}:${k.name}`).join(' | ')}
+  last stops: ${names.slice(-6).map((k) => `${k.tag}:${k.name}@${k.section}`).join(' | ')}`);
 console.log(`  focus order in the chat: input → microphone → Ask ${iChatInput >= 0 && iMic > iChatInput && iAsk > iMic ? 'OK' : 'CHECK'}`);
+console.log(`  Turnstile (third-party) hosts in the Tab path: ${thirdParty.length}`);
 console.log(`  focused controls without an outline: ${noOutline.length}${noOutline.length ? ` e.g. ${noOutline.slice(0, 5).map((k) => `${k.tag}:${k.name}`).join(' | ')}` : ''}`);
+if (noOutline.length) console.log(`  no-outline stops: ${noOutline.slice(0, 8).map((k) => `${k.tag}#${k.id}:${k.name}@${k.section}`).join(' | ')}`);
 console.log(`  zero-size focus stops: ${names.filter((k) => k.hidden).length}`);
 
 await browser.close();
@@ -167,6 +194,7 @@ if (process.argv.includes('--write')) {
     '',
     `- ${names.length} Tab stops in one pass, no keyboard trap (the pass ends when focus leaves the document).`,
     `- Chat order: message box (#${iChatInput}) → microphone (#${iMic}) → Ask (#${iAsk}): ${iChatInput >= 0 && iMic > iChatInput && iAsk > iMic ? 'correct' : 'CHECK'}.`,
+    `- ${thirdParty.length} of those stops are Cloudflare's Turnstile hosts (empty third-party divs that exist only while the widget is loaded); they are left out of the outline count.`,
     `- Focused controls with no outline: ${noOutline.length}${noOutline.length ? ` (${noOutline.slice(0, 8).map((k) => `${k.tag} "${k.name}"`).join(', ')})` : ''}.`,
     '',
     '### What this does not prove',

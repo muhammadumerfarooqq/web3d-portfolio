@@ -134,9 +134,13 @@ export const yieldToMain = () =>
 
 // Each SplitText measures layout after the previous one mutated the DOM, so every reveal costs a
 // layout pass: one element per task keeps each task short.
+const splits = new Map();
 async function initReveals() {
   for (const el of document.querySelectorAll('[data-reveal]')) {
-    REVEALS[el.dataset.reveal]?.(el);
+    // Urdu is cursive: splitting it into characters would unjoin the letters, so those reveals fade instead.
+    const kind = el.dataset.reveal;
+    const made = REVEALS[document.documentElement.lang === 'ur' && (kind === 'chars' || kind === 'type-on') ? 'fade-up' : kind]?.(el);
+    if (typeof made?.revert === 'function') splits.set(el, made); // SplitText instances, so a language switch can put the text back
     await yieldToMain();
   }
 }
@@ -182,6 +186,12 @@ export async function initRevealMotion({ reduced }) {
   if (reduced) return;
   await initReveals();
   initCounters();
+
+  // P10: switching to Urdu puts split reveals back (an auto-split would cut the Urdu apart or bring the English back).
+  window.addEventListener('i18nrevert', () => {
+    for (const split of splits.values()) split.revert();
+    splits.clear();
+  });
 
   // Line breaks and trigger positions settle once the web fonts are in.
   document.fonts?.ready.then(() => ScrollTrigger.refresh());

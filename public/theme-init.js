@@ -27,7 +27,34 @@
   }
   root.setAttribute('data-theme', theme);
 
-  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // P10: the visitor's own display settings (accessibility menu) and language, applied before the first paint.
+  // Only known names are accepted from storage (mirrors OPTIONS in src/ui/a11y-menu.js and LANGS in src/i18n).
+  var A11Y = { motion: ['data-a11y-motion', 'reduce'], text: ['data-a11y-text', 'large'], contrast: ['data-a11y-contrast', 'high'], spacing: ['data-a11y-spacing', 'readable'], links: ['data-a11y-links', 'underline'] };
+  var a11yMotion = false;
+  try {
+    var saved = (window.localStorage.getItem('a11y') || '').split(',');
+    for (var i = 0; i < saved.length; i += 1) {
+      if (Object.prototype.hasOwnProperty.call(A11Y, saved[i])) {
+        root.setAttribute(A11Y[saved[i]][0], A11Y[saved[i]][1]);
+        if (saved[i] === 'motion') a11yMotion = true;
+      }
+    }
+  } catch (e) {
+    // Storage blocked: the menu still works for this page.
+  }
+  var lang = null;
+  try {
+    var asked = /(?:^\?|&)lang=(en|ur)(?:&|$)/.exec(window.location.search);
+    lang = asked ? asked[1] : window.localStorage.getItem('lang');
+  } catch (e) {
+    lang = null;
+  }
+  if (lang === 'ur') {
+    root.setAttribute('lang', 'ur');
+    root.setAttribute('dir', 'rtl');
+  }
+
+  var reduceMotion = a11yMotion || (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 
   // Boot layer (src/ui/start.js): first visit with motion → the intro covers the page from the first
   // frame; otherwise straight to the start screen. Without JS this never runs and the Classic page shows.

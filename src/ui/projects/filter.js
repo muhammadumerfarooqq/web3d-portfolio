@@ -40,7 +40,14 @@ export function matchesProject(project, { cat = '', stacks = [], q = '' }) {
 }
 
 const COMPARE = {
-  featured: (a, b) => Number(b.featured) - Number(a.featured) || a.order - b.order,
+  // P7: projects in the admin's saved order carry a `rank` and come first, by rank (like mergeOrder on the server);
+  // the others follow by the built-in rule. With no ranks at all this is exactly the old comparison.
+  featured: (a, b) => {
+    const ra = a.rank ?? Infinity;
+    const rb = b.rank ?? Infinity;
+    if (ra !== rb) return ra < rb ? -1 : 1;
+    return Number(b.featured) - Number(a.featured) || a.order - b.order;
+  },
   newest: (a, b) => b.year - a.year || a.order - b.order,
   az: (a, b) => a.title.localeCompare(b.title, 'en', { sensitivity: 'base' }) || a.order - b.order,
 };

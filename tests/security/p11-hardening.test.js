@@ -148,8 +148,8 @@ describe('C13 database lockdown, statically (C1, C3)', () => {
   const dir = join(ROOT, 'supabase', 'migrations');
   const sql = readdirSync(dir).filter((f) => f.endsWith('.sql')).sort().map((f) => read(`supabase/migrations/${f}`)).join('\n').replace(/--.*$/gm, '');
   const tables = [...sql.matchAll(/create table (?:if not exists )?public\.(\w+)/gi)].map((m) => m[1]);
-  it('the five known tables exist and EVERY table has RLS enabled and forced, no policies, no privileges for anon / authenticated, grants only to service_role', () => {
-    expect(tables.sort()).toEqual(['chat_hits', 'chat_logs', 'chunks', 'contact_messages', 'documents']);
+  it('the known tables exist (P7 added three) and EVERY table has RLS enabled and forced, no policies, no privileges for anon / authenticated, grants only to service_role', () => {
+    expect(tables.sort()).toEqual(['admin_login_hits', 'admins', 'analytics_daily', 'chat_hits', 'chat_logs', 'chunks', 'contact_messages', 'documents', 'project_order']);
     for (const t of tables) {
       expect(sql, t).toMatch(new RegExp(`alter table public\\.${t} enable row level security`, 'i'));
       expect(sql, t).toMatch(new RegExp(`alter table public\\.${t} force row level security`, 'i'));
@@ -161,7 +161,7 @@ describe('C13 database lockdown, statically (C1, C3)', () => {
   });
   it('every function: security invoker, a fixed search_path, EXECUTE revoked from public roles and granted to service_role only', () => {
     const fns = [...sql.matchAll(/create or replace function public\.(\w+)\(([^)]*)\)/gi)];
-    expect(fns.map((m) => m[1]).sort()).toEqual(['chat_submit', 'chat_submit', 'contact_submit', 'match_chunks', 'stt_submit']); // chat_submit is redefined in 0003
+    expect(fns.map((m) => m[1]).sort()).toEqual(['admin_login_submit', 'analytics_bump', 'chat_submit', 'chat_submit', 'contact_submit', 'match_chunks', 'project_order_save', 'stt_submit']); // chat_submit is redefined in 0003
     for (const [, name, args] of fns) {
       const sig = args.replace(/\s+/g, ' ').replace(/\b(?:p_\w+|query_\w+|match_count|min_similarity)\s+/g, '').replace(/ default [^,)]+/g, '').trim();
       expect(sql, name).toMatch(new RegExp(`revoke all on function public\\.${name}\\(`, 'i'));
@@ -178,9 +178,9 @@ describe('C13 database lockdown, statically (C1, C3)', () => {
     for (const kind of ['functions', 'tables', 'sequences']) expect(h).toMatch(new RegExp(`alter default privileges for role postgres in schema public revoke \\w+(?: on)? ${kind} from`, 'i'));
   });
   it('no IP and no audio can be stored: only salted hashes (64 hex) in ip_hash, no bytea / oid / blob column anywhere', () => {
-    expect(sql).not.toMatch(/\b(bytea|oid|blob)\b|\binet\b|\bcidr\b/i);
+    expect(sql.replace(/pg_get_constraintdef\(oid\)/g, '')).not.toMatch(/\b(bytea|oid|blob)\b|\binet\b|\bcidr\b/i);
     expect(sql).not.toMatch(/\bip\s+text|\bip_address\b|\bclient_ip\b|remote_addr/i);
-    expect([...sql.matchAll(/ip_hash text not null check \(ip_hash ~ '\^\[0-9a-f\]\{64\}\$'\)/g)]).toHaveLength(3); // contact_messages, chat_logs, chat_hits
+    expect([...sql.matchAll(/ip_hash text not null check \(ip_hash ~ '\^\[0-9a-f\]\{64\}\$'\)/g)]).toHaveLength(4); // contact_messages, chat_logs, chat_hits, admin_login_hits
   });
   it('the audit and purge SQL exist; the purge deletes nothing until a human uncomments it; retention is 90 / 365 days', () => {
     const purge = read('supabase/maintenance/purge.sql');
@@ -486,7 +486,7 @@ describe('C13 front end (D2) and quality (E)', () => {
     expect(html).toContain('<meta property="og:url" content="https://umerfarooq-ai.vercel.app/" />');
     expect(html).toMatch(/<meta property="og:image" content="https:\/\/umerfarooq-ai\.vercel\.app\/images\/profile\/umer-portrait\.jpg" \/>/);
     expect(existsSync(join(ROOT, 'public', 'images', 'profile', 'umer-portrait.jpg'))).toBe(true);
-    expect(read('public/robots.txt')).toMatch(/User-agent: \*\nAllow: \/\n\nSitemap: https:\/\/umerfarooq-ai\.vercel\.app\/sitemap\.xml/);
+    expect(read('public/robots.txt')).toMatch(/User-agent: \*\nAllow: \/\nDisallow: \/admin\nDisallow: \/api\/\n\nSitemap: https:\/\/umerfarooq-ai\.vercel\.app\/sitemap\.xml/);
     expect(read('public/sitemap.xml')).toMatch(/<loc>https:\/\/umerfarooq-ai\.vercel\.app\/<\/loc>/);
   });
   it('accessibility fixes (axe, P11): nav aria-labels start with the plain word and contain the visible one without parentheses; SplitText sets no aria-label; the ink-strip numbers inherit their colour', () => {

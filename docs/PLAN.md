@@ -289,7 +289,7 @@ Status: ⬜ not started · 🟨 in progress · ✅ done with evidence
 | E7 | Website analytics | Vercel Web Analytics (views, referrers, devices) + first-party events (chat, voice, video, project views, CV downloads, contact) charted in admin; no cookies, respects Do-Not-Track | P10 | ⬜ |
 | E8 | Accessibility enhancements | WCAG 2.2 AA: keyboard, skip link, focus, ARIA for chat/modals, captions (EN/UR) + transcript, accessible 3D alternatives, **accessibility menu** (reduce motion, pause 3D, larger text), `lang`/`dir` for Urdu, axe 0 serious | P2, P10 | 🟨 (base done in P2.4; accessibility menu later) |
 | E9 | Chatbot source citations linking to portfolio content | Source chips under each answer → scroll to and highlight the `#anchor` | P5 | 🟡 source chips built, live evidence pending |
-| E10 | Project / task ordering system | **Visitor:** sort by featured / newest / A–Z. **Admin:** drag-and-drop project order (keyboard alternative), saved to Supabase and live instantly. **Task board:** contact messages as tasks (New → In progress → Replied → Archived), drag between columns | P2, P7 | 🟨 (admin ordering in P7) |
+| E10 | Project / task ordering system | **Visitor:** sort by featured / newest / A–Z. **Admin:** drag-and-drop project order (keyboard alternative), saved to Supabase and live instantly. **Task board:** contact messages as tasks (New → In progress → Replied → Archived), drag between columns | P2, P7 | 🟡 admin ordering (drag and drop + Up / Down) and the telegram board built in P7 lite; live after Umer's setup (L227, L228) |
 
 ### Required submission materials
 | # | Item | Phase | Status |
@@ -447,6 +447,12 @@ Visual layer only (structure, content pipeline, filters/URL state, modal, lightb
 
 **Exit:** login needs password + MFA; non-admin token → 403; anon can't read admin tables; reorder shows on live site within one refresh.
 
+#### P7 lite (19-Nov-2026): 🟡 built and tested with mocks; first login pending
+- **Design (as decided):** visitors never log in; sign-ups are off; Umer is the only admin (a row in `admins`). The browser talks ONLY to same-origin `/api/admin/*` (one catch-all function, so the project uses 8 of the 12 free-plan functions); the server proxies Supabase Auth REST with plain `fetch`. Login = Turnstile (action `admin`) + rate limit (5 per 10 minutes per IP hash) + password grant, tokens only for an admin, generic errors. TOTP is mandatory (enrol on the first login, then a code each login); every data route needs a valid Supabase token + an `admins` row + `aal2`. Tokens live in memory only; 15-minute idle sign-out; logout revokes the session.
+- **Built:** `/admin` (login → TOTP → tabs "Case order" with drag and drop + Up / Down buttons, and "Telegrams", a four-column board), `GET/POST /api/admin/projects-order`, `GET/PATCH /api/admin/messages` (only the status can change; `ip_hash` and `user_agent` are never read), public `GET /api/project-order` (Classic's "Featured" sort uses it, built-in order if the call fails), `GET /api/cron/keepalive` (daily, `CRON_SECRET`, constant-time), `supabase/migrations/0005_admin.sql`.
+- **Cut from the plan (L233):** visibility / featured toggles, analytics charts (E7), re-index button, password reset, delete button for logs.
+- **Needs Umer:** run 0005, create the admin user, insert his id into `admins`, add `CRON_SECRET` (and the anon key if missing) in Vercel, redeploy, first login (L227, L228).
+
 ### P8 — Blender avatar (AI twin) + world art · 14% · 2.1–2.8, E1 (avatar), E5
 - Spec (decision record 9-Nov-2026, DESIGN.md §7): stylized animated-film human (Pixar-inspired, not a copy of any studio or character) with Umer's likeness; realistic-leaning proportions (head ≈ 1/6.5 of height), slightly enlarged head and eyes, soft shapes, clean PBR materials (soft skin, matte wool suit, satin tie); ≤ 40k tris; GLB ≤ 3 MB (Draco + compressed textures).
 - Built by Claude (assistant) in a cloud workspace with Blender 5.2.3 Python (bpy) scripts committed under `blender/scripts/`; running them rebuilds `blender/avatar.blend`. No Blender MCP, no AI 3D generators, no imported third-party models or base meshes.
@@ -489,6 +495,14 @@ Visual layer only (structure, content pipeline, filters/URL state, modal, lightb
 - 404 page, Open Graph image + meta, favicon, micro-interactions.
 
 **Exit:** events visible in admin charts; axe clean; every E1–E10 row ✅.
+
+#### P10 lite (19-Nov-2026): 🟡 built and tested; setup and proofreading pending
+- **A. Analytics (E7, partly):** first-party, cookie-less, no IP / user id / fingerprint / third-party script. Nine allow-listed events; `src/ui/analytics.js` (sendBeacon, honours Do-Not-Track and Global Privacy Control, skips localhost, never throws, loaded on idle so it is not in the Classic entry or Explore); `api/collect.js` (same-origin, 200-byte body, always 204, daily cap 5000 per event via `analytics_bump()`); `0006_analytics.sql` (RLS forced, service role only); admin **Stats** tab (`GET /api/admin/stats`, inside the existing catch-all, so 9 of 12 functions). Charts and a Vercel Web Analytics script were NOT added (L252; no third party).
+- **B. Accessibility menu (E8, partly):** disclosure button + switches (Reduce motion, Larger text, High contrast, Readable spacing, Underline links, Open plain Classic / skip 3D, Reset); `data-a11y-*` attributes on `<html>` set before first paint; axe 0 violations in each mode (dark and light).
+- **C. Captions (E8):** `promo.en.vtt` + `promo.ur.vtt` from `docs/promo/captions.json` (`node scripts/promo/build-vtt.mjs`), two `<track>`s, a transcript; Urdu flagged for a native speaker. Burned-in captions inside the film are out of scope (the After Effects project was not touched).
+- **D. Urdu UI (E4, partly):** EN | اردو toggle, 187 keys, RTL, system fonts, lazy chunk; project descriptions and Explore stay English (L243).
+- **Cut / left:** analytics charts (table only), a CV link for `cv_download`, a screen-reader pass (L253), Explore HUD translation.
+- **Needs Umer:** run 0006, proofread the Urdu, hand-test on a phone, deploy (L238, L242, L253).
 
 ### P11 — Security, QA & production · 4% · 1.1, 1.10, 5.6, 6.1
 - §2 checklist all green; `npm audit` no high/critical; gitleaks full history; headers/CSP verified.
@@ -539,10 +553,10 @@ Overall  [██░░░░░░░░░░░░░░░░░░]  8%
 | P4 Supabase + contact & email | 9% | 🟡 contact system built; live checks pending |
 | P5 RAG chatbot | 13% | 🟡 built and evaluated; live checks pending |
 | P6 Voice chat | 4% | 🟡 built and tested; live checks pending |
-| P7 Admin dashboard & secure login | 7% | ⬜ |
+| P7 Admin dashboard & secure login | 7% | 🟡 lite version built and tested with mocks; first login pending |
 | P8 Blender avatar (AI twin) + world art | 14% | ⬜ |
 | P9 AE intro sting + promo video | 8% | 🟡 P9.5 part A done; render pending |
-| P10 Analytics, a11y audit & polish | 4% | ⬜ |
+| P10 Analytics, a11y audit & polish | 4% | 🟡 lite version built and tested; Umer runs 0006 and proofreads the Urdu (L238, L242) |
 | P11 Security, QA & production | 4% | 🟡 audits, tooling and reports done; Umer's steps pending (0004 SQL, gitleaks, ZAP, DevTools shots) |
 | P12 Documentation & submission | 5% | ⬜ |
 | **Total** | **100%** | |

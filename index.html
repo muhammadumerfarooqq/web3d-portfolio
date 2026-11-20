@@ -27,6 +27,31 @@
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
 
+    <!-- P10: accessibility menu (disclosure). Outside the Classic containers on purpose: it stays usable over Explore. Logic: src/ui/a11y-menu.js (lazy). -->
+    <div class="a11y" data-a11y>
+      <button type="button" class="btn btn--sm a11y__toggle" aria-expanded="false" aria-controls="a11y-panel" data-a11y-toggle>
+        <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="12" cy="4.5" r="1.8" /><path d="M5 8.5h14M12 8.5v5.5M12 14l-3.5 6M12 14l3.5 6" /></svg>
+        <span>Accessibility</span>
+      </button>
+      <div class="a11y__panel" id="a11y-panel" role="group" aria-labelledby="a11y-title" data-a11y-panel hidden>
+        <p class="a11y__title" id="a11y-title">Accessibility settings</p>
+        <ul class="a11y__list">
+          <li><button type="button" class="a11y__switch" aria-pressed="false" data-a11y-option="motion"><span class="a11y__box" aria-hidden="true"></span><span>Reduce motion</span></button></li>
+          <li><button type="button" class="a11y__switch" aria-pressed="false" data-a11y-option="text"><span class="a11y__box" aria-hidden="true"></span><span>Larger text</span></button></li>
+          <li><button type="button" class="a11y__switch" aria-pressed="false" data-a11y-option="contrast"><span class="a11y__box" aria-hidden="true"></span><span>High contrast</span></button></li>
+          <li><button type="button" class="a11y__switch" aria-pressed="false" data-a11y-option="spacing"><span class="a11y__box" aria-hidden="true"></span><span>Readable spacing</span></button></li>
+          <li><button type="button" class="a11y__switch" aria-pressed="false" data-a11y-option="links"><span class="a11y__box" aria-hidden="true"></span><span>Underline links</span></button></li>
+        </ul>
+        <p class="a11y__note" data-a11y-note role="status" hidden>Scripted animations and smooth scrolling stop after the page is reloaded.</p>
+        <div class="a11y__actions">
+          <button type="button" class="btn btn--sm" data-a11y-reload hidden>Reload now</button>
+          <button type="button" class="btn btn--sm" data-a11y-classic>Open plain Classic site (skip 3D)</button>
+          <button type="button" class="btn btn--sm" data-a11y-reset>Reset all</button>
+        </div>
+        <p class="a11y__note">Settings are saved in this browser only.</p>
+      </div>
+    </div>
+
     <!-- Classic-mode backdrop: parchment + paper grain (CSS only) -->
     <div class="paper-bg" aria-hidden="true"><span class="grain"></span></div>
 
@@ -61,6 +86,11 @@
             </button>
             <span class="tooltip" role="tooltip" id="explore-tip">Walk the 3D town</span>
           </span>
+
+          <div class="lang-switch" role="group" aria-label="Language">
+            <button type="button" class="lang-switch__btn" aria-pressed="true" data-lang="en" lang="en">EN</button>
+            <button type="button" class="lang-switch__btn" aria-pressed="false" data-lang="ur" lang="ur">اردو</button>
+          </div>
 
           <button type="button" class="icon-btn" aria-label="Sound" aria-pressed="false" data-sound-toggle>
             <svg class="sound-icon--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -123,6 +153,11 @@
               <span>Ride to the island</span>
               <svg class="btn__icon btn__icon--nudge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
             </button>
+            <div class="lang-switch" role="group" aria-label="Language">
+              <button type="button" class="lang-switch__btn" aria-pressed="true" data-lang="en" lang="en">EN</button>
+              <button type="button" class="lang-switch__btn" aria-pressed="false" data-lang="ur" lang="ur">اردو</button>
+            </div>
+
             <button type="button" class="icon-btn" aria-label="Sound" aria-pressed="false" data-sound-toggle>
               <svg class="sound-icon--off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                 <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
@@ -391,6 +426,12 @@
       <div class="container">
         <div class="site-footer__inner paper case-frame">
           <p class="site-footer__copy">Filed by the Byte Island Sheriff’s Dept. · Karachi<span class="site-footer__legal">© <span data-year>2026</span> Muhammad Umer Farooq</span></p>
+          <details class="site-footer__privacy" id="privacy">
+            <summary>Privacy</summary>
+            <p>This site counts anonymous daily totals (for example, how many times the chat was opened). Those counts hold no cookies, no IP address and no identity, there is no third-party analytics, and nothing is sent if your browser says Do Not Track or Global Privacy Control.</p>
+            <p>If you send a telegram, your name, email and message are stored so I can reply, together with a salted hash of your IP address for spam limits. Chat questions are stored without your IP address (a salted hash only) to check answer quality. Voice recordings are never stored. I aim to delete telegrams after about a year and chat questions after about 90 days.</p>
+            <p>Questions or a deletion request: use the contact form or the email address in the Telegraph section.</p>
+          </details>
           <ul class="social-list">
             <!--content:social-footer-->
           </ul>

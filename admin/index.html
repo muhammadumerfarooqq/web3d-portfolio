@@ -1,16 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex, nofollow" />
     <title>Admin | Muhammad Umer Farooq</title>
     <meta name="description" content="Admin area. Not for public use." />
+    <meta name="color-scheme" content="dark light" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script src="/theme-init.js"></script>
     <link rel="stylesheet" href="/src/styles/main.css" />
+    <link rel="stylesheet" href="/src/styles/admin.css" />
   </head>
   <body>
+    <div class="paper-bg" aria-hidden="true"><span class="grain"></span></div>
     <main id="main" class="admin-shell">
-      <h1>Admin: coming soon</h1>
+      <header class="admin-head">
+        <p class="hud-label">Sheriff's office · private</p>
+        <h1 class="admin-title">Admin</h1>
+      </header>
+      <noscript><p class="admin-note">The admin area needs JavaScript.</p></noscript>
+      <div class="admin-root" data-admin-root></div>
     </main>
+    <script type="module" src="/src/admin/main.js"></script>
   </body>
 </html>

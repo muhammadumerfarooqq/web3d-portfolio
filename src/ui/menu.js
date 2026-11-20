@@ -82,7 +82,7 @@ export function initMenu({ reduced }) {
   });
 
   // The menu only exists below the desktop breakpoint.
-  window.matchMedia('(min-width: 75rem)').addEventListener('change', (event) => {
+  window.matchMedia('(min-width: 80rem)').addEventListener('change', (event) => {
     if (event.matches) closeMenu({ restoreFocus: false });
   });
 }

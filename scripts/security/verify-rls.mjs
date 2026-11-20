@@ -52,6 +52,11 @@ if (open?.paths) {
   }
   console.log(`service role OpenAPI lists ${[...Object.keys(open.paths)].filter((p) => p !== '/').length} paths`);
 } else warn('could not read the service-role OpenAPI document; using the tables and functions declared in supabase/migrations');
+if (open?.paths) {
+  // A table declared in a migration but missing in the database would be "denied" with a 404 for the wrong reason.
+  for (const t of declaredTables) if (!open.paths[`/${t}`]) warn(`table ${t} is declared in supabase/migrations but is NOT in the database: run the latest migration, then run this check again`);
+  for (const f of declaredFns) if (!open.paths[`/rpc/${f}`]) warn(`function ${f}() is declared in supabase/migrations but is NOT in the database: run the latest migration, then run this check again`);
+}
 console.log(`tables to probe (${tables.size}): ${[...tables].sort().join(', ')}`);
 console.log(`functions to probe (${fns.size}): ${[...fns].sort().join(', ')}\n`);
 check(tables.size >= 5, 'at least the five known tables are covered (contact_messages, documents, chunks, chat_logs, chat_hits)');
@@ -62,17 +67,21 @@ check(tables.size >= 5, 'at least the five known tables are covered (contact_mes
 const ZERO_UUID = '00000000-0000-0000-0000-000000000000';
 const idType = (t) => (new RegExp(String.raw`create table (?:if not exists )?public\.${t}\s*\(\s*id (uuid|bigint)`, 'i').exec(sql)?.[1] ?? 'bigint').toLowerCase();
 // A plain column to "update" where id is GENERATED ALWAYS (setting it is rejected while the query is analysed, before any privilege check).
-const PATCH_COL = { documents: 'title', chunks: 'heading', chat_hits: 'ip_hash' };
+const PATCH_COL = { documents: 'title', chunks: 'heading', chat_hits: 'ip_hash', admin_login_hits: 'ip_hash' };
+// P7: tables whose key is not "id". The filter must match no row; the patch must be a plain, valid column.
+const KEYED = { admins: { filter: `user_id=eq.${ZERO_UUID}`, patch: { created_at: '1970-01-01T00:00:00Z' } }, project_order: { filter: 'slug=eq.zz-no-such-slug', patch: { position: 0 } }, analytics_daily: { filter: 'day=eq.1970-01-01&event=eq.zz', patch: { count: 0 } } };
 const noRow = (t) => (idType(t) === 'uuid' ? ZERO_UUID : -1);
+const rowFilter = (t) => KEYED[t]?.filter ?? `id=eq.${noRow(t)}`;
+const patchBody = (t) => KEYED[t]?.patch ?? (t in PATCH_COL ? { [PATCH_COL[t]]: 'x' } : { id: noRow(t) });
 for (const t of [...tables].sort()) {
   const read = await req('GET', `/rest/v1/${t}?select=*&limit=1`, anon);
   const rows = read.ok ? await read.json().catch(() => null) : null;
   check(DENIED.has(read.status) || (read.ok && Array.isArray(rows) && rows.length === 0), `anon cannot read ${t} (HTTP ${read.status}${read.ok ? `, ${rows?.length} rows` : ''})`);
   const ins = await req('POST', `/rest/v1/${t}`, { ...anon, Prefer: 'return=minimal' }, {});
   check(DENIED.has(ins.status), `anon cannot insert into ${t} (HTTP ${ins.status})`);
-  const upd = await req('PATCH', `/rest/v1/${t}?id=eq.${noRow(t)}`, { ...anon, Prefer: 'return=minimal' }, (t in PATCH_COL ? { [PATCH_COL[t]]: 'x' } : { id: noRow(t) }));
+  const upd = await req('PATCH', `/rest/v1/${t}?${rowFilter(t)}`, { ...anon, Prefer: 'return=minimal' }, patchBody(t));
   check(DENIED.has(upd.status), `anon cannot update ${t} (HTTP ${upd.status})`);
-  const del = await req('DELETE', `/rest/v1/${t}?id=eq.${noRow(t)}`, { ...anon, Prefer: 'return=minimal' });
+  const del = await req('DELETE', `/rest/v1/${t}?${rowFilter(t)}`, { ...anon, Prefer: 'return=minimal' });
   check(DENIED.has(del.status), `anon cannot delete from ${t} (HTTP ${del.status})`);
 }
 // Arguments that a CHECK constraint or a type error would reject, so even a wrongly granted function changes nothing.
@@ -82,6 +91,9 @@ const ARGS = {
   contact_submit: { p_ip_hash: BAD_HASH, p_name: 'x', p_email: 'x', p_subject: 'x', p_message: 'x', p_user_agent: 'x' },
   chat_submit: { p_ip_hash: BAD_HASH, p_daily_cap: 0 },
   stt_submit: { p_ip_hash: BAD_HASH, p_daily_cap: 0 },
+  admin_login_submit: { p_ip_hash: BAD_HASH, p_kind: 'login' },
+  analytics_bump: { p_event: 'not-an-event', p_cap: 0 }, // P10: an event the CHECK constraint rejects
+  project_order_save: { p_slugs: ['BAD SLUG'] }, // rejected by the function's own validation before anything is deleted
   match_chunks: { query_embedding: zeroVector, query_text: 'x', match_count: 1, min_similarity: 0 },
 };
 for (const f of [...fns].sort()) {

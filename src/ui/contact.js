@@ -9,6 +9,8 @@
 //   the form renders), Turnstile, rate limit. No-JS / no site key / 503 → the email link only.
 // DOM is built with createElement / textContent only.
 import { LIMITS, validateContact } from '../shared/contact-schema.js';
+import { tr } from '../i18n/index.js';
+import { track } from './analytics.js';
 import { SITE_KEY, loadTurnstile, turnstileTheme } from './turnstile.js';
 
 export { TURNSTILE_SRC } from './turnstile.js';
@@ -70,7 +72,7 @@ export function initContact(box) {
   let unavailable = false;
 
   function setStatus(text, tone = 'info') {
-    status.textContent = text;
+    status.textContent = tr(text);
     status.dataset.tone = tone;
   }
 
@@ -120,7 +122,7 @@ export function initContact(box) {
       'refresh-expired': 'manual',
       callback: (value) => {
         token = value;
-        if (status.textContent === MESSAGES.needCheck || status.textContent === MESSAGES.checkError) setStatus('');
+        if (status.textContent === tr(MESSAGES.needCheck) || status.textContent === tr(MESSAGES.checkError)) setStatus('');
       },
       'expired-callback': () => {
         token = '';
@@ -167,7 +169,7 @@ export function initContact(box) {
     if (!input || !error) return;
     if (message) input.setAttribute('aria-invalid', 'true');
     else input.removeAttribute('aria-invalid');
-    error.textContent = message ?? '';
+    error.textContent = tr(message ?? '');
     error.hidden = !message;
   }
   function renderSummary(errors, focus) {
@@ -176,7 +178,7 @@ export function initContact(box) {
       ...names.map((n) => {
         const a = document.createElement('a');
         a.href = `#${field(n).id}`;
-        a.textContent = errors[n];
+        a.textContent = tr(errors[n]);
         a.addEventListener('click', (e) => {
           e.preventDefault();
           field(n).focus();
@@ -186,7 +188,7 @@ export function initContact(box) {
         return li;
       }),
     );
-    summaryTitle.textContent = MESSAGES.summary(names.length);
+    summaryTitle.textContent = tr(MESSAGES.summary(names.length));
     summary.hidden = names.length === 0;
     if (focus && names.length) summary.focus();
   }
@@ -217,7 +219,7 @@ export function initContact(box) {
     submit.disabled = on;
     form.setAttribute('aria-busy', String(on));
     form.classList.toggle('is-sending', on);
-    submitLabel.textContent = on ? 'Sending…' : 'Send telegram';
+    submitLabel.textContent = on ? tr('Sending…') : tr('Send telegram');
   }
 
   function showSuccess() {
@@ -266,6 +268,7 @@ export function initContact(box) {
     resetWidget();
     const o = outcome(res.status, body, res.headers.get('Retry-After'));
     if (o.kind === 'success') {
+      track('contact_submit_ok'); // P10: anonymous daily counter
       setStatus('');
       attempted = false;
       showSuccess();

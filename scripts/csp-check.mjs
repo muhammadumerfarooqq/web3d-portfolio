@@ -102,6 +102,24 @@ await session('classic: opening + sound + video + contact form', {}, async (page
   await page.waitForTimeout(1500);
   await mic.evaluate((el) => el.click()); // stop; the upload waits for the anti-spam check, which is not needed for the CSP result
   notes.transcribeEndpoint = await page.evaluate(async () => (await fetch('/api/transcribe', { method: 'POST', headers: { 'Content-Type': 'audio/webm' }, body: new Blob([new Uint8Array(32)]) })).status);
+  // P10: the accessibility menu (lazy chunk), the Urdu switch (lazy chunks, dictionaries) and the analytics collector (an unknown event is ignored)
+  await page.locator('[data-a11y-toggle]').evaluate((el) => el.click());
+  await page.waitForTimeout(1000);
+  notes.a11yMenuOpen = await page.locator('[data-a11y-panel]').isVisible();
+  await page.locator('[data-lang="ur"]').first().evaluate((el) => el.click());
+  await page.waitForTimeout(2000);
+  notes.urdu = await page.evaluate(() => `${document.documentElement.lang} ${document.documentElement.dir} ${document.querySelector('.nav-link')?.textContent}`);
+  notes.collectIgnored = await page.evaluate(async () => (await fetch('/api/collect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"e":"not_an_event"}' })).status);
+});
+
+// P7: the admin page (login form + Turnstile widget). It talks only to same-origin /api/admin.
+await session('admin: login page', {}, async (page, notes) => {
+  await page.goto(`${base}/admin/`, { waitUntil: 'load' });
+  await page.waitForSelector('#admin-email', { timeout: 15000 });
+  await page.waitForTimeout(5000);
+  notes.loginForm = await page.locator('#admin-password').isVisible();
+  notes.turnstileFrame = page.frames().some((f) => f.url().startsWith('https://challenges.cloudflare.com/'));
+  notes.adminNoToken = await page.evaluate(async () => (await fetch('/api/admin/messages')).status);
 });
 
 for (const backend of process.argv.includes('--classic-only') ? [] : ['webgpu', 'webgl']) {

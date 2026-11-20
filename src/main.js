@@ -14,9 +14,12 @@ import { initTimeline } from './ui/timeline.js';
 import { initPlayer } from './ui/video.js';
 import { initContactLoader } from './ui/contact-loader.js';
 import { initChatLoader } from './ui/chat-loader.js';
+import { initLangLoader } from './ui/lang-loader.js';
+import { initA11yLoader } from './ui/a11y-loader.js';
 
-const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const root = document.documentElement;
+// P10: the system setting OR the visitor's own "Reduce motion" switch (theme-init.js sets data-a11y-motion early).
+const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches || root.dataset.a11yMotion === 'reduce';
 
 // One failing module must not take the rest of the shell down with it.
 async function safely(name, init) {
@@ -35,6 +38,8 @@ const CRITICAL = [
   ['nav', initNav],
   ['menu', initMenu],
   ['mode', initMode], // html[data-mode] + "modechange": the hook P3 uses
+  ['a11y', initA11yLoader], // P10: the accessibility menu's chunk loads on first use
+  ['lang', initLangLoader], // P10: EN | اردو; with Urdu chosen, the text is swapped before the reveals start
   ['start', initStart], // intro + start screen
 ];
 
@@ -50,6 +55,7 @@ const DEFERRED = [
   ['cursor', initCursor],
   ['contact', initContactLoader], // P4: the form chunk loads when the Telegraph section nears the viewport
   ['chat', initChatLoader], // P5: the chat chunk loads when the Ask my AI section nears the viewport
+  ['analytics', () => (window.requestIdleCallback ?? window.setTimeout)(() => import('./ui/analytics.js').then((m) => m.initAnalytics()).catch(() => {}))], // P10: anonymous daily counters (own chunk, after idle)
 ];
 
 for (const el of document.querySelectorAll('[data-year]')) el.textContent = String(new Date().getFullYear());

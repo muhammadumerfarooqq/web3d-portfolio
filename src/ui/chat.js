@@ -12,6 +12,8 @@
 //   is PUT IN THE INPUT for the visitor to check and send (never auto-sent); each answer has a Listen button
 //   (browser speechSynthesis). The microphone is released when the panel leaves the screen or the tab hides.
 import { chatRequestSchema, CHAT_LIMITS, looksUrdu } from '../shared/chat-schema.js';
+import { tr } from '../i18n/index.js';
+import { track } from './analytics.js';
 import { SITE_KEY, loadTurnstile, turnstileTheme } from './turnstile.js';
 import { createRecorder, createSpeaker, speechLang, speechSupported, transcribeOutcome, VOICE_MESSAGES } from './voice.js';
 
@@ -87,6 +89,7 @@ export function initChat(box) {
     return;
   }
   panel.hidden = false;
+  panel.addEventListener('focusin', () => track('chat_open', { once: true }), { once: true }); // P10
 
   let lang = 'en';
   let session = '';
@@ -100,7 +103,7 @@ export function initChat(box) {
   const history = [];
 
   const setStatus = (text, tone = 'info') => {
-    status.textContent = text;
+    status.textContent = tr(text);
     status.dataset.tone = tone;
   };
 
@@ -217,7 +220,7 @@ export function initChat(box) {
     li.className = `chat__msg chat__msg--${role}${refused ? ' is-refused' : ''}`;
     const who = document.createElement('p');
     who.className = 'chat__who';
-    who.textContent = role === 'user' ? 'You' : 'Umer’s AI twin';
+    who.textContent = role === 'user' ? tr('You') : tr('Umer’s AI twin');
     const bodyEl = document.createElement('div');
     bodyEl.className = 'chat__body';
     if (looksUrdu(text)) {
@@ -242,7 +245,7 @@ export function initChat(box) {
     if (valid.length) {
       const label = document.createElement('p');
       label.className = 'chat__sources-label';
-      label.textContent = 'Sources';
+      label.textContent = tr('Sources');
       const ul = document.createElement('ul');
       ul.className = 'chat__sources';
       valid.forEach((s, i) => {
@@ -267,8 +270,8 @@ export function initChat(box) {
       listen.type = 'button';
       listen.className = 'chip chat__listen';
       listen.setAttribute('aria-pressed', 'false');
-      listen.setAttribute('aria-label', 'Listen to this answer');
-      listen.textContent = 'Listen';
+      listen.setAttribute('aria-label', tr('Listen to this answer'));
+      listen.textContent = tr('Listen');
       listen.addEventListener('click', () => toggleListen(listen, text, speechLang(text, askLang)));
       li.append(listen);
     }
@@ -288,11 +291,11 @@ export function initChat(box) {
     form.setAttribute('aria-busy', String(on));
     form.classList.toggle('is-sending', on);
     typing.hidden = !on;
-    sendLabel.textContent = on ? 'Asking…' : 'Ask';
+    sendLabel.textContent = on ? tr('Asking…') : tr('Ask');
   }
 
   function showError(text) {
-    error.textContent = text ?? '';
+    error.textContent = tr(text ?? '');
     error.hidden = !text;
     if (text) input.setAttribute('aria-invalid', 'true');
     else input.removeAttribute('aria-invalid');
@@ -308,6 +311,7 @@ export function initChat(box) {
       return;
     }
     showError('');
+    track('chat_message'); // P10: anonymous daily counter
     recorder.cancel();
     hideReview();
     stopListening();
@@ -382,8 +386,8 @@ export function initChat(box) {
   function resetListen() {
     if (!listenBtn) return;
     listenBtn.setAttribute('aria-pressed', 'false');
-    listenBtn.setAttribute('aria-label', 'Listen to this answer');
-    listenBtn.textContent = 'Listen';
+    listenBtn.setAttribute('aria-label', tr('Listen to this answer'));
+    listenBtn.textContent = tr('Listen');
     listenBtn = null;
   }
   function stopListening() {
@@ -394,12 +398,13 @@ export function initChat(box) {
   async function toggleListen(btn, text, speakLang) {
     if (!speaker) return;
     if (listenBtn === btn) return stopListening(); // pressed again: Stop
+    track('voice_used');
     stopListening();
     const token = listenToken;
     listenBtn = btn;
     btn.setAttribute('aria-pressed', 'true');
-    btn.setAttribute('aria-label', 'Stop listening');
-    btn.textContent = 'Stop';
+    btn.setAttribute('aria-label', tr('Stop listening'));
+    btn.textContent = tr('Stop');
     const out = await speaker.speak(text, speakLang);
     if (token !== listenToken || !out) return;
     if (out.result === 'novoice') {
@@ -441,7 +446,7 @@ export function initChat(box) {
   function resetMic() {
     if (!mic) return;
     mic.setAttribute('aria-pressed', 'false');
-    mic.setAttribute('aria-label', 'Record your question with the microphone');
+    mic.setAttribute('aria-label', tr('Record your question with the microphone'));
     mic.removeAttribute('aria-busy');
     mic.disabled = false;
     micTime.textContent = '';
@@ -459,7 +464,7 @@ export function initChat(box) {
         case 'recording':
           mic.removeAttribute('aria-busy');
           mic.setAttribute('aria-pressed', 'true');
-          mic.setAttribute('aria-label', 'Stop recording');
+          mic.setAttribute('aria-label', tr('Stop recording'));
           micTime.textContent = clock(e.secondsLeft);
           if (!wasRecording) {
             wasRecording = true;
@@ -470,7 +475,7 @@ export function initChat(box) {
         case 'transcribing':
           wasRecording = false;
           mic.setAttribute('aria-pressed', 'false');
-          mic.setAttribute('aria-label', 'Turning your voice into text');
+          mic.setAttribute('aria-label', tr('Turning your voice into text'));
           mic.setAttribute('aria-busy', 'true');
           mic.disabled = true;
           micTime.textContent = '';
@@ -519,6 +524,7 @@ export function initChat(box) {
       else if (recorder.state === 'idle' && !sending) {
         stopListening();
         hideReview();
+        track('voice_used');
         recorder.start();
       }
     });

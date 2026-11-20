@@ -7,6 +7,9 @@ import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 export const MIN_SUBMIT_MS = 3000;
 export const MAX_STAMP_AGE_MS = 2 * 60 * 60 * 1000;
 
+/** Constant-time string equality: both sides are hashed first, so their lengths never differ (used for CRON_SECRET). */
+export const safeEqual = (a, b) => timingSafeEqual(createHash('sha256').update(String(a)).digest(), createHash('sha256').update(String(b)).digest());
+
 export const hashIp = (ip, salt) => createHash('sha256').update(`${ip}${salt}`).digest('hex');
 
 const sign = (ts, ipHash, salt) => createHmac('sha256', salt).update(`contact.${ts}.${ipHash}`).digest('base64url');

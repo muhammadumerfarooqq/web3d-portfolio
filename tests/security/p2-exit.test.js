@@ -113,8 +113,9 @@ describe('C6 boot layer before first paint (theme-init.js)', () => {
     expect(attrs['data-boot']).toBe('intro');
   });
 
-  it('reads only the theme (localStorage) and intro (sessionStorage) keys, and never writes', () => {
-    expect(new Set(runThemeInit().reads)).toEqual(new Set(['theme', 'session:intro']));
+  it('reads only the theme, a11y and lang (localStorage) and intro (sessionStorage) keys, and never writes', () => {
+    // P10 adds the accessibility settings and the language, each applied before the first paint
+    expect(new Set(runThemeInit().reads)).toEqual(new Set(['theme', 'a11y', 'lang', 'session:intro']));
   });
 
   it('failsafe: if the app never takes over, the boot layer and hidden reveals are dropped', () => {
@@ -151,13 +152,13 @@ describe('C6 localStorage keys are theme, sound, intro, mode and the four explor
       // readPref/writePref must be called with a *_KEY constant, never a literal or a variable from input
       if (f.endsWith('prefs.js')) continue; // the definitions themselves
       for (const [call] of code.matchAll(/(?:readPref|writePref)\(\s*[^,)]+/g)) {
-        expect(call, f).toMatch(/\(\s*[A-Z_]+_KEY$/);
+        expect(call, f).toMatch(/\(\s*[A-Z0-9_]+_KEY$/); // P10: digits allowed (A11Y_KEY)
       }
     }
     // P3.1 adds three Explore keys (quality tier, tutorial done, time of day); P3.2 adds the star
     // badges (explore.badges, validated against the eight zone ids). Each is whitelisted.
     // P3.3: explore.arrival (the boat arrival played once) and audio.music (the HUD music toggle).
-    expect([...keys].sort()).toEqual(['audio.music', 'explore.arrival', 'explore.badges', 'explore.quality', 'explore.time', 'explore.tutorial', 'intro', 'mode', 'sound', 'theme']);
+    expect([...keys].sort()).toEqual(['a11y', 'audio.music', 'explore.arrival', 'explore.badges', 'explore.quality', 'explore.time', 'explore.tutorial', 'intro', 'lang', 'mode', 'sound', 'theme']);
   });
 });
 

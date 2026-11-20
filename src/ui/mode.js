@@ -68,7 +68,7 @@ export function detectCapabilities(win = window) {
   }
   return {
     webgl2,
-    reducedMotion: win.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    reducedMotion: win.matchMedia('(prefers-reduced-motion: reduce)').matches || win.document?.documentElement?.dataset?.a11yMotion === 'reduce',
     saveData: Boolean(win.navigator.connection?.saveData),
   };
 }

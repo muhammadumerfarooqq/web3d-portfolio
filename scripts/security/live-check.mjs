@@ -120,12 +120,64 @@ for (const path of ['/api/contact', '/api/chat', '/api/transcribe']) {
   check('A /api/contact no stamp', 'a contact post without the time-trap stamp and Turnstile token → 400/503, nothing is sent', [400, 503].includes(contact.res.status) && json(contact.text)?.ok === false, `${contact.res.status} ${contact.text.slice(0, 80)}`);
 }
 
+// P7: the admin API and the cron. None of these requests carries a valid credential, so each is refused before any
+// database read, and none of them attempts a login (a login attempt would use up the owner's own rate limit).
+{
+  const FORGED = `eyJhbGciOiJIUzI1NiJ9.${Buffer.from(JSON.stringify({ sub: '00000000-0000-4000-8000-000000000000', aal: 'aal2', exp: 9999999999 })).toString('base64url')}.c2lnbmF0dXJlLXRlc3Q`;
+  const adminRoutes = [['GET', '/api/admin/messages'], ['PATCH', '/api/admin/messages'], ['GET', '/api/admin/projects-order'], ['POST', '/api/admin/projects-order'], ['POST', '/api/admin/mfa/enroll'], ['POST', '/api/admin/mfa/verify']];
+  for (const [method, path] of adminRoutes) {
+    const body = method === 'GET' ? undefined : '{}';
+    const type = { 'Content-Type': 'application/json' };
+    const none = await call(method, path, { origin: BASE, headers: type, body });
+    raw.push([`${method} ${path} (no token)`, none.res.status, pick(none.res, ['cache-control']), none.text.slice(0, 80)]);
+    check(`P7 ${method} ${path} no token`, 'admin API without a token → 401 (404 only before the P7 deploy), nothing returned', [401, 404].includes(none.res.status) && !/messages|projects|email/.test(none.text.replace(/"error":"[a-z_]+"/g, '')), `${none.res.status} ${none.text.slice(0, 80)}`);
+    const forged = await call(method, path, { origin: BASE, headers: { ...type, Authorization: `Bearer ${FORGED}` }, body });
+    check(`P7 ${method} ${path} forged token`, 'a token Supabase never issued (even one whose payload claims aal2) → 401', [401, 404].includes(forged.res.status), `${forged.res.status} ${forged.text.slice(0, 80)}`);
+    const evil = await call(method, path, { origin: EVIL, headers: { ...type, Authorization: `Bearer ${FORGED}` }, body });
+    check(`P7 ${method} ${path} cross-origin`, 'cross-origin → 403 (404 only before the P7 deploy), no CORS headers', [403, 404].includes(evil.res.status) && !evil.res.headers.get('access-control-allow-origin'), `${evil.res.status}`);
+  }
+  const bad = await call('POST', '/api/admin/login', { origin: BASE, headers: { 'Content-Type': 'application/json' }, body: '{"email":"nobody"}' });
+  check('P7 login bad body', 'a login body that fails validation → 400 before the rate limiter, Turnstile or Supabase is touched', [400, 404].includes(bad.res.status), `${bad.res.status} ${bad.text.slice(0, 80)}`);
+  const get = await call('GET', '/api/admin/login', { origin: BASE });
+  check('P7 login GET', 'GET on the login route → 405', [405, 404].includes(get.res.status), String(get.res.status));
+  const cron = await call('GET', '/api/cron/keepalive');
+  check('P7 cron no secret', '/api/cron/keepalive without the secret → 401 (404 only before the P7 deploy)', [401, 404].includes(cron.res.status) && !/"ok":true/.test(cron.text), `${cron.res.status} ${cron.text.slice(0, 60)}`);
+  const cron2 = await call('GET', '/api/cron/keepalive', { headers: { Authorization: 'Bearer not-the-secret-0123456789abcdefghijklmnopqrstuvwxyz' } });
+  check('P7 cron wrong secret', 'a wrong cron secret → 401 (404 only before the P7 deploy)', [401, 404].includes(cron2.res.status) && !/"ok":true/.test(cron2.text), `${cron2.res.status}`);
+  const order = await call('GET', '/api/project-order');
+  const o = json(order.text);
+  check('P7 public order', 'GET /api/project-order is public and returns slugs only ({ ok, order })', order.res.status === 404 || (order.res.status === 200 && o?.ok === true && Array.isArray(o.order) && Object.keys(o).sort().join() === 'ok,order' && o.order.every((x) => /^[a-z0-9-]+$/.test(x))), `${order.res.status} ${order.text.slice(0, 80)}`);
+  const page = await call('GET', '/admin/');
+  check('P7 admin page', '/admin is served noindex (X-Robots-Tag header and meta) with no data in it', (page.res.status === 200 && /noindex/.test(page.res.headers.get('x-robots-tag') ?? '') && /<meta name="robots" content="noindex/.test(page.text) && !/@|messages/.test(page.text.replace(/<meta[^>]*>/g, ''))) || page.res.status === 404, `${page.res.status} ${page.res.headers.get('x-robots-tag')}`);
+}
+
+// P10: the analytics collector. Only requests that are refused or ignored: no counter is ever incremented here.
+{
+  const post = (body, type = 'application/json', origin = BASE) => call('POST', '/api/collect', { origin, headers: { 'Content-Type': type }, body });
+  const get = await call('GET', '/api/collect', { origin: BASE });
+  check('P10 collect GET', 'GET /api/collect → 405 (404 only before the P10 deploy)', [405, 404].includes(get.res.status), String(get.res.status));
+  const evil = await post('{"e":"chat_open"}', 'application/json', EVIL);
+  check('P10 collect cross-origin', 'a cross-origin POST is refused (403) and counts nothing, no CORS headers', [403, 404].includes(evil.res.status) && !evil.res.headers.get('access-control-allow-origin'), String(evil.res.status));
+  const noOrigin = await call('POST', '/api/collect', { headers: { 'Content-Type': 'application/json' }, body: '{"e":"chat_open"}' });
+  check('P10 collect no origin', 'a POST with no Origin or Referer is refused', [403, 404].includes(noOrigin.res.status), String(noOrigin.res.status));
+  const type = await post('e=chat_open', 'application/x-www-form-urlencoded');
+  check('P10 collect type', 'a form-encoded POST → 415', [415, 404].includes(type.res.status), String(type.res.status));
+  const big = await post(JSON.stringify({ e: 'x'.repeat(400) }));
+  check('P10 collect oversized', 'a body over 200 bytes → 413', [413, 404].includes(big.res.status), String(big.res.status));
+  const unknown = await post('{"e":"not_an_event"}');
+  check('P10 collect unknown event', 'an unknown event is ignored: 204 with no body, nothing counted', unknown.res.status === 404 || (unknown.res.status === 204 && unknown.text === ''), `${unknown.res.status} ${unknown.text.slice(0, 40)}`);
+  const junk = await post('not json at all');
+  check('P10 collect junk', 'a body that is not JSON is ignored the same way (204, empty)', junk.res.status === 404 || (junk.res.status === 204 && junk.text === ''), `${junk.res.status}`);
+  const stats = await call('GET', '/api/admin/stats', { origin: BASE });
+  check('P10 admin stats no token', '/api/admin/stats without a token → 401 (404 only before the deploy)', [401, 404].includes(stats.res.status) && !/"stats"/.test(stats.text), `${stats.res.status}`);
+}
+
 // ── 3. error bodies and unrouted paths ──
-for (const path of ['/api/cron', '/api/cron/anything', '/api/admin', '/api/admin/users', '/api/nothing', '/.env', '/.git/config', '/package.json', '/vercel.json', '/supabase/migrations/0001_contact_messages.sql']) {
+for (const path of ['/api/cron', '/api/cron/anything', '/api/admin', '/api/admin/users', '/api/admin/../../.env', '/api/nothing', '/.env', '/.git/config', '/package.json', '/vercel.json', '/supabase/migrations/0001_contact_messages.sql']) {
   const { res, text } = await call('GET', path);
   raw.push([`GET ${path}`, res.status, pick(res, ['content-type']), text.slice(0, 60).replace(/\s+/g, ' ')]);
   const looksLikeSecret = /SUPABASE|SERVICE_ROLE|GROQ|TURNSTILE|sk_|gsk_|BEGIN .*PRIVATE|"dependencies"|create table/i.test(text);
-  check(`E ${path}`, 'not served (404 or the app shell), no file or secret content', (res.status === 404 || (res.status === 200 && /<!doctype html/i.test(text))) && !looksLikeSecret, `${res.status} ${text.slice(0, 60)}`);
+  check(`E ${path}`, 'not served (404, 429 from the firewall, or the app shell), no file or secret content', (res.status === 404 || res.status === 429 || (res.status === 200 && /<!doctype html/i.test(text))) && !looksLikeSecret, `${res.status} ${text.slice(0, 60)}`);
 }
 for (const path of API) {
   const { res, text } = await call('POST', path, { origin: BASE, headers: { 'Content-Type': 'application/json' }, body: '{not json' });

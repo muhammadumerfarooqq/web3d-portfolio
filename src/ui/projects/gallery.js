@@ -5,6 +5,7 @@ import gsap from 'gsap';
 import { Flip } from 'gsap/Flip';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import content from 'virtual:content';
+import { applyRanks } from '../../shared/project-order.js';
 import { cleanQuery, filterProjects, highlightRanges, isFiltered, parseState, queryTerms, serializeState } from './filter.js';
 import { initProjectModal } from './modal.js';
 import { initStackSelect } from './stack-select.js';
@@ -150,4 +151,12 @@ export function initGallery({ reduced }) {
 
   render({ animate: false });
   initProjectModal({ reduced, root, bySlug });
+
+  // P7: the admin's saved order (slugs only, public endpoint). Any failure keeps the built-in order.
+  fetch('/api/project-order', { credentials: 'omit', headers: { Accept: 'application/json' } })
+    .then((res) => (res.ok ? res.json() : null))
+    .then((data) => {
+      if (data?.ok && Array.isArray(data.order) && applyRanks(projects, data.order) > 0) render({ animate: false });
+    })
+    .catch(() => {});
 }
