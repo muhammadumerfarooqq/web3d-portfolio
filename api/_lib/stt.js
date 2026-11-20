@@ -40,12 +40,13 @@ export function wavSeconds(bytes) {
   return null;
 }
 
-// A style prompt keeps proper nouns right and (for Roman Urdu, which has no language code) keeps the output
-// in Latin letters. If Whisper echoes it back on silence, `cleanTranscript` throws that result away.
+// A style prompt keeps proper nouns right and (for Roman Urdu, which has no language code, so none is forced: a forced
+// "ur" would answer in Arabic script) keeps the output in Latin letters; if Whisper still writes Devanagari, the handler
+// transliterates it (src/shared/devanagari.js). If Whisper echoes it back on silence, `cleanTranscript` throws that result away.
 export const STT_PROMPTS = {
   en: 'Umer Farooq, Axisero, TALEEM360, KnoDesk, NED University, RAG, Groq.',
   ur: 'عمر فاروق، Axisero، TALEEM360، KnoDesk، NED یونیورسٹی۔',
-  roman: 'Umer kon he? Kya aap remote kaam karte hain? Aap ke projects aur skills ke baare mein batayein. Axisero, TALEEM360, KnoDesk.',
+  roman: 'Umer kaun hai? Umer kahan rehta hai? Kya aap remote kaam karte hain? Aap ke projects aur skills ke baare mein batayein. Axisero, TALEEM360, KnoDesk, NED University.',
 };
 
 /**

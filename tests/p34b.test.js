@@ -1,7 +1,7 @@
 // P3.4b: the opening and the boat arrival play once per browser SESSION (sessionStorage) and ?replay=1
 // forces them; neither can be silently skipped by a load-order race or a stale flag; the system cursor
 // is always visible in Explore (a centre dot while pointer-locked).
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { bootPlan, introSeenThisSession, readIntroSession, replayRequested, writeIntro, writeIntroSession } from '../src/ui/boot-rules.js';
@@ -78,16 +78,14 @@ describe('the boat arrival: once per session, ?replay=1 forces it, no stale flag
 });
 
 describe('the cursor in Explore', () => {
-  it('the Classic ring stands down in Explore (system cursor visible), with a CSS safety net', () => {
-    const cursor = strip(read('src', 'ui', 'cursor.js'));
-    expect(cursor).toMatch(/const inExplore = \(\) => root\.dataset\.mode === 'explore';/);
-    expect(cursor).toMatch(/if \(inExplore\(\)\) \{\s*standDown\(\);\s*return;/);
-    expect(cursor).toMatch(/if \(event\.detail\?\.mode === 'explore'\) standDown\(\);/);
-    const css = read('src', 'styles', 'main.css');
-    expect(css).toMatch(/html\.has-cursor\[data-mode='explore'\] \*\s*\{\s*cursor: auto !important;/);
+  it('P12-UX: the custom Classic ring is gone; the system draws a solid cursor in Explore too (src/styles/cursor.css)', () => {
+    expect(existsSync(join(ROOT, 'src', 'ui', 'cursor.js'))).toBe(false);
+    const css = read('src', 'styles', 'cursor.css');
+    expect(css).toMatch(/html \{\s*cursor: url\('\/cursors\/arrow\.svg'\) 5 3, auto;/);
+    expect(read('src', 'styles', 'main.css')).not.toMatch(/has-cursor|cursor-visible/);
   });
 
-  it('pointer-lock look shows a small centre dot, hidden otherwise; Explore itself never hides the cursor', () => {
+  it('pointer-lock look shows a small solid reticle, hidden otherwise; Explore itself never hides the cursor', () => {
     const hud = strip(read('src', 'explore', 'hud.js'));
     expect(hud).toMatch(/const crosshair = el\('span', \{ class: 'xp-crosshair', 'aria-hidden': 'true' \}\);\s*crosshair\.hidden = true;/);
     expect(hud).toMatch(/setPointerLock\(on\) \{\s*crosshair\.hidden = !on;/);

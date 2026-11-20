@@ -164,3 +164,17 @@ Every step adds its rows here. Save each screenshot under `docs/screenshots/<mod
 | P10-13 | Security / Analytics tests | `npm run test:security`: the p10-analytics.test.js line and the totals (14 files, 435 tests) | Terminal | ⬜ |
 | P10-14 | Data / analytics_daily | Supabase → Table editor → analytics_daily with a few rows and the RLS badge; `npm run rls:verify` all PASS with no warnings | Supabase dashboard and terminal | ⬜ |
 | P10-15 | QA / axe per mode | `node scripts/qa/a11y-check.mjs` summary: 12 runs, 0 violations | Terminal | ⬜ |
+
+## P12-UX: cursor, accessibility button, phones, voice, repository
+
+| ID | Where | What to show | How | Done |
+|---|---|---|---|---|
+| P12-1 | Site / Cursor on a button | The solid arrow and the pointing hand over the header buttons and a project card (dark and light) | Move the mouse; screenshot with the cursor visible (Win + Shift + S shows it only with "capture mouse pointer" on, otherwise photograph the screen) | ⬜ |
+| P12-2 | Explore / Cursor | The cursor over a HUD button, and the small reticle while looking around (click the view, Esc releases) | Explore | ⬜ |
+| P12-3 | Site / Accessibility in the header | The icon between theme and menu, panel open under it (1280 px) | Click the icon | ⬜ |
+| P12-4 | Explore / Accessibility in the HUD | The icon in the top-right cluster with the panel open | Explore, click the icon | ⬜ |
+| P12-5 | Phone / Classic | The page at 390 px: header, hero, menu open, accessibility sheet (see also `docs/screenshots/p12/responsive/`) | Real phone | ⬜ |
+| P12-6 | Phone / Urdu | The Urdu page at 390 px (right to left) with the chat | Real phone | ⬜ |
+| P12-7 | Voice / Roman Urdu | Speak "umer kaun hai": the chat input shows Roman text, not Devanagari | Chat → microphone | ⬜ |
+| P12-8 | QA / Responsive check | `npm run qa:responsive` summary: all checks passed, and `docs/reports/responsive.md` | Terminal | ⬜ |
+| P12-9 | GitHub / Public repo and Release | The repository page logged out (public) and the Release with promo-4k.mp4 attached | Browser (private window) | ⬜ |

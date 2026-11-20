@@ -56,7 +56,7 @@ describe('keyboard scrolling works everywhere', () => {
   });
 
   it('no Classic handler swallows the scroll keys globally', () => {
-    for (const f of ['main.js', 'nav.js', 'cursor.js', 'start.js']) {
+    for (const f of ['main.js', 'nav.js', 'start.js']) {
       const code = f === 'main.js' ? readFileSync(join(ROOT, 'src', f), 'utf8') : ui(f);
       const handlers = code.match(/(window|document)\.addEventListener\('keydown'[\s\S]{0,400}?\n {2}\}\)?;?/g) ?? [];
       for (const h of handlers) if (/preventDefault/.test(h)) expect(h).not.toMatch(/ArrowDown|PageDown|'End'|'Home'/);

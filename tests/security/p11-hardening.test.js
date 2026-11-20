@@ -51,7 +51,7 @@ describe('C13 secret scanner (A1)', () => {
     expect(r.stdout).toMatch(/tracked \.env files other than \.env\.example: 0/);
     expect(r.stdout).not.toMatch(/NOT IGNORED/);
     expect(r.status, r.stdout).toBe(0);
-  });
+  }, 30000); // scans the whole git history (it grows): 2 s alone, over 5 s while the other test files run in parallel
 
   it('finds a planted key in the tree and in history, reports where, and never prints the value', () => {
     const fake = `gsk_${'a1B2c3D4e5'.repeat(4)}`; // built at run time so this file holds no key-shaped literal

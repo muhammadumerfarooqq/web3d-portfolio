@@ -18,7 +18,8 @@
     "rag:ingest": "node scripts/rag/ingest.mjs",
     "rag:verify": "node scripts/rag/verify.mjs",
     "rag:eval": "node scripts/rag/eval.mjs",
-    "rag:similarity": "node scripts/rag/similarity.mjs"
+    "rag:similarity": "node scripts/rag/similarity.mjs",
+    "qa:responsive": "node scripts/qa/responsive-check.mjs"
   },
   "allowScripts": {
     "fsevents": false

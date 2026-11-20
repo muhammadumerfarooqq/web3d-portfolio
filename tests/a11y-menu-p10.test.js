@@ -252,13 +252,13 @@ describe('P10 accessibility menu: the disclosure and the switches', () => {
 describe('P10 accessibility menu: markup, loader and CSS', () => {
   it('the button is in the tab order from the start (a plain button, aria-expanded + aria-controls) and the panel holds five real switches', () => {
     const html = read('index.html');
-    expect(html).toMatch(/<button type="button" class="btn btn--sm a11y__toggle" aria-expanded="false" aria-controls="a11y-panel" data-a11y-toggle>/);
+    expect(html).toMatch(/<button type="button" class="icon-btn a11y__toggle" aria-label="Accessibility" aria-expanded="false" aria-controls="a11y-panel" data-a11y-toggle>/);
     expect(html).toMatch(/<div class="a11y__panel" id="a11y-panel" role="group" aria-labelledby="a11y-title" data-a11y-panel hidden>/);
     expect(html.match(/<button type="button" class="a11y__switch" aria-pressed="false" data-a11y-option="(motion|text|contrast|spacing|links)">/g)).toHaveLength(5);
     expect(html).not.toMatch(/data-a11y[^>]*tabindex="-1"/);
-    // outside the Classic containers that go inert under Explore, so it stays usable there
-    const menu = html.slice(html.indexOf('<div class="a11y" data-a11y>'), html.indexOf('<div class="paper-bg"'));
-    expect(menu).not.toContain('data-inert-when-menu');
+    // P12-UX: in the Classic header's control row (a11y-loader.js moves the same box into the Explore HUD and back)
+    const row = html.slice(html.indexOf('<div class="header-actions">'), html.indexOf('</header>'));
+    expect(row).toContain('<div class="a11y" data-a11y>');
   });
   it('the logic loads on first focus or click (lazy chunk), never at start-up', () => {
     const code = read('src/ui/a11y-loader.js');
@@ -309,6 +309,6 @@ describe('P10 accessibility menu: markup, loader and CSS', () => {
   it('the menu and the language switch are labelled for both languages (the dictionary translates every visible string)', () => {
     const en = JSON.parse(read('src/i18n/en.json'));
     for (const key of ['a11y.button', 'a11y.title', 'a11y.motion', 'a11y.text', 'a11y.contrast', 'a11y.spacing', 'a11y.links', 'a11y.reset', 'a11y.classic', 'a11y.note', 'a11y.reload', 'a11y.saved', 'lang.group']) expect(en[key], key).toBeTruthy();
-    expect(read('index.html')).toContain(`>${en['a11y.button']}</span>`);
+    expect(read('index.html')).toContain(`aria-label="${en['a11y.button']}" aria-expanded="false" aria-controls="a11y-panel"`); // an icon button: its name is the label, translated with the other aria-labels
   });
 });

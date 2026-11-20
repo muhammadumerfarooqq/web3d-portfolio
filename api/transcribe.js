@@ -3,10 +3,11 @@
 // Order: method → origin → audio content type (webm | ogg | mp4 | wav) → declared size (≤ 2 MB) → configuration →
 // language header → chat session (X-Chat-Session, from GET /api/chat-token) → body read (≤ 2 MB) → rate limit + the shared daily
 // cap (stt_submit: 10 per 10 minutes per hashed IP) → container signature + WAV length → Groq Whisper
-// (STT_MODEL) → length check (≤ 30 s) → cleaning → the chat's injection and private-data screens (heuristics
+// (STT_MODEL) → length check (≤ 30 s) → Devanagari → Roman transliteration (only if Whisper wrote Devanagari) → cleaning → the chat's injection and private-data screens (heuristics
 // + Prompt Guard 2) → { ok, text, seconds } or a fixed refusal. Audio is never stored; logs hold metadata only
 // (no audio, no transcript, no IP, no keys). The visitor confirms the text before it is sent as a question.
 import { looksUrdu } from '../src/shared/chat-schema.js';
+import { devanagariToRoman, hasDevanagari } from '../src/shared/devanagari.js';
 import { AUDIO_TYPES, baseType, sttLanguage, VOICE_LIMITS } from '../src/shared/voice-limits.js';
 import { chatSettings } from './chat.js';
 import { screenInput } from './_lib/chat-filter.js';
@@ -94,7 +95,10 @@ export function createTranscribeHandler({ env = process.env, fetch = globalThis.
     // Other containers carry no cheap length: Whisper reports the real duration.
     if (result.seconds !== null && result.seconds > VOICE_LIMITS.seconds + 1) return fail(413, 'too_long');
 
-    const text = cleanTranscript(result.text, { noSpeech: result.noSpeech, prompt });
+    // P12-UX: Whisper may write spoken Roman Urdu in Devanagari (it has no Roman Urdu language code). Only then the text
+    // is transliterated to Roman letters (rule based, approximate); the screens below run on this FINAL text.
+    const transliterated = hasDevanagari(result.text);
+    const text = cleanTranscript(transliterated ? devanagariToRoman(result.text) : result.text, { noSpeech: result.noSpeech, prompt });
     const done = (body, reason) => {
       log('transcribe', { status: 200, reason, ms: now() - t0, bytes: bytes.length, seconds: result.seconds === null ? null : Math.round(result.seconds), lang, model: settings.sttModel });
       return sendJson(res, 200, { ok: true, ...body });
@@ -102,7 +106,7 @@ export function createTranscribeHandler({ env = process.env, fetch = globalThis.
     if (!text) return done({ text: '', seconds: result.seconds }, 'no_speech');
 
     // The transcript is visitor text like any other: the same screens as /api/chat, before it can become a question.
-    const replyLang = looksUrdu(text) ? 'ur' : lang;
+    const replyLang = looksUrdu(text) ? 'ur' : transliterated ? 'roman' : lang;
     const heuristic = screenInput(text);
     if (heuristic) return done({ text: '', refused: true, reason: heuristic, reply: REPLIES[heuristic][replyLang] }, `screen_${heuristic}`);
     try {

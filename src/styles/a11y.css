@@ -117,16 +117,18 @@ html[data-a11y-contrast='high'] * {
   text-shadow: none !important;
 }
 
-/* The menu itself (also visible over Explore, so it is outside the Classic containers). */
+/*
+  The menu itself. P12-UX: it is NOT a fixed button over the page any more (it covered section headings in Classic and
+  the hotspot chips in Explore). It is an icon button among the other controls: in the Classic header next to the
+  language, sound and theme buttons, and in Explore in the HUD's top-right cluster (src/ui/a11y-loader.js moves this
+  same box there and back, so the keyboard disclosure, Esc and focus return are one piece of code).
+  The panel is anchored under the button, scrolls inside itself and is never taller than the viewport; below 48rem it
+  is a full-width bottom sheet.
+*/
 .a11y {
-  position: fixed;
-  inset-block-end: 16px;
-  inset-inline-start: 16px;
-  z-index: 400;
-  display: grid;
-  gap: 8px;
-  justify-items: start;
-  max-inline-size: calc(100vw - 32px);
+  position: relative;
+  z-index: 20;
+  flex: none;
 }
 
 .a11y__toggle {
@@ -134,21 +136,57 @@ html[data-a11y-contrast='high'] * {
 }
 
 .a11y__panel {
+  position: absolute;
+  inset-block-start: calc(100% + 10px);
+  inset-inline-end: 0;
+  z-index: 20;
   display: grid;
   gap: 8px;
   inline-size: min(22rem, calc(100vw - 32px));
-  max-block-size: calc(100svh - 96px);
+  max-block-size: calc(100svh - var(--header-h, 72px) - 24px);
   overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   padding: 16px;
   border: 2px solid var(--border-strong);
   border-radius: 2px;
   background: var(--surface);
   color: var(--text);
   box-shadow: var(--shadow-mid);
+  text-align: start;
+}
+
+@media (max-width: 47.99rem) {
+  .a11y__panel {
+    position: fixed;
+    inset-block: auto 0;
+    inset-inline: 0;
+    inline-size: auto;
+    max-block-size: min(82svh, 36rem);
+    padding-block-end: max(16px, env(safe-area-inset-bottom));
+    border-width: 2px 0 0;
+    border-radius: 0;
+  }
 }
 
 .a11y__panel[hidden] {
   display: none;
+}
+
+/* In Explore the toggle looks like the other HUD buttons (dark paper on the night town). */
+.xp-top__right .a11y__toggle {
+  border-color: #D9C9A6;
+  color: #F1E6CE;
+  background: rgba(20, 16, 12, 0.82);
+  box-shadow: 3px 3px 0 #000;
+}
+
+.xp-top__right .a11y__toggle:hover,
+.xp-top__right .a11y__toggle:focus-visible,
+.xp-top__right .a11y__toggle[aria-expanded='true'] {
+  color: #14100C;
+  background: #F1E6CE;
+  box-shadow: 5px 5px 0 #000;
 }
 
 .a11y__title {

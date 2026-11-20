@@ -109,6 +109,20 @@ Lost authenticator or password: Supabase dashboard → Authentication → Users 
 5. **Screenshots:** the P11 rows of `docs/screenshots/SHOTLIST.md`, saved in `docs/screenshots/p11/`.
 6. **Rehearse** `docs/VIVA_SECURITY_DEMO.md` once from top to bottom.
 
+## Repository contents vs assignment
+
+The assignment says: "Repository must contain complete source code, avatar model, aftereffects video, all assets used, report." Audited on 21-Nov-2026 with `git ls-files` (524 tracked files, the largest 19 MB; nothing over GitHub's limit; no `.env`, `content-inbox`, key or credential tracked; the repository is public: `git ls-remote` works without credentials).
+
+| Required | Where it is in the repository | Status |
+|---|---|---|
+| Complete source code | `src/` (Classic, Explore, admin, i18n), `api/` (9 Vercel functions), `supabase/migrations/` (0001 to 0007), `scripts/`, `tests/`, `content/`, `index.html`, `admin/`, `vercel.json`, `vite.config.js`, `package.json` + lockfile | ✅ |
+| Avatar model | `blender/avatar.blend` (source) and `blender/export/avatar.glb` (export); the site loads `public/models/avatar.glb`; build scripts `blender/scripts/*.py`; also the horse, oars, town and train (`.blend`, `.glb`) | ✅ |
+| After Effects project and scripts | `aftereffects/promo.aep` (project), `aftereffects/promo.jsx` (AE script), `scripts/promo/*` (cue, audio and caption pipeline), `docs/promo/*` (storyboard, shots, cues) | ✅ (the footage frames and audio stems it uses are regenerable, 6.4 GB and 50 MB, see `docs/DOWNLOADS.md`) |
+| Promo video (web version) | `public/media/promo-1080.mp4` (1080p, 19 MB, the film the site plays) + poster + captions `public/captions/promo.en.vtt` and `promo.ur.vtt` | ✅ |
+| Promo video (4K master) | 244 MB: over GitHub's 100 MB file limit, so it is a **GitHub Release asset**; steps in `docs/DOWNLOADS.md` | ⬜ Umer attaches it |
+| All assets used by the site | `public/` (images, models, draco decoder, captions, media, project video, cursors, favicon), fonts from the pinned `@fontsource/*` packages (no CDN) | ✅ (the CV PDF is not published on purpose; the button appears when `public/cv/Muhammad_Umer_Farooq_CV_web.pdf` exists) |
+| Report | `docs/report/` (placeholder, `docs/report/README.md`); the evidence it is written from is in `docs/` and `docs/reports/` | ⬜ final PDF to be committed |
+
 ## Security
 
 Threat model, OWASP mappings, the controls register and known limitations are in [docs/security.md](docs/security.md).
@@ -232,3 +246,4 @@ Every known limitation and issue since P0, with its impact, a plain-English defe
 - **P7 fix (20-Nov-2026): admin two-step enrolment.** The first live enrolment failed and the reason was not logged. Enrolment now uses a fresh name each time, removes leftover unverified factors (never a verified one), logs Supabase's HTTP status and error code (no secrets), and shows one of three fixed messages; `/api/collect` ignores non-JSON bodies with the bare 204. See `docs/P7_PROGRESS.md` and L255.
 - **P7 fix 2 (20-Nov-2026): the real cause of the failed two-step enrolment.** Nested admin paths (`/api/admin/mfa/enroll`) never reached the function on Vercel (a platform 404, so nothing was logged); the MFA routes are now single-segment (`mfa-enroll`, `mfa-verify`), failures log a line before answering, the page shows a short reason tag, and the whole flow was run against the real Supabase with a temporary user. See `docs/P7_PROGRESS.md` and L255.
 - **P7 final admin fix (20-Nov-2026).** Every admin route was run against the real Supabase (`node --env-file=.env scripts/qa/admin-e2e.mjs`, restores everything it touches): only Save order failed (Postgres 21000, `pg_safeupdate`); fixed by `supabase/migrations/0007_admin_fixes.sql` (run it in the SQL editor) plus a safe fallback; database failures now log their code and the page shows a short tag. See `docs/P7_PROGRESS.md`, L256.
+- **P12-UX (21-Nov-2026): cursor, accessibility button, phones, Roman Urdu, repository audit.** (1) The drawn Classic cursor (`cursor: none`) is gone: the browser draws a solid dark arrow / pointing hand from `public/cursors/` everywhere (a test fails on any `cursor: none`); Explore shows the cursor and a solid reticle during pointer lock. (2) The Accessibility button is an icon in the Classic header and in the Explore HUD cluster (never fixed over content); the panel is anchored under it, scrolls inside itself, and is a bottom sheet on phones. (3) `npm run qa:responsive` (real Chrome, 320 to 1280 px, English and Urdu, light and dark) found and fixed: a header wider than a 320 px screen, the contact e-mail overflow (L250), a broken hero name, tilted open project cards, a chat form and 300 px Turnstile frame that widened the page, controls under 44 px; the table is `docs/reports/responsive.md`. (4) Spoken Roman Urdu that Whisper writes in Devanagari is transliterated to Roman letters (`src/shared/devanagari.js`, approximate, L262) before the usual screens. (5) Repository audit and `docs/DOWNLOADS.md` (attach the 4K film to a GitHub Release). See `docs/P12_PROGRESS.md`, L258 to L266.

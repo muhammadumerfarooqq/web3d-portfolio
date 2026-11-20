@@ -14,6 +14,7 @@
 @import "@fontsource/source-serif-4/latin-400.css";
 @import "@fontsource/source-serif-4/latin-600.css";
 @import "./tokens.css";
+@import "./cursor.css";
 @import "./a11y.css";
 
 @source "../../index.html";
@@ -438,6 +439,47 @@
     }
   }
 
+  /* P12-UX: at 80–90rem the English header (8 links, Ride to the island, EN | اردو and four icon buttons) was 29 px wider than the
+     viewport once the accessibility button joined it: a little less air around the links and between the three groups. */
+  @media (min-width: 80rem) and (max-width: 89.99rem) {
+    .site-header__inner {
+      gap: var(--space-4);
+    }
+
+    .nav-link {
+      padding-inline: 6px;
+    }
+  }
+
+  /* P12-UX phones: the header holds the monogram and four 44 px buttons (sound, theme, accessibility, menu). It must fit
+     the viewport (a wider header made mobile Chrome zoom the whole page out at 320 px): tighter gaps below 30rem, and the
+     word under the star is dropped below 21.5rem (the link keeps its aria-label). */
+  @media (max-width: 29.99rem) {
+    .site-header__inner {
+      gap: var(--space-3);
+    }
+
+    .header-actions {
+      gap: 6px;
+    }
+
+    .monogram {
+      gap: 8px;
+      font-size: 1.25rem;
+    }
+  }
+
+  @media (max-width: 21.5rem) {
+    .monogram > span {
+      display: none;
+    }
+
+    .monogram {
+      justify-content: center;
+      min-inline-size: 44px;
+    }
+  }
+
   /* Buttons: flat paper with an ink border and a hard shadow that grows on hover. */
   .btn {
     position: relative;
@@ -793,6 +835,7 @@
 
   .mobile-menu__controls {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: var(--space-3);
   }
@@ -920,8 +963,9 @@
     gap: var(--space-5);
     inline-size: 100%;
     container-type: inline-size;
-    /* One name size, capped by the container: "MUHAMMAD" never overflows a 320 px phone. */
-    --name-size: min(var(--fs-display), 19cqi);
+    /* One name size, capped by the container: "MUHAMMAD" never overflows a phone. P12-UX: the old cap (19cqi) let the 52 px floor of
+       --fs-display win at 320 px, so the word broke as "MUHAMMA / D"; 8 capitals are ~5.9em wide, 15.2cqi leaves room on every width. */
+    --name-size: min(var(--fs-display), 15.2cqi);
   }
 
   .hero > *,
@@ -1062,6 +1106,32 @@
   .social-link svg {
     inline-size: 18px;
     block-size: 18px;
+    flex: none;
+  }
+
+  /* P12-UX: a pill never outgrows its column; the e-mail address (long, one word) keeps its case and may break anywhere. */
+  .social-link {
+    max-inline-size: 100%;
+    min-inline-size: 0;
+  }
+
+  .social-link > span {
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .social-link--email {
+    text-transform: none;
+    letter-spacing: 0.02em;
+    line-height: 1.25;
+    padding-block: var(--space-2);
+  }
+
+  @media (max-width: 29.99rem) {
+    .social-link {
+      padding-inline: var(--space-3);
+      font-size: 0.8125rem;
+    }
   }
 
   .social-link:hover,
@@ -1073,79 +1143,6 @@
   .social-link:active {
     transform: translate(2px, 2px);
     box-shadow: 1px 1px 0 var(--shadow-ink);
-  }
-
-  /* Custom cursor (pointer: fine, no reduced motion; see src/ui/cursor.js). It stays out of the
-     page (off-screen, invisible, native cursor kept) until the first real mouse move. */
-  .cursor {
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: var(--z-cursor);
-    border-radius: 50%;
-    pointer-events: none;
-    translate: -200px -200px;
-    opacity: 0;
-    transition: opacity 0.2s ease, scale 0.25s var(--ease-out);
-  }
-
-  html.cursor-visible .cursor {
-    opacity: 1;
-    translate: 0 0;
-  }
-
-  html.cursor-native .cursor {
-    opacity: 0;
-  }
-
-  .cursor--dot {
-    inline-size: 6px;
-    block-size: 6px;
-    margin: -3px 0 0 -3px;
-    background: var(--rust);
-  }
-
-  .cursor--ring {
-    inline-size: 34px;
-    block-size: 34px;
-    margin: -17px 0 0 -17px;
-    border: 2px solid var(--ink);
-  }
-
-  .cursor--ring.is-hover {
-    scale: 1.5;
-  }
-
-  .cursor--ring.is-press {
-    scale: 0.8;
-  }
-
-  .cursor--dot.is-hover {
-    scale: 0;
-  }
-
-  html.has-cursor,
-  html.has-cursor * {
-    cursor: none !important;
-  }
-
-  html.has-cursor :is(input, textarea, [contenteditable='true']) {
-    cursor: text !important;
-  }
-
-  html.has-cursor select {
-    cursor: default !important;
-  }
-
-  /* P3.4b safety net: the Classic ring never hides the system cursor in Explore (cursor.js also
-     drops has-cursor there). */
-  html.has-cursor[data-mode='explore'],
-  html.has-cursor[data-mode='explore'] * {
-    cursor: auto !important;
-  }
-
-  html.has-cursor[data-mode='explore'] :is(a[href], button, [role='button'], select, summary, label) {
-    cursor: pointer !important;
   }
 
   /* Explore mode (src/explore/, lazy) covers the page; Classic underneath is hidden and inert. */
@@ -1180,7 +1177,6 @@
     }
 
     .paper-bg,
-    .cursor,
     .scroll-progress,
     .pin,
     .stamp {
@@ -2300,6 +2296,7 @@
 
   .gallery__grid {
     display: grid;
+    grid-template-columns: minmax(0, 1fr); /* P12-UX: an auto column grew with an opened project's content */
     gap: var(--space-5);
   }
 
@@ -2325,6 +2322,8 @@
 
   .gallery__item {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    min-inline-size: 0;
   }
 
   .project-card {
@@ -4335,6 +4334,7 @@
 @layer components {
   .contact {
     display: grid;
+    grid-template-columns: minmax(0, 1fr); /* P12-UX: an auto column grew to the e-mail pill's width (320 px overflow, L250) */
     gap: var(--space-8);
     padding: clamp(var(--space-6), 4vw, var(--space-10));
     border-radius: var(--radius-lg);
@@ -4376,6 +4376,7 @@
 
   .contact__form {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
   }
 
@@ -4482,6 +4483,8 @@
 
   .contact__turnstile {
     min-block-size: 65px;
+    max-inline-size: 100%;
+    overflow-x: auto; /* the widget is 300 px wide: on a very narrow card it scrolls inside itself instead of widening the page */
   }
 
   .contact__status:empty {
@@ -4590,6 +4593,7 @@
 @layer components {
   .chat {
     display: grid;
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-8);
     padding: clamp(var(--space-6), 4vw, var(--space-10));
     border-radius: var(--radius-lg);
@@ -4624,6 +4628,7 @@
 
   .chat__panel {
     display: grid;
+    grid-template-columns: minmax(0, 1fr); /* P12-UX: Cloudflare's 300 px frame must not widen the panel on a 320 px phone */
     gap: var(--space-4);
     min-inline-size: 0;
   }
@@ -4840,6 +4845,11 @@
     font-weight: 600;
   }
 
+  .chat__turnstile {
+    max-inline-size: 100%;
+    overflow-x: auto;
+  }
+
   .chat__turnstile:empty {
     display: none;
   }
@@ -5046,6 +5056,116 @@
   @media (min-width: 48rem) {
     .header-actions .lang-switch {
       display: inline-flex;
+    }
+  }
+}
+
+/* ─────────────────── P12-UX: touch targets of at least 44 px (phones and coarse pointers) ─────────────────── */
+@layer components {
+  @media (max-width: 63.99rem), (pointer: coarse) {
+    .lang-switch__btn {
+      min-block-size: 44px;
+      min-inline-size: 44px;
+    }
+
+    .chip--link,
+    .chat__suggestion,
+    .chat__lang,
+    .player__btn {
+      min-block-size: 44px;
+      min-inline-size: 44px;
+    }
+
+    .player__btn {
+      inline-size: 44px;
+      block-size: 44px;
+    }
+
+    .chat__how-summary,
+    .site-footer__privacy summary,
+    .video-transcript summary {
+      min-block-size: 44px;
+      min-inline-size: 44px;
+      padding-block: 11px;
+    }
+  }
+}
+
+/* ─────────────────── P12-UX: phones (below 30rem): tighter cards, columns that can shrink, a chat form that fits ─────────────────── */
+@layer components {
+  /* Open project details: grid / flex children may shrink below their content, long words break instead of widening the page. */
+  .project-card,
+  .project-card__body,
+  .project-card__actions,
+  .project-card__more,
+  .project-detail,
+  .project-detail__body,
+  .project-detail__aside {
+    min-inline-size: 0;
+  }
+
+  .project-card__more {
+    max-inline-size: 100%;
+  }
+
+  .project-detail {
+    overflow-wrap: anywhere;
+  }
+
+  .project-detail__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  @media (min-width: 48rem) {
+    .project-detail__grid {
+      grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    }
+  }
+
+  /* A tilted card turns its box: a tall (opened) card then reaches past the viewport edge. The "no tilt on phones" rule above lost to
+     the nth-child rules (higher specificity), so the tilt stayed on phones; an opened card is straight at every width. */
+  .gallery__item .project-card:has(details[open]) {
+    --tilt: 0deg;
+  }
+
+  @media (prefers-reduced-motion: reduce), (max-width: 30rem) {
+    .gallery__item:nth-child(n) .project-card {
+      --tilt: 0deg;
+    }
+  }
+
+  @media (max-width: 29.99rem) {
+    .contact,
+    .chat {
+      padding: var(--space-4);
+    }
+
+    .project-card__body {
+      padding: var(--space-4) var(--space-4) var(--space-5);
+    }
+
+    /* "Languages" at 24 px was 2 px wider than its card at 320 px and broke mid-word. */
+    .bento__title {
+      font-size: 1.375rem;
+    }
+
+    /* The question field takes the whole row; the microphone and Send share the row below it. */
+    .chat__compose {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+    }
+
+    .chat__input {
+      flex: 1 1 100%;
+    }
+
+    .chat__mic {
+      flex: none;
+    }
+
+    .chat__send {
+      flex: 1 1 8rem;
     }
   }
 }

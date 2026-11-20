@@ -1083,18 +1083,18 @@
   }
 }
 
-/* P3.4b: pointer-lock look shows a small centre dot (the browser hides the cursor while locked). */
+/* Pointer-lock look (Esc releases): the browser hides the cursor itself, so a small solid reticle shows the aim. */
 .xp-crosshair {
   position: fixed;
   inset-block-start: 50%;
   inset-inline-start: 50%;
   z-index: 6;
-  inline-size: 6px;
-  block-size: 6px;
-  margin: -3px 0 0 -3px;
+  inline-size: 10px;
+  block-size: 10px;
+  margin: -5px 0 0 -5px;
   border-radius: 50%;
   background: #f4ead8;
-  box-shadow: 0 0 0 1.5px rgb(20 14 8 / 0.85);
+  box-shadow: 0 0 0 2px rgb(20 14 8 / 0.9);
   pointer-events: none;
 }
 

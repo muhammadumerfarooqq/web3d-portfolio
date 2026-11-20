@@ -1,5 +1,4 @@
 // Portfolio entry (Classic mode shell). The 3D island arrives in P3 through src/ui/mode.js.
-import { initCursor } from './ui/cursor.js';
 import { initHud } from './ui/hud.js';
 import { initLightbox } from './ui/lightbox.js';
 import { initMenu } from './ui/menu.js';
@@ -52,7 +51,6 @@ const DEFERRED = [
   ['lightbox', initLightbox],
   // Players in the #video section; project players are enhanced when their modal opens.
   ['video', () => document.querySelectorAll('#video [data-player]').forEach(initPlayer)],
-  ['cursor', initCursor],
   ['contact', initContactLoader], // P4: the form chunk loads when the Telegraph section nears the viewport
   ['chat', initChatLoader], // P5: the chat chunk loads when the Ask my AI section nears the viewport
   ['analytics', () => (window.requestIdleCallback ?? window.setTimeout)(() => import('./ui/analytics.js').then((m) => m.initAnalytics()).catch(() => {}))], // P10: anonymous daily counters (own chunk, after idle)

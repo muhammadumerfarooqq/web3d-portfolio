@@ -1,6 +1,6 @@
 # Accessibility check (P11 E1)
 
-Run on 2026-11-19 by `node scripts/qa/a11y-check.mjs --write`: axe-core 4.14.0 (from node_modules) in real Chrome against the production build served by `vite preview`, rule sets wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa, best-practice, desktop 1280×900. Classic mode only (Explore is a 3D canvas; its text equivalents are the Classic sections, see LIMITATIONS).
+Run on 2026-11-20 by `node scripts/qa/a11y-check.mjs --write`: axe-core 4.14.0 (from node_modules) in real Chrome against the production build served by `vite preview`, rule sets wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa, best-practice, desktop 1280×900. Classic mode only (Explore is a 3D canvas; its text equivalents are the Classic sections, see LIMITATIONS).
 
 | Run | axe violations | rules passed | need manual review |
 |---|---|---|---|
@@ -17,7 +17,7 @@ Run on 2026-11-19 by `node scripts/qa/a11y-check.mjs --write`: axe-core 4.14.0 (
 | Urdu (right to left), dark | 0 | 56 | 2 |
 | Urdu (right to left), light, high contrast | 0 | 56 | 2 |
 
-Needs manual review (axe cannot decide): aria-valid-attr-value (1 node(s), e.g. #stack-button ), color-contrast (72 node(s)), color-contrast (20 node(s)), color-contrast (35 node(s)), color-contrast (63 node(s)), color-contrast (18 node(s)), color-contrast (8 node(s)), color-contrast (9 node(s)), color-contrast (1 node(s)).
+Needs manual review (axe cannot decide): aria-valid-attr-value (1 node(s), e.g. #stack-button ), color-contrast (72 node(s)), color-contrast (20 node(s)), color-contrast (35 node(s)), color-contrast (63 node(s)), color-contrast (18 node(s)), color-contrast (8 node(s)), color-contrast (22 node(s)), color-contrast (10 node(s)).
 
 ### Page facts (same in every run)
 
@@ -58,8 +58,8 @@ Needs manual review (axe cannot decide): aria-valid-attr-value (1 node(s), e.g. 
 ### Keyboard, dark theme
 
 - 168 Tab stops in one pass, no keyboard trap (the pass ends when focus leaves the document).
-- Chat order: message box (#62) → microphone (#63) → Ask (#64): correct.
-- 12 of those stops are Cloudflare's Turnstile hosts (empty third-party divs that exist only while the widget is loaded); they are left out of the outline count.
+- Chat order: message box (#67) → microphone (#68) → Ask (#69): correct.
+- 16 of those stops are Cloudflare's Turnstile hosts (empty third-party divs that exist only while the widget is loaded); they are left out of the outline count.
 - Focused controls with no outline: 0.
 
 ### What this does not prove

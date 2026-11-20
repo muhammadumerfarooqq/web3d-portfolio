@@ -1,0 +1,35 @@
+/*
+  P12-UX: a SOLID cursor that is visible on every background, everywhere.
+
+  The old Classic cursor (a 6 px dot + a lagging ring, `cursor: none` on the whole page) was only DRAWN inside the
+  page: it disappeared behind <dialog> overlays (top layer), over the video controls and third-party frames, after
+  a Tab press or a window blur (while the real cursor was still hidden), and it was a thin ring on parchment. It is
+  gone. Now the browser draws the cursor and the images are our own files (public/cursors/, same origin, so the CSP
+  is unchanged): a dark solid arrow and a pointing hand, each with a light outline, 32 px, hotspots on the tip.
+  The native keyword is always the fallback. Text fields keep the native I-beam. Nothing may hide the cursor:
+  tests/cursor-p12.test.js fails on any `cursor: none` (only the dev-only promo capture mode is allowed one).
+
+  Unlayered on purpose: these rules win over the component layers and over the Explore sheet (same selectors there
+  are plain keywords). Busy / disabled states keep their own cursor (progress, not-allowed).
+*/
+html {
+  cursor: url('/cursors/arrow.svg') 5 3, auto;
+}
+
+dialog::backdrop {
+  cursor: url('/cursors/arrow.svg') 5 3, auto;
+}
+
+html :is(a[href], button, [role='button'], summary, label[for], select, [data-cursor], .xp-btn, .xp-chip, .xp-prompt, .xp-link, .xp-touch, input:is([type='checkbox'], [type='radio'], [type='range'], [type='submit'], [type='button'], [type='file'])):not(:disabled, [aria-disabled='true'], [aria-busy='true']) {
+  cursor: url('/cursors/pointer.svg') 14 2, pointer;
+}
+
+/* The system I-beam stays over text fields. */
+html :is(textarea, [contenteditable='true'], input:not([type='checkbox'], [type='radio'], [type='range'], [type='submit'], [type='button'], [type='file'], [type='color'])) {
+  cursor: text;
+}
+
+/* Disabled controls: the arrow with the native "not allowed" fallback; busy ones keep "progress". */
+html :is(button, input, select, textarea):disabled {
+  cursor: url('/cursors/arrow.svg') 5 3, not-allowed;
+}
