@@ -220,11 +220,12 @@ function showCode() {
 
 async function showEnroll() {
   mount(h('div', { class: 'admin-card paper case-frame' }, h('p', { class: 'admin-note' }, 'Preparing two-step sign-in…'), live));
-  const { status, data } = await api('mfa/enroll', { method: 'POST', auth: true, body: {} });
+  const { status, retry, data } = await api('mfa/enroll', { method: 'POST', auth: true, body: {} });
   if (status === 409) return showCode();
   if (status !== 200 || !data.ok) {
     if (status === 401) return endSession();
-    return showLogin('Could not start the two-step setup. Please try again.', 'error');
+    if (status === 429) return showLogin(WAIT(retry), 'error');
+    return showLogin(typeof data.message === 'string' && data.message.length < 120 ? data.message : 'Could not start the two-step setup. Please try again.', 'error');
   }
   const extra = [
     h('ol', { class: 'admin-steps' },

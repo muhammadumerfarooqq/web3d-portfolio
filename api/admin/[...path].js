@@ -12,7 +12,7 @@ import { ADMIN_LIMITS, STATUS_COLUMN, loginSchema, messagePatchSchema, mfaVerify
 import { ANALYTICS_EVENTS, STATS_DAYS } from '../../src/shared/analytics-events.js';
 import { mergeOrder, validateOrder } from '../../src/shared/project-order.js';
 import { PROJECTS, PROJECT_SLUGS } from '../../src/shared/project-slugs.js';
-import { createAuth, requireAdmin } from '../_lib/auth.js';
+import { AuthUpstreamError, createAuth, requireAdmin, upstreamReason } from '../_lib/auth.js';
 import { readEnv } from '../_lib/env.js';
 import { HttpError, clientIp, getHeader, isAllowedOrigin, readBody, requestOrigin, safe, sendJson } from '../_lib/http.js';
 import { logEvent } from '../_lib/log.js';
@@ -33,6 +33,14 @@ const ROUTES = {
   'projects-order': { methods: ['GET', 'POST'], json: 'POST', max: ADMIN_LIMITS.orderBody },
   messages: { methods: ['GET', 'PATCH'], json: 'PATCH', max: ADMIN_LIMITS.body },
   stats: { methods: ['GET'], json: false, max: 0 }, // P10: the analytics counters of the last 14 days
+};
+
+// Only because /mfa/enroll is reachable after a valid password AND an `admins` row: a short fixed sentence for the few
+// upstream codes the owner can act on. Never the upstream text.
+const ENROL_MESSAGES = {
+  mfa_totp_enroll_not_enabled: 'Two-step setup is switched off in Supabase.',
+  mfa_factor_name_conflict: 'A previous setup attempt is pending. Try again.',
+  too_many_enrolled_mfa_factors: 'A previous setup attempt is pending. Try again.',
 };
 
 const routeOf = (req) => {
@@ -136,8 +144,19 @@ export function createAdminHandler({ env = process.env, fetch = globalThis.fetch
         const totp = gate.factors.filter((f) => f.type === 'totp');
         if (name === 'mfa/enroll') {
           if (totp.some((f) => f.status === 'verified')) return fail(409, 'already_enrolled');
-          for (const f of totp) await auth.removeFactor(gate.token, f.id); // abandoned, never-verified enrolments
-          const enrol = await auth.enroll(gate.token);
+          // Abandoned, never-verified enrolments would block or clutter a retry: remove them (never a verified one).
+          for (const f of totp.filter((x) => x.status !== 'verified')) {
+            const removed = await auth.removeFactor(gate.token, f.id);
+            if (!removed.ok) log('admin', { status: removed.status, reason: upstreamReason('factor_remove', removed.status, removed.code), ms: now() - t0 });
+          }
+          let enrol;
+          try {
+            enrol = await auth.enroll(gate.token);
+          } catch (error) {
+            if (!(error instanceof AuthUpstreamError)) throw error;
+            log('admin', { status: 502, reason: upstreamReason(error.op, error.status, error.code), ms: now() - t0 });
+            return sendJson(res, 502, { ok: false, error: 'enroll_failed', ...(ENROL_MESSAGES[error.code] ? { message: ENROL_MESSAGES[error.code] } : {}) });
+          }
           log('admin', { status: 200, reason: 'enroll_started', ms: now() - t0 });
           return sendJson(res, 200, { ok: true, ...enrol });
         }
@@ -148,6 +167,7 @@ export function createAdminHandler({ env = process.env, fetch = globalThis.fetch
         const result = await auth.verifyTotp(gate.token, factor.id, parsed.data.code);
         if (!result.ok) {
           await sleep(FAIL_DELAY_MS);
+          log('admin', { status: 401, reason: upstreamReason(result.op ?? 'verify', result.status, result.code), ms: now() - t0 });
           return fail(401, 'invalid_code');
         }
         log('admin', { status: 200, reason: 'mfa_ok', ms: now() - t0 });
@@ -204,7 +224,9 @@ export function createAdminHandler({ env = process.env, fetch = globalThis.fetch
       await db.patch('contact_messages', `id=eq.${encodeURIComponent(id)}`, { status });
       log('admin', { status: 200, reason: 'message_status', ms: now() - t0 });
       return sendJson(res, 200, { ok: true, id, status });
-    } catch {
+    } catch (error) {
+      // The real reason, without secrets: which Supabase call failed, its HTTP status and short error code.
+      if (error instanceof AuthUpstreamError) log('admin', { status: 500, reason: upstreamReason(error.op, error.status, error.code), ms: now() - t0 });
       return fail(500, 'server_error');
     }
   };

@@ -36,11 +36,11 @@ const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 const makeJwt = (claims) => `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64(claims)}.c2lnbmF0dXJlLXRlc3Q`;
 
 /** A stateful stand-in for Supabase Auth + PostgREST + Turnstile. */
-function upstream({ factors = {}, admins = [UID_ADMIN], turnstile = { success: true, hostname: 'umerfarooq-ai.vercel.app', action: 'admin' }, authDown = false, dbDown = false, qr = 'data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg"/>' } = {}) {
+function upstream({ factors = {}, admins = [UID_ADMIN], turnstile = { success: true, hostname: 'umerfarooq-ai.vercel.app', action: 'admin' }, authDown = false, dbDown = false, enrolErrors = [], deleteStatus = 200, qr = 'data:image/svg+xml;utf-8,<svg xmlns="http://www.w3.org/2000/svg"/>' } = {}) {
   const users = { 'admin@example.com': { password: 'correct horse battery', id: UID_ADMIN }, 'other@example.com': { password: 'other password 1', id: UID_OTHER } };
   const f = { [UID_ADMIN]: [], [UID_OTHER]: [], ...factors };
   const tokens = new Map(); // access token → { id, aal }
-  const state = { calls: [], logins: 0, rpc: [], patches: [], saved: [], revoked: [], removed: [], hits: { login: 0, mfa: 0 }, selects: [], messages: [
+  const state = { calls: [], logins: 0, rpc: [], patches: [], saved: [], revoked: [], removed: [], enrolBodies: [], hits: { login: 0, mfa: 0 }, selects: [], messages: [
     { id: MSG_ID, created_at: '2026-11-19T10:00:00Z', name: 'Ada Lovelace', email: 'ada@example.com', subject: 'General', message: 'Hello <b>there</b>\nsecond line', status: 'new', ip_hash: 'a'.repeat(64), user_agent: 'Mozilla/5.0 secret-agent' },
     { id: '44444444-4444-4444-8444-444444444444', created_at: '2026-11-18T10:00:00Z', name: 'Bob', email: 'bob@example.com', subject: 'Other', message: 'Email failed one for the mailbox test', status: 'email_failed', ip_hash: 'b'.repeat(64), user_agent: 'x' },
     { id: '55555555-5555-4555-8555-555555555555', created_at: '2026-11-17T10:00:00Z', name: 'Cy', email: 'cy@example.com', subject: 'Other', message: 'A legacy read message for the board', status: 'read', ip_hash: 'c'.repeat(64), user_agent: 'x' },
@@ -76,6 +76,10 @@ function upstream({ factors = {}, admins = [UID_ADMIN], turnstile = { success: t
       }
       if (path === '/factors' && method === 'POST') {
         const t = tokens.get(bearer(init));
+        state.enrolBodies.push(body);
+        state.enrolHeaders = { apikey: init.headers?.apikey, bearerIsUser: tokens.has(bearer(init)), type: init.headers?.['Content-Type'] };
+        const err = enrolErrors.shift();
+        if (err) return json(err.body, err.status);
         const factor = { id: `66666666-6666-4666-8666-66666666666${f[t.id].length}`, factor_type: 'totp', status: 'unverified' };
         f[t.id].push(factor);
         return json({ id: factor.id, totp: { qr_code: qr, secret: 'JBSWY3DPEHPK3PXP', uri: 'otpauth://totp/Byte%20Island:admin?secret=JBSWY3DPEHPK3PXP' } });
@@ -85,6 +89,7 @@ function upstream({ factors = {}, admins = [UID_ADMIN], turnstile = { success: t
         const t = tokens.get(bearer(init));
         if (method === 'DELETE') {
           state.removed.push(fm[1]);
+          if (deleteStatus !== 200) return json({ error_code: 'bad_jwt', msg: 'SECRET upstream text' }, deleteStatus);
           f[t.id] = f[t.id].filter((x) => x.id !== fm[1]);
           return json({});
         }
@@ -307,6 +312,110 @@ describe('C14 login', () => {
     const bad = await login(upstream(), { password: 'wrong password' });
     const all = [...r.logs, ...bad.logs].join('\n');
     for (const secret of ['admin@example.com', 'correct horse battery', 'wrong password', 'turnstile-token', IP, 'eyJ']) expect(all).not.toContain(secret);
+  });
+});
+
+describe('C14 TOTP enrolment: the P7-fix (unique name, stale factors, real reasons, safe messages)', () => {
+  const unverified = (n) => ({ id: `66666666-6666-4666-8666-66666666666${n}`, factor_type: 'totp', status: 'unverified' });
+  const verified = { id: '66666666-6666-4666-8666-666666666669', factor_type: 'totp', status: 'verified' };
+
+  it('POST /auth/v1/factors: the USER token is the bearer, the anon key is apikey, JSON body {factor_type, friendly_name, issuer}; every attempt has a different friendly name', async () => {
+    const up = upstream();
+    const { aal1 } = sessions(up);
+    await call('mfa/enroll', { body: {}, headers: auth(aal1) }, up);
+    await call('mfa/enroll', { body: {}, headers: auth(aal1) }, up);
+    expect(up.state.enrolHeaders).toEqual({ apikey: 'anon-test-key', bearerIsUser: true, type: 'application/json' });
+    const [one, two] = up.state.enrolBodies;
+    for (const b of [one, two]) {
+      expect(Object.keys(b).sort()).toEqual(['factor_type', 'friendly_name', 'issuer']);
+      expect(b.factor_type).toBe('totp');
+      expect(b.friendly_name).toMatch(/^admin-[0-9a-f]{12}$/);
+    }
+    expect(one.friendly_name).not.toBe(two.friendly_name);
+  });
+
+  it('stale UNVERIFIED factors are deleted before enrolling; a VERIFIED factor is never deleted (409, nothing removed)', async () => {
+    const stale = upstream({ factors: { [UID_ADMIN]: [unverified(1), unverified(2), unverified(3)] } });
+    const { aal1 } = sessions(stale);
+    const r = await call('mfa/enroll', { body: {}, headers: auth(aal1) }, stale);
+    expect(r.res.statusCode).toBe(200);
+    expect(stale.state.removed).toEqual([unverified(1).id, unverified(2).id, unverified(3).id]);
+    expect(stale.state.calls.filter((c) => c.includes('/factors')).at(-1)).toBe('POST /auth/v1/factors'); // the enrol comes after every delete
+    const mixed = upstream({ factors: { [UID_ADMIN]: [unverified(1), verified] } });
+    const r2 = await call('mfa/enroll', { body: {}, headers: auth(sessions(mixed).aal1) }, mixed);
+    expect(r2.res.statusCode).toBe(409);
+    expect(r2.res.json()).toEqual({ ok: false, error: 'already_enrolled' });
+    expect(mixed.state.removed).toEqual([]);
+    expect(mixed.state.enrolBodies).toEqual([]);
+  });
+
+  it('a stale factor that cannot be removed is logged (status and code only) and the enrolment still goes on', async () => {
+    const up = upstream({ factors: { [UID_ADMIN]: [unverified(1)] }, deleteStatus: 401 });
+    const r = await call('mfa/enroll', { body: {}, headers: auth(sessions(up).aal1) }, up);
+    expect(r.res.statusCode).toBe(200);
+    expect(r.logs.join('\n')).toContain('factor_remove_upstream_401_bad_jwt');
+    expect(r.logs.join('\n')).not.toContain('SECRET');
+  });
+
+  it('a duplicate friendly name from Supabase is retried once with a new name', async () => {
+    const up = upstream({ enrolErrors: [{ status: 422, body: { code: 422, error_code: 'mfa_factor_name_conflict', msg: 'A factor with the friendly name "x" for this user already exists' } }] });
+    const r = await call('mfa/enroll', { body: {}, headers: auth(sessions(up).aal1) }, up);
+    expect(r.res.statusCode).toBe(200);
+    expect(up.state.enrolBodies).toHaveLength(2);
+    expect(up.state.enrolBodies[0].friendly_name).not.toBe(up.state.enrolBodies[1].friendly_name);
+  });
+
+  it('known upstream codes map to short FIXED messages with no raw upstream text; unknown codes get no message', async () => {
+    const cases = [
+      ['mfa_totp_enroll_not_enabled', 'Two-step setup is switched off in Supabase.'],
+      ['mfa_factor_name_conflict', 'A previous setup attempt is pending. Try again.'],
+      ['too_many_enrolled_mfa_factors', 'A previous setup attempt is pending. Try again.'],
+    ];
+    for (const [code, message] of cases) {
+      const err = { status: 422, body: { code: 422, error_code: code, msg: 'RAW upstream text with user@example.com and a-secret' } };
+      const up = upstream({ enrolErrors: [err, err] });
+      const r = await call('mfa/enroll', { body: {}, headers: auth(sessions(up).aal1) }, up);
+      expect(r.res.statusCode, code).toBe(502);
+      expect(r.res.json(), code).toEqual({ ok: false, error: 'enroll_failed', message });
+      expect(r.res.body).not.toMatch(/RAW|secret|example\.com/);
+    }
+    const odd = upstream({ enrolErrors: [{ status: 500, body: { msg: 'RAW upstream text', error_code: 'Some Weird Code!' } }] });
+    const r = await call('mfa/enroll', { body: {}, headers: auth(sessions(odd).aal1) }, odd);
+    expect(r.res.statusCode).toBe(502);
+    expect(r.res.json()).toEqual({ ok: false, error: 'enroll_failed' });
+    expect(r.res.body).not.toContain('RAW');
+  });
+
+  it('every enrol failure logs the outcome with the upstream HTTP status and error code, and nothing secret; verify says which step failed', async () => {
+    const up = upstream({ enrolErrors: [{ status: 422, body: { code: 422, error_code: 'mfa_totp_enroll_not_enabled', msg: 'RAW text user@example.com' } }] });
+    const { aal1 } = sessions(up);
+    const r = await call('mfa/enroll', { body: {}, headers: auth(aal1) }, up);
+    const line = r.logs.map((l) => JSON.parse(l)).find((l) => /upstream/.test(l.reason ?? ''));
+    expect(line).toMatchObject({ e: 'admin', status: 502, reason: 'enroll_upstream_422_mfa_totp_enroll_not_enabled' });
+    const all = r.logs.join('\n');
+    for (const secret of [aal1, 'RAW', 'example.com', 'JBSWY3DPEHPK3PXP', 'anon-test-key', 'service-role-test-key', IP, 'data:image']) expect(all).not.toContain(secret);
+    const down = upstream({ enrolErrors: [{ status: 503, body: {} }] });
+    const r2 = await call('mfa/enroll', { body: {}, headers: auth(sessions(down).aal1) }, down);
+    expect(r2.logs.join('\n')).toContain('enroll_upstream_503_none');
+    const wrong = upstream({ factors: { [UID_ADMIN]: [verified] } });
+    const r3 = await call('mfa/verify', { body: { code: '000000' }, headers: auth(sessions(wrong).aal1) }, wrong);
+    expect(r3.res.statusCode).toBe(401);
+    expect(r3.logs.join('\n')).toContain('verify_upstream_400_mfa_verification_failed');
+    expect(r3.logs.join('\n')).not.toContain('000000');
+  });
+
+  it('the QR is accepted as an SVG data URI or as raw SVG (converted); a raw SVG with a script is dropped', async () => {
+    const raw = upstream({ qr: '<svg xmlns="http://www.w3.org/2000/svg" width="10"><rect width="10" height="10"/></svg>' });
+    const r = await call('mfa/enroll', { body: {}, headers: auth(sessions(raw).aal1) }, raw);
+    expect(r.res.json().qr).toMatch(/^data:image\/svg\+xml;utf-8,%3Csvg/);
+    const evil = upstream({ qr: '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>' });
+    expect((await call('mfa/enroll', { body: {}, headers: auth(sessions(evil).aal1) }, evil)).res.json().qr).toBe('');
+  });
+
+  it('the browser shows only the safe fixed message and never builds HTML from it', () => {
+    const code = strip(read('src/admin/main.js'));
+    expect(code).toMatch(/data\.message/);
+    expect(code).not.toMatch(/innerHTML|insertAdjacentHTML|outerHTML/);
   });
 });
 

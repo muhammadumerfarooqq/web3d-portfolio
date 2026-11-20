@@ -28,3 +28,11 @@ select a.user_id, u.email from public.admins a join auth.users u on u.id = a.use
 4. Vercel (Production + Preview): add `CRON_SECRET` (copy from your local `.env`); make sure `VITE_SUPABASE_ANON_KEY` exists. Redeploy.
 5. Open `/admin/`, sign in, enrol the authenticator **immediately**, then try: reorder + Save (reload the live site), change a message status.
 6. Vercel → Settings → Cron Jobs: check `/api/cron/keepalive`. Run `npm run live:check`.
+
+## P7-fix (20-Nov-2026): TOTP enrolment failed live
+
+- **Symptom:** login 200, then "Could not start the two-step setup"; no log line said why.
+- **Cause found:** the exact upstream failure is not known (the handler discarded it). Confirmed in code: it was invisible, because `auth.js` threw a bare `auth enroll <status>` and the handler logged only `server_error`. Best evidence for the trigger: a Supabase refusal of the enrol call (switch off, duplicate friendly name or leftover unverified factors). The new log line shows which.
+- **Changed:** `api/_lib/auth.js` (`AuthUpstreamError`, `upstreamReason`, unique name + one retry on `mfa_factor_name_conflict`, defensive QR / secret / uri parsing incl. a raw SVG, `removeFactor` returns its status), `api/admin/[...path].js` (stale unverified factors removed, never a verified one; 502 `enroll_failed` with one of three fixed sentences; logs `<op>_upstream_<status>_<code>`), `src/admin/main.js` (shows the fixed sentence, 429 shows the wait), `api/collect.js` (junk body: bare 204).
+- **Tests:** `tests/security/p7-admin.test.js` (+8: headers and body of the enrol call, unique names, stale factors, verified never removed, name-conflict retry, fixed messages with no upstream text, log lines with status and code and no secrets, raw / unsafe SVG), `tests/security/p10-analytics.test.js` (+1: junk body when the runtime parser throws → 204 empty, oversized stays 413).
+- **Umer:** deploy; wait 10 minutes (login rate limit); log in ONCE; enrol. If it fails again, the Vercel log line `enroll_upstream_<status>_<code>` names the cause (for example `mfa_totp_enroll_not_enabled`: Supabase → Authentication → Multi-Factor: enable TOTP enrol AND verify).

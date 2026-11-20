@@ -101,6 +101,21 @@ describe('C15 events and "always 204"', () => {
       expect(r.up.fetch, body).not.toHaveBeenCalled();
     }
   });
+  it('a body that is not valid JSON is a bare 204 even when the runtime body parser throws (Vercel) - nothing counted, still 413 for oversized', async () => {
+    const res = response();
+    const up = upstream();
+    const logs = [];
+    const req = request({ body: 'not json at all' });
+    Object.defineProperty(req, 'body', { get() { throw Object.assign(new Error('Invalid JSON'), { statusCode: 400 }); } });
+    await createCollectHandler({ env: ENV, fetch: up.fetch, log: (e, f) => logs.push(JSON.stringify({ e, ...f })) })(req, res);
+    expect(res.statusCode).toBe(204);
+    expect(res.body).toBe('');
+    expect(up.fetch).not.toHaveBeenCalled();
+    expect(logs.join('\n')).toContain('ignored');
+    expect(logs.join('\n')).not.toContain('not json');
+    const big = await post({ body: JSON.stringify({ e: 'chat_open', pad: 'x'.repeat(ANALYTICS_BODY_MAX) }) });
+    expect(big.res.statusCode).toBe(413);
+  });
   it('a database failure, a full daily cap or a missing configuration never changes the answer (204, no body)', async () => {
     expect((await post({}, { fail: true })).res.statusCode).toBe(204);
     expect((await post({}, { env: { ...ENV, SUPABASE_URL: '' } })).res.statusCode).toBe(204);

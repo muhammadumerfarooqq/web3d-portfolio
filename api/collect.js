@@ -34,7 +34,10 @@ export function createCollectHandler({ env = process.env, fetch = globalThis.fet
     try {
       raw = await readBody(req, ANALYTICS_BODY_MAX);
     } catch (error) {
-      return error instanceof HttpError ? fail(error.status, error.code) : fail(400, 'bad_request');
+      // Too large stays a 413. Anything else (on Vercel the runtime's own body parser throws for invalid JSON) is junk:
+      // ignored like an unknown event, so the answer never tells a prober which bodies count.
+      if (error instanceof HttpError) return fail(error.status, error.code);
+      raw = '';
     }
     let event = null;
     try {
